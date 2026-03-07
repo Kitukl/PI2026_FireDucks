@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace StudyHub.Domain.Entitties;
+namespace StudyHub.Domain.Entities;
 
 public class User : IdentityUser<Guid>
 {

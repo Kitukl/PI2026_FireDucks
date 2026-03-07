@@ -1,4 +1,4 @@
-namespace StudyHub.Domain.Entitties;
+namespace StudyHub.Domain.Entities;
 
 public class Statistic
 {
