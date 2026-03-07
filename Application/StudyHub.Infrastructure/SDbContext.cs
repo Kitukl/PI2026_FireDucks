@@ -19,9 +19,14 @@ public class SDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<Subject> Subjects { get; set; }
     public DbSet<Task> Tasks { get; set; }
 
+    public SDbContext(DbContextOptions<SDbContext> options) :  base(options)
+    {
+        
+    }
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         
+        builder.ApplyConfigurationsFromAssembly(typeof(SDbContext).Assembly);
     }
 }

@@ -3,7 +3,7 @@ namespace StudyHub.Domain.Entities;
 public class Schedule
 {
     public Guid Id { get; set; }
-    public TimeSpan UpdateInterval { get; set; }
+    public int UpdateInterval { get; set; }
     public DateTime UpdatedAt { get; set; }
     public bool IsAutoUpdate { get; set; }
     public bool CanHeadmanUpdate { get; set; }

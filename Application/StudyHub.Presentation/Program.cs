@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using StudyHub.Infrastructure;
+
 namespace Application;
 
 public class Program
@@ -8,7 +11,10 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
-
+        builder.Services.AddDbContext<SDbContext>(options =>
+            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+                b => b.MigrationsAssembly("StudyHub.Infrastructure")));
+        
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
