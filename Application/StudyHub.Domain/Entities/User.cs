@@ -8,7 +8,6 @@ public class User : IdentityUser<Guid>
     public Guid MicrosoftId { get; set; }
     public string Name { get; set; }
     public string Surname { get; set; }
-    public string Role { get; set; }
     public bool IsNotified { get; set; }
     public TimeSpan ReminderOffset { get; set; }
     public string PhotoUrl { get; set; }

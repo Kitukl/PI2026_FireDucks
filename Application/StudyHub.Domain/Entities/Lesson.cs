@@ -8,6 +8,6 @@ public class Lesson
     public Subject Subject { get; set; }
     
     public ICollection<Schedule> Schedules { get; set; }
-    public ICollection<Lecturer> Lectures { get; set; }
+    public ICollection<Lecturer> Lecturers { get; set; }
     public ICollection<LessonsSlot> LessonsSlots { get; set; }
 }
