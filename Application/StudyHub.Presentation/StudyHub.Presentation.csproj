@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <RootNamespace>Application</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\StudyHub.Core\StudyHub.Core.csproj" />
+      <ProjectReference Include="..\StudyHub.Domain\StudyHub.Domain.csproj" />
+      <ProjectReference Include="..\StudyHub.Infrastructure\StudyHub.Infrastructure.csproj" />
+    </ItemGroup>
+
+</Project>

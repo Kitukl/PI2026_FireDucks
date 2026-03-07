@@ -1,0 +1,117 @@
+{
+  "version": 3,
+  "targets": {
+    "net9.0": {
+      "StudyHub.Core/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "StudyHub.Domain": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/StudyHub.Core.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/StudyHub.Core.dll": {}
+        }
+      },
+      "StudyHub.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "compile": {
+          "bin/placeholder/StudyHub.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/StudyHub.Domain.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "StudyHub.Core/1.0.0": {
+      "type": "project",
+      "path": "../StudyHub.Core/StudyHub.Core.csproj",
+      "msbuildProject": "../StudyHub.Core/StudyHub.Core.csproj"
+    },
+    "StudyHub.Domain/1.0.0": {
+      "type": "project",
+      "path": "../StudyHub.Domain/StudyHub.Domain.csproj",
+      "msbuildProject": "../StudyHub.Domain/StudyHub.Domain.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net9.0": [
+      "StudyHub.Core >= 1.0.0",
+      "StudyHub.Domain >= 1.0.0"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\kitol\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\Users\\kitol\\PI2026_FireDucks\\Application\\StudyHub.Infrastructure\\StudyHub.Infrastructure.csproj",
+      "projectName": "StudyHub.Infrastructure",
+      "projectPath": "C:\\Users\\kitol\\PI2026_FireDucks\\Application\\StudyHub.Infrastructure\\StudyHub.Infrastructure.csproj",
+      "packagesPath": "C:\\Users\\kitol\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\kitol\\PI2026_FireDucks\\Application\\StudyHub.Infrastructure\\obj\\",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "C:\\Users\\kitol\\AppData\\Roaming\\NuGet\\NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "net9.0"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "projectReferences": {
+            "C:\\Users\\kitol\\PI2026_FireDucks\\Application\\StudyHub.Core\\StudyHub.Core.csproj": {
+              "projectPath": "C:\\Users\\kitol\\PI2026_FireDucks\\Application\\StudyHub.Core\\StudyHub.Core.csproj"
+            },
+            "C:\\Users\\kitol\\PI2026_FireDucks\\Application\\StudyHub.Domain\\StudyHub.Domain.csproj": {
+              "projectPath": "C:\\Users\\kitol\\PI2026_FireDucks\\Application\\StudyHub.Domain\\StudyHub.Domain.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.300"
+    },
+    "frameworks": {
+      "net9.0": {
+        "targetAlias": "net9.0",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.310/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}
