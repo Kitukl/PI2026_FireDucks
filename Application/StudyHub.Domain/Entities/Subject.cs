@@ -1,0 +1,10 @@
+namespace StudyHub.Domain.Entities;
+
+public class Subject
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; }
+    
+    public ICollection<Task> Tasks { get; set; }
+    public ICollection<Lesson> Lessons { get; set; }
+}

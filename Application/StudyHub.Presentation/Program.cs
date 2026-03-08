@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using StudyHub.Infrastructure;
+
 using Serilog;
 namespace Application;
 
@@ -12,7 +15,9 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
-
+        builder.Services.AddDbContext<SDbContext>(options =>
+            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        
         var app = builder.Build();
 
         app.UseSerilogRequestLogging();
