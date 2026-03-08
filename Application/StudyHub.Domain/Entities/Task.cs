@@ -6,16 +6,22 @@ public class Task
     public string Title { get; set; }
 
     public bool IsGroupTask { get; set; }
-    public string Status { get; set; }
+    public Status Status { get; set; }
     public DateTime Deadline { get; set; }
     public DateTime CreatedAt { get; set; }
 
-    public Guid SubjectId { get; set; }
-    public Subject  Subject { get; set; }
+    public Subject Subject { get; set; }
     
-    public Guid UserId { get; set; }
     public User User { get; set; }
 
     public ICollection<Statistic> Statistics { get; set; }
     public ICollection<Comment> Comments { get; set; }
+}
+
+public enum Status
+{
+    ToDo,
+    InProgress,
+    ForReview,
+    Done
 }

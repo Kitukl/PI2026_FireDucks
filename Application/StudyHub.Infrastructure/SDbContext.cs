@@ -6,7 +6,8 @@ using Task = StudyHub.Domain.Entities.Task;
 
 namespace StudyHub.Infrastructure;
 
-public class SDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
+public class SDbContext(DbContextOptions<SDbContext> options) 
+    : IdentityDbContext<User, IdentityRole<Guid>, Guid> (options)
 {
     public DbSet<Lesson> Lessons { get; set; }
     public DbSet<Comment> Comments { get; set; }
@@ -19,10 +20,7 @@ public class SDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<Subject> Subjects { get; set; }
     public DbSet<Task> Tasks { get; set; }
 
-    public SDbContext(DbContextOptions<SDbContext> options) :  base(options)
-    {
-        
-    }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

@@ -10,7 +10,6 @@ public class ScheduleConfiguration : IEntityTypeConfiguration<Schedule>
     {
         builder.HasKey(s => s.Id);
 
-        builder.Property(s => s.UpdatedAt).HasColumnType("timestamp with time zone");
         builder.Property(s => s.IsAutoUpdate).HasDefaultValue(false);
         builder.Property(s => s.CanHeadmanUpdate).HasDefaultValue(true);
     }

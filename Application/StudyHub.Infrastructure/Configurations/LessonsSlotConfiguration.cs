@@ -10,8 +10,8 @@ public class LessonsSlotConfiguration : IEntityTypeConfiguration<LessonsSlot>
     {
         builder.HasKey(l => l.Id);
 
-        builder.Property(l => l.StartTime).HasColumnType("time").IsRequired();
-        builder.Property(l => l.EndTime).HasColumnType("time").IsRequired();
+        builder.Property(l => l.StartTime).IsRequired();
+        builder.Property(l => l.EndTime).IsRequired();
 
         builder.HasIndex(l => new { l.StartTime, l.EndTime })
             .IsUnique();
