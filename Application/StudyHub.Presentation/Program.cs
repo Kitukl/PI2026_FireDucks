@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Infrastructure;
 
+using Serilog;
 namespace Application;
 
 public class Program
@@ -9,12 +10,17 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.Host.UseSerilog((context, configuration) =>
+            configuration.ReadFrom.Configuration(context.Configuration));
+
         // Add services to the container.
         builder.Services.AddControllersWithViews();
         builder.Services.AddDbContext<SDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
         
         var app = builder.Build();
+
+        app.UseSerilogRequestLogging();
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
