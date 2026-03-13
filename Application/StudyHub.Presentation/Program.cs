@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using StudyHub.Core.Handlers;
+using StudyHub.Core.Interfaces;
 using StudyHub.Infrastructure;
+using StudyHub.Infrastructure.Repositories;
 
 using Serilog;
 namespace Application;
@@ -17,6 +20,11 @@ public class Program
         builder.Services.AddControllersWithViews();
         builder.Services.AddDbContext<SDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        
+        builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
+        
+        builder.Services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));
         
         var app = builder.Build();
 

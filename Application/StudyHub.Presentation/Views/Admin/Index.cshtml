@@ -1,0 +1,11 @@
+@model StudyHub.Core.DTOs.UsersStatisticDto
+
+@{
+    ViewBag.Title = "title";
+    Layout = "_Layout";
+}
+
+
+<h1>Статистика</h1>
+<p> users files @Model.FilesCount </p>
+<p> users activity @Model.UserActivityPerMonth </p>
