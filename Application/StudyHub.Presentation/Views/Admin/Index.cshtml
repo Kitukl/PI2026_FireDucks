@@ -1,0 +1,13 @@
+@model Application.Models.SystemStatisticViewModel
+
+@{
+    ViewBag.Title = "title";
+    Layout = "_Layout";
+}
+
+
+<h1>Статистика</h1>
+<p>created at @Model.CreatedAt</p>
+<p> users files @Model.FileCount </p>
+<p> users activity @Model.UserActivityPerMonth </p>
+<p> taskCount @Model.TaskCount</p>
