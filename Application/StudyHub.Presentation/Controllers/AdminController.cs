@@ -11,7 +11,7 @@ namespace Application.Controllers;
 
 public class AdminController(IMediator mediator) : Controller
 {
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Dashboard()
     {
         var user = await mediator.Send(new GetUsersStatisticRequest());
         var tasksCount = await mediator.Send(new GetTaskCountRequest());
@@ -38,6 +38,7 @@ public class AdminController(IMediator mediator) : Controller
     public async Task<IActionResult> UpdateUser(Guid id)
     {
         var user = await mediator.Send(new GetUserRequest(id));
+        
         return View(user);
     }
 

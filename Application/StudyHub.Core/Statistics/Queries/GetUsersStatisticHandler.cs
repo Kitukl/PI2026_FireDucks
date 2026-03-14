@@ -20,12 +20,17 @@ public class GetUsersStatisticHandler : IRequestHandler<GetUsersStatisticRequest
         
         if (rawData is null)
         {
-            return new UsersStatisticDto(DateTime.Now, 0, 0); 
+            return new UsersStatisticDto(DateTime.Now, [], 0); 
         }
-        
+        var userActivityPerMonth = await repository.GetThisYearStatisticsAsync();
+      
+        var activityList = userActivityPerMonth
+            .Select(ua => (ua.CreatedAt.Month, ua.UserActivityPerMonth))
+            .ToList();
+
         return new UsersStatisticDto(
             rawData.CreatedAt,
-            rawData.UserActivityPerMonth,
+            activityList,
             rawData.FilesCount
         );
     }

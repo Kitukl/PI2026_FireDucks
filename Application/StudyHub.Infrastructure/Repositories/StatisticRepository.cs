@@ -12,4 +12,14 @@ public class StatisticRepository(SDbContext context) : IStatisticRepository
         
         return recentStats;
     }
+
+    public async Task<IEnumerable<Statistic>> GetThisYearStatisticsAsync()
+    {
+        var thisYearStats = await context.Statistics
+            .Where(s => s.CreatedAt.Year == DateTime.Now.Year)
+            .AsNoTracking()
+            .ToListAsync();
+        
+        return thisYearStats;
+    }
 }
