@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Core.Interfaces;
+using StudyHub.Core.Statistics.Interfaces;
 using StudyHub.Domain.Entities;
 
 namespace StudyHub.Infrastructure.Repositories;

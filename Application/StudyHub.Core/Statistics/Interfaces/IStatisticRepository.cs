@@ -1,6 +1,6 @@
 using StudyHub.Domain.Entities;
 
-namespace StudyHub.Core.Interfaces;
+namespace StudyHub.Core.Statistics.Interfaces;
 
 public interface IStatisticRepository
 {

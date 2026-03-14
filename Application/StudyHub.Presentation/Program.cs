@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Core.Handlers;
-using StudyHub.Core.Interfaces;
 using StudyHub.Infrastructure;
 using StudyHub.Infrastructure.Repositories;
 
 using Serilog;
+using StudyHub.Core.Statistics.Interfaces;
+using StudyHub.Core.Statistics.Queries;
+
 namespace Application;
 
 public class Program
