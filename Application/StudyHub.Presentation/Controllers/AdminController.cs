@@ -15,11 +15,13 @@ public class AdminController(IMediator mediator) : Controller
     {
         var user = await mediator.Send(new GetUsersStatisticRequest());
         var tasksCount = await mediator.Send(new GetTaskCountRequest());
+        var userRoleCount = await mediator.Send(new GetUserCountByRole());
         
         var viewModel = new SystemStatisticViewModel()
         {
             CreatedAt = user.CreatedAt,
             UserActivityPerMonth = user.UserActivityPerMonth,
+            UserRoleCount =  userRoleCount,
             FileCount = user.FileCount,
             TaskCount = tasksCount,
         };

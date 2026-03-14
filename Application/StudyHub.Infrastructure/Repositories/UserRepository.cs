@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using StudyHub.Core.DTOs;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Domain.Entities;
+using StudyHub.Domain.Entities.enums;
 using Task = System.Threading.Tasks.Task;
 
 
@@ -10,6 +11,18 @@ namespace StudyHub.Infrastructure.Repositories;
 
 public class UserRepository(SDbContext context,UserManager<User> userManager) : IUserRepository
 {
+    public async Task<Dictionary<string, int>> GetUsersCountByRoleAsync()
+    {
+        return await context.UserRoles
+            .Join(context.Roles, 
+                ur => ur.RoleId, 
+                r => r.Id, 
+                (ur, r) => r.Name)
+            .GroupBy(roleName => roleName)
+            .Select(g => new { RoleName = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.RoleName, x => x.Count);
+    }
+
     public async Task<IEnumerable<UserDto>> GetUsersAsync()
     {
         return await context.Users

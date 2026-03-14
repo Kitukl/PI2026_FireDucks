@@ -12,17 +12,31 @@
 <p> users files @Model.FileCount </p>
 <p> taskCount @Model.TaskCount</p>
 
-<p>User Activity Per Month</p>
-<ul class="list-group">
-    @foreach (var (month, value) in Model.UserActivityPerMonth)
-    {
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <span>
-                <strong>
-                    @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)
-                </strong>
-            </span>
-            <span class="badge bg-primary rounded-pill">@value.ToString("F2") %</span>
-        </li>
-    }
-</ul>
+<div>
+    <p>User Activity Per Month</p>
+    <ul class="list-group">
+        @foreach (var (month, value) in Model.UserActivityPerMonth)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                    <strong>
+                        @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)
+                    </strong>
+                </span>
+                <span class="badge bg-primary rounded-pill">@value.ToString("F2") %</span>
+            </li>
+        }
+    </ul>
+</div>
+
+<div>
+    <p>Users</p>
+    <ul class="list-group">
+        @foreach (var (role, count) in Model.UserRoleCount)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+               <span> @role : @count</span>
+            </li>
+        }
+    </ul>
+</div>
