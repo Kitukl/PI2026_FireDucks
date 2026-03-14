@@ -11,12 +11,20 @@ public class TaskRepository(SDbContext context) : ITaskRepository
         return await context.Tasks.CountAsync();
     }
     
-    public Dictionary<Status,int> GetCountByStatusAsync()
-    {
-        return context.Tasks
-            .GroupBy(t => t.Status)
+    public async Task<Dictionary<bool, Dictionary<Status, int>>> GetGroupedTaskStatsAsync()    {
+        var stats =  context.Tasks
+            .GroupBy(x => new { x.IsGroupTask, x.Status })
+            .Select(g => new
+            {
+                g.Key.IsGroupTask,
+                g.Key.Status,
+                Count = g.Count()
+            });
+        
+        return stats.GroupBy(s=>s.IsGroupTask)
             .ToDictionary(
-                g =>g.Key,
-                g=> g.Count());
+            g => g.Key, 
+            g => g.ToDictionary(x => x.Status, x => x.Count)
+        );
     }
 }

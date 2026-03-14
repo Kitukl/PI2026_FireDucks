@@ -10,7 +10,18 @@
 <h1>Статистика</h1>
 <p>created at @Model.CreatedAt</p>
 <p> users files @Model.FileCount </p>
-<p> taskCount @Model.TaskCount</p>
+<p> task All @Model.TaskCount</p>
+
+<div>
+    @foreach (var (kind, statusDict) in Model.GropedTaskCount)
+    {
+        <h2>@kind</h2>
+        foreach (var (status,count) in statusDict)
+        {
+            <p>@status : @count</p>    
+        }
+    }
+</div>
 
 <div>
     <p>User Activity Per Month</p>
@@ -30,13 +41,22 @@
 </div>
 
 <div>
-    <p>Users</p>
+    <h2>Users</h2>
     <ul class="list-group">
         @foreach (var (role, count) in Model.UserRoleCount)
         {
             <li class="list-group-item d-flex justify-content-between align-items-center">
-               <span> @role : @count</span>
+                <span> @role : @count</span>
             </li>
         }
     </ul>
+    
+    <h2>Tasks</h2>
+    @foreach (var (kind, statusDict) in Model.GropedTaskCount)
+    {
+        <p>@kind : @statusDict.Sum(s=>s.Value) </p>
+    }
+    
+    <h2>Files</h2>
+    <p>All files : @Model.FileCount</p>
 </div>

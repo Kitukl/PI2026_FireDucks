@@ -10,4 +10,5 @@ public class SystemStatisticViewModel
 
     public int FileCount {get; set; }
     public int TaskCount { get; set; }
+    public Dictionary<string, Dictionary<string, int>> GropedTaskCount { get; set; }
 }
