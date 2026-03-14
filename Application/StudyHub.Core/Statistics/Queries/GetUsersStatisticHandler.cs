@@ -22,15 +22,12 @@ public class GetUsersStatisticHandler : IRequestHandler<GetUsersStatisticRequest
         {
             return new UsersStatisticDto(DateTime.Now, [], 0); 
         }
-        var userActivityPerMonth = await repository.GetThisYearStatisticsAsync();
-      
-        var activityList = userActivityPerMonth
-            .Select(ua => (ua.CreatedAt.Month, ua.UserActivityPerMonth))
-            .ToList();
+        
+        var userActivityPerMonth = await repository.GetYearlyActivityAsync(DateTime.Now.Year);
 
         return new UsersStatisticDto(
             rawData.CreatedAt,
-            activityList,
+            userActivityPerMonth,
             rawData.FilesCount
         );
     }

@@ -5,5 +5,5 @@ namespace StudyHub.Core.Statistics.Interfaces;
 public interface IStatisticRepository
 {
     Task<Statistic?> GetRecentStatisticAsync();
-    Task<IEnumerable<Statistic>> GetThisYearStatisticsAsync();
+    Task<Dictionary<int,double>> GetYearlyActivityAsync(int year);
 }

@@ -13,13 +13,14 @@ public class StatisticRepository(SDbContext context) : IStatisticRepository
         return recentStats;
     }
 
-    public async Task<IEnumerable<Statistic>> GetThisYearStatisticsAsync()
+    public async Task<Dictionary<int, double>> GetYearlyActivityAsync(int year)
     {
-        var thisYearStats = await context.Statistics
-            .Where(s => s.CreatedAt.Year == DateTime.Now.Year)
+        return await context.Statistics
+            .Where(s => s.CreatedAt.Year == year)
+            .GroupBy(s => s.CreatedAt.Month)
             .AsNoTracking()
-            .ToListAsync();
-        
-        return thisYearStats;
+            .ToDictionaryAsync(
+                g => g.Key,
+                g => g.Sum(s => s.UserActivityPerMonth));
     }
 }

@@ -3,6 +3,6 @@ namespace StudyHub.Core.DTOs;
 public record UsersStatisticDto
 (
     DateTime CreatedAt,
-    List<(int,double)> UserActivityPerMonth,
+    Dictionary<int,double> UserActivityPerMonth,
     int FileCount
 );
