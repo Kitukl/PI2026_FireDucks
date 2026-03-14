@@ -14,10 +14,4 @@
       <PackageReference Include="MediatR" Version="14.1.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Queries\" />
-      <Folder Include="Schedule\" />
-      <Folder Include="User\" />
-    </ItemGroup>
-
 </Project>

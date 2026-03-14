@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Infrastructure;
 using StudyHub.Infrastructure.Repositories;
@@ -5,6 +6,9 @@ using StudyHub.Infrastructure.Repositories;
 using Serilog;
 using StudyHub.Core.Statistics.Interfaces;
 using StudyHub.Core.Statistics.Queries;
+using StudyHub.Core.Tasks.Interfaces;
+using StudyHub.Core.Users.Interfaces;
+using StudyHub.Domain.Entities;
 
 namespace Application;
 
@@ -22,7 +26,13 @@ public class Program
         builder.Services.AddDbContext<SDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
         
+        builder.Services.AddIdentity<User, IdentityRole<Guid>>()
+            .AddEntityFrameworkStores<SDbContext>()
+            .AddDefaultTokenProviders();
+        
         builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
+        builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+        builder.Services.AddScoped<IUserRepository, UserRepository>();
         
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));

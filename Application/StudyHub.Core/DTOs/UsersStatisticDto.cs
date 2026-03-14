@@ -4,5 +4,5 @@ public record UsersStatisticDto
 (
     DateTime CreatedAt,
     double UserActivityPerMonth,
-    int FilesCount
+    int FileCount
 );
