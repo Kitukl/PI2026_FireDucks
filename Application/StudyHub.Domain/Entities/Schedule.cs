@@ -7,7 +7,7 @@ public class Schedule
     public DateTime UpdatedAt { get; set; }
     public bool IsAutoUpdate { get; set; }
     public bool CanHeadmanUpdate { get; set; }
-
+    public Group Group { get; set; }
     public ICollection<Lesson> Lessons { get; set; }
     public ICollection<User> Users { get; set; }
 }

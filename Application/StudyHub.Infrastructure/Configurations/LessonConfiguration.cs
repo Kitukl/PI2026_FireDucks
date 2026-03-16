@@ -10,6 +10,9 @@ public class LessonConfiguration : IEntityTypeConfiguration<Lesson>
     {
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.Day).HasConversion<string>();
+        builder.Property(x => x.LessonType);
+
         builder.HasOne(l => l.Subject)
             .WithMany(su => su.Lessons)
             .OnDelete(DeleteBehavior.Restrict);

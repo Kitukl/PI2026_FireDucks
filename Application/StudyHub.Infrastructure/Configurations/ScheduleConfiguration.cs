@@ -12,5 +12,10 @@ public class ScheduleConfiguration : IEntityTypeConfiguration<Schedule>
 
         builder.Property(s => s.IsAutoUpdate).HasDefaultValue(false);
         builder.Property(s => s.CanHeadmanUpdate).HasDefaultValue(true);
+
+        builder.HasOne(x => x.Group)
+            .WithOne()
+            .HasForeignKey<Schedule>("GroupId")
+            .IsRequired();
     }
 }
