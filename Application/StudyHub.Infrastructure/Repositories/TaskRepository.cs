@@ -4,27 +4,50 @@ using StudyHub.Domain.Entities;
 
 namespace StudyHub.Infrastructure.Repositories;
 
-public class TaskRepository(SDbContext context) : ITaskRepository
+public class TaskRepository : ITaskRepository
 {
-    public async Task<int> GetCountAsync()
+    private readonly StudyHubDbContext context;
+
+    public TaskRepository(StudyHubDbContext context)
     {
-        return await context.Tasks.CountAsync();
+        _context = context;
     }
-    
-    public async Task<Dictionary<bool, Dictionary<Status, int>>> GetGroupedTaskStatsAsync()    {
-        var stats =  context.Tasks
-            .GroupBy(x => new { x.IsGroupTask, x.Status })
-            .Select(g => new
-            {
-                g.Key.IsGroupTask,
-                g.Key.Status,
-                Count = g.Count()
-            });
-        
-        return stats.GroupBy(s=>s.IsGroupTask)
-            .ToDictionary(
-            g => g.Key, 
-            g => g.ToDictionary(x => x.Status, x => x.Count)
-        );
+
+    public async Task<Task?> GetTaskAsync(Guid Id)
+    {
+        return await _context.Tasks.FindAsync(Id);
     }
+    public async Task<List<Task>> GetTasksAsync()
+    {
+        return await _context.Tasks.ToListAsync();
+    }
+    public async Task<Guid> AddTaskAsync(Task task)
+    {
+        await _context.Tasks.AddAsync(task);
+        return task.Id;
+    }
+    public async Task<Guid> UpdateTaskAsync(Task task)
+    {
+        var userTask = await _context.Task.FirstOrDefaultAsync(f => f.Id == task.Id);
+
+        if (userTask != null)
+        {
+            userTask.Title = task.Title;
+            userTask.Status = task.Status;
+            userTask.Deadline = task.Deadline;
+            userTask.Subject = task.Subject;
+
+            await _context.SaveChangesAsync();
+        }
+
+        return userTask.Id.ToString();
+    }
+
+    public async Task<Guid> DeleteTaskAsync(Guid Id)
+    {
+        return await _context.Tasks
+            .Where(f => f.Id == task.Id)
+            .ExecuteDeleteAsync();
+    }
+
 }
