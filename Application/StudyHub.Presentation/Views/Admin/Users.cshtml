@@ -1,0 +1,38 @@
+@model IEnumerable<StudyHub.Core.DTOs.UserDto>
+
+@{
+    Layout="_Layout";
+}
+
+<div class="container-fluid mt-4"> <h1 class="mb-4">Users</h1>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped w-100"> <thead class="table-light">
+            <tr>
+                <th class="border">Name</th>
+                <th class="border">Role</th>
+                <th class="border">Group</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td class="border">@user.Name @user.Surname</td>
+                    <td class="border">@string.Join(", ", user.Roles)</td>
+                    <td class="border">@user.Group</td>
+                    <td>
+                        <a asp-action="UpdateUser" asp-controller="Admin" asp-route-id="@user.Id">Edit</a> 
+                       
+                        <form asp-action="DeleteUser" method="post">
+                            <input type="hidden" name="id" value="@user.Id" />
+                            <button type="submit">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

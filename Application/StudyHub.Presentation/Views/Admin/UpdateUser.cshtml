@@ -1,0 +1,64 @@
+@model Application.Models.UpdateUserViewModel
+
+@{
+    Layout = "_Layout";
+}
+
+<h2>Edit user</h2>
+
+<form asp-action="UpdateUser" method="post">
+
+    <input type="hidden" asp-for="Id"/>
+
+    <div class="mb-3">
+        <label>Name</label>
+        <input asp-for="Name" class="form-control"/>
+    </div>
+
+    <div class="mb-3">
+        <label>Surname</label>
+        <input asp-for="Surname" class="form-control"/>
+    </div>
+
+    <div class="mb-3">
+        <label>Group</label>
+        <input asp-for="GroupName" class="form-control"/>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+
+</form>
+
+<h3 class="mt-4">Roles</h3>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Role</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+
+    @foreach (var role in Model.Roles)
+    {
+        <tr>
+            <td>@role</td>
+
+            <td>
+                <form asp-action="RemoveUserRole" method="post">
+
+                    <input type="hidden" name="Id" value="@Model.Id"/>
+                    <input type="hidden" name="RoleName" value="@role"/>
+
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        Remove
+                    </button>
+
+                </form>
+            </td>
+        </tr>
+    }
+
+    </tbody>
+</table>
