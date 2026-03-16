@@ -2,7 +2,7 @@ using StudyHub.Domain.Entities;
 
 namespace StudyHub.Core.Tasks.Interfaces;
 
-public interface TItaskRepository
+public interface ItaskRepository
 {
     Task<Task?> GetTaskAsync(Guid Id);
     Task<List<Task>> GetTasksAsync();
