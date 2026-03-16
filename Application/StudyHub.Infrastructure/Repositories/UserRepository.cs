@@ -52,6 +52,7 @@ public class UserRepository(SDbContext context,UserManager<User> userManager) : 
 
         user.Name = userUpdateDto.Name;
         user.Surname = userUpdateDto.Surname;
+        user.PhotoUrl = user.PhotoUrl;
         
         var group = await context.Groups
             .FirstOrDefaultAsync(g => g.Name == userUpdateDto.GroupName) ?? new Group();
