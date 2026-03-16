@@ -39,19 +39,19 @@ public class AdminController(IMediator mediator) : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> UpdateUser(Guid id)
+    public async Task<IActionResult> GetUser(Guid id)
     {
         var user = await mediator.Send(new GetUserRequest(id));
         
         return View(user);
     }
 
-    [HttpPost]
+    [HttpPut]
     public async Task<IActionResult> UpdateUser(UserUpdateDto user)
     {
         await mediator.Send(new UpdateUserCommand(user));
         
-        return RedirectToAction("UpdateUser");
+        return RedirectToAction("GetUser");
     }
     
     [HttpPost]
@@ -67,14 +67,14 @@ public class AdminController(IMediator mediator) : Controller
     {
         await mediator.Send(new AddUserRoleCommand(user));
         
-        return RedirectToAction("UpdateUser", new { id = user.Id });
+        return RedirectToAction("GetUser", new { id = user.Id });
     }
     
-    [HttpPost]
+    [HttpDelete]
     public async Task<IActionResult> RemoveUserRole(UserRoleUpdateDto user)
     {
         await mediator.Send(new RemoveUserRoleCommand(user));
         
-        return RedirectToAction("UpdateUser", new { id = user.Id });
+        return RedirectToAction("GetUser", new { id = user.Id });
     }
 }

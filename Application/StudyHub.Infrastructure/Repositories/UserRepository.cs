@@ -33,8 +33,8 @@ public class UserRepository(SDbContext context,UserManager<User> userManager) : 
                 Id = u.Id,
                 Name = u.Name,
                 Surname = u.Surname,
-                Group = u.Group.Name,
-                Roles = userManager.GetRolesAsync(u).Result.ToList(),
+                GroupName = u.Group.Name,
+                Roles = userManager.GetRolesAsync(u).Result.ToList()
             })
             .ToListAsync();
     }
@@ -52,9 +52,10 @@ public class UserRepository(SDbContext context,UserManager<User> userManager) : 
 
         user.Name = userUpdateDto.Name;
         user.Surname = userUpdateDto.Surname;
+        user.PhotoUrl = user.PhotoUrl;
         
         var group = await context.Groups
-            .FirstAsync(g => g.Name == userUpdateDto.GroupName);
+            .FirstOrDefaultAsync(g => g.Name == userUpdateDto.GroupName) ?? new Group();
 
         user.Group = group;
         
@@ -84,7 +85,7 @@ public class UserRepository(SDbContext context,UserManager<User> userManager) : 
             Id = user.Id,
             Name = user.Name,
             Surname = user.Surname,
-            Group = user.Group.Name,
+            GroupName = user.Group.Name,
             Roles = userManager.GetRolesAsync(user).Result.ToList(),
         };
     }

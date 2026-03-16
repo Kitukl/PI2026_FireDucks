@@ -21,9 +21,9 @@
                 <tr>
                     <td class="border">@user.Name @user.Surname</td>
                     <td class="border">@string.Join(", ", user.Roles)</td>
-                    <td class="border">@user.Group</td>
+                    <td class="border">@user.GroupName</td>
                     <td>
-                        <a asp-action="UpdateUser" asp-controller="Admin" asp-route-id="@user.Id">Edit</a> 
+                        <a asp-action="GetUser" asp-controller="Admin" asp-route-id="@user.Id">Edit</a> 
                        
                         <form asp-action="DeleteUser" method="post">
                             <input type="hidden" name="id" value="@user.Id" />
