@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StudyHub.Infrastructure;
@@ -11,9 +12,11 @@ using StudyHub.Infrastructure;
 namespace StudyHub.Infrastructure.Migrations
 {
     [DbContext(typeof(SDbContext))]
-    partial class SDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260315154943_AddedLessonDay")]
+    partial class AddedLessonDay
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -331,14 +334,6 @@ namespace StudyHub.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Day")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("LessonType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<Guid>("LessonsSlotId")
                         .HasColumnType("uuid");
 
@@ -402,9 +397,6 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
-                    b.Property<Guid>("GroupId")
-                        .HasColumnType("uuid");
-
                     b.Property<bool>("IsAutoUpdate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -417,9 +409,6 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GroupId")
-                        .IsUnique();
 
                     b.ToTable("Schedules");
                 });
@@ -759,17 +748,6 @@ namespace StudyHub.Infrastructure.Migrations
                     b.Navigation("LessonsSlot");
 
                     b.Navigation("Subject");
-                });
-
-            modelBuilder.Entity("StudyHub.Domain.Entities.Schedule", b =>
-                {
-                    b.HasOne("StudyHub.Domain.Entities.Group", "Group")
-                        .WithOne()
-                        .HasForeignKey("StudyHub.Domain.Entities.Schedule", "GroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Group");
                 });
 
             modelBuilder.Entity("StudyHub.Domain.Entities.Task", b =>
