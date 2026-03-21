@@ -4,9 +4,9 @@ using StudyHub.Core.Subjects.Interfaces;
 
 namespace StudyHub.Core.Subjects.Queries
 {
-    public record GetAllRequest : IRequest<List<SubjectDto>>;
+    public record GetAllSubjectsRequest : IRequest<List<SubjectDto>>;
 
-    public class GetAllQueryHandler : IRequestHandler<GetAllRequest, List<SubjectDto>>
+    public class GetAllQueryHandler : IRequestHandler<GetAllSubjectsRequest, List<SubjectDto>>
     {
         private readonly ISubjectRepository _repo;
 
@@ -15,7 +15,7 @@ namespace StudyHub.Core.Subjects.Queries
             _repo = repo;
         }
 
-        public async Task<List<SubjectDto>> Handle(GetAllRequest request, CancellationToken cancellationToken)
+        public async Task<List<SubjectDto>> Handle(GetAllSubjectsRequest request, CancellationToken cancellationToken)
         {
             return (await _repo.GetAll())
                 .Select(x => new SubjectDto

@@ -4,9 +4,9 @@ using StudyHub.Core.LessonSlots.Interfaces;
 
 namespace StudyHub.Core.LessonSlots.Queries
 {
-    public record GetAllRequest : IRequest<List<LessonSlotDto>>;
+    public record GetAllLessonSlotsRequest : IRequest<List<LessonSlotDto>>;
 
-    public class GetAllQueryHandler : IRequestHandler<GetAllRequest, List<LessonSlotDto>>
+    public class GetAllQueryHandler : IRequestHandler<GetAllLessonSlotsRequest, List<LessonSlotDto>>
     {
         private readonly ILessonSlotRepository _repo;
 
@@ -15,7 +15,7 @@ namespace StudyHub.Core.LessonSlots.Queries
             _repo = repo;
         }
 
-        public async Task<List<LessonSlotDto>> Handle(GetAllRequest request, CancellationToken cancellationToken)
+        public async Task<List<LessonSlotDto>> Handle(GetAllLessonSlotsRequest request, CancellationToken cancellationToken)
         {
             return (await _repo.GetAll())
                 .Select(x => new LessonSlotDto

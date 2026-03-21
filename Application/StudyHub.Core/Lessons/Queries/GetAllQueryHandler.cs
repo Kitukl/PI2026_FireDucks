@@ -5,9 +5,9 @@ using StudyHub.Core.Lessons.Interfaces;
 
 namespace StudyHub.Core.Lessons.Queries
 {
-    public record GetAllRequest : IRequest<List<LessonDto>>;
+    public record GetAllLessonsRequest : IRequest<List<LessonDto>>;
 
-    public class GetAllQueryHandler : IRequestHandler<GetAllRequest, List<LessonDto>>
+    public class GetAllQueryHandler : IRequestHandler<GetAllLessonsRequest, List<LessonDto>>
     {
         private readonly ILessonRepository _repo;
 
@@ -16,7 +16,7 @@ namespace StudyHub.Core.Lessons.Queries
             _repo = repo;
         }
 
-        public async Task<List<LessonDto>> Handle(GetAllRequest request, CancellationToken cancellationToken)
+        public async Task<List<LessonDto>> Handle(GetAllLessonsRequest request, CancellationToken cancellationToken)
         {
             return (await _repo.GetAll())
                 .Select(l => new LessonDto

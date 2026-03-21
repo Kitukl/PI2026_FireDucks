@@ -4,9 +4,9 @@ using StudyHub.Core.Lecturers.Interfaces;
 
 namespace StudyHub.Core.Lecturers.Queries
 {
-    public record GetByIdRequest(Guid id) : IRequest<LecturerDtoResponse?>;
+    public record GetLecturerByIdRequest(Guid id) : IRequest<LecturerDtoResponse?>;
 
-    public class GetByIdQueryHandler : IRequestHandler<GetByIdRequest, LecturerDtoResponse?>
+    public class GetByIdQueryHandler : IRequestHandler<GetLecturerByIdRequest, LecturerDtoResponse?>
     {
         private readonly ILecturerRepository _repo;
 
@@ -15,7 +15,7 @@ namespace StudyHub.Core.Lecturers.Queries
             _repo = repo;
         }
 
-        public async Task<LecturerDtoResponse?> Handle(GetByIdRequest request, CancellationToken cancellationToken)
+        public async Task<LecturerDtoResponse?> Handle(GetLecturerByIdRequest request, CancellationToken cancellationToken)
         {
             var lecturer = await _repo.GetById(request.id);
 

@@ -6,6 +6,8 @@ namespace StudyHub.Core.Schedules.Interfaces
 {
     public interface IScheduleRepository
     {
+        Task<Schedule?> GetById(Guid id);
+        Task<List<Schedule>> GetAll();
         Task<Schedule?> GetByGroupIdAsync(Guid groupId);
         Task<List<Lesson>> GetLessonsByDay(Guid id, DayOfWeek Day);
         Task AddSchedule(Schedule schedule);

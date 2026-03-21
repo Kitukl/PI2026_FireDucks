@@ -1,0 +1,97 @@
+﻿@model StudyHub.Core.DTOs.ScheduleDto
+
+@{
+    ViewData["Title"] = "Розклад групи " + Model.Group.Name;
+    var lessonsByDay = Model.Lessons
+        .GroupBy(l => l.Day)
+        .OrderBy(g => g.Key)
+        .ToList();
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h2 class="mb-0">Розклад групи <span class="text-primary">@Model.Group.Name</span></h2>
+            <p class="text-muted mb-0">Останнє оновлення: @Model.UpdateAt.ToString("g")</p>
+        </div>
+        <div class="btn-group">
+            <a asp-action="ScheduleEdit" asp-route-id="@Model.Id" class="btn btn-outline-warning">Редагувати</a>
+            <a asp-action="SchedulesList" class="btn btn-outline-secondary">До списку груп</a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-light border-0">
+                <div class="card-body d-flex gap-4">
+                    <div><strong>Статус:</strong> @(Model.IsAutoUpdate ? "⚡ Автооновлення" : "📝 Ручне керування")</div>
+                    <div><strong>Доступ старости:</strong> @(Model.HeadmanUpdate ? "✅ Дозволено" : "❌ Заборонено")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Lessons.Any())
+    {
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
+            <h5>Розклад ще не заповнений</h5>
+            <p>Додайте уроки через меню редагування.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-lg-2 g-4">
+            @foreach (var dayGroup in lessonsByDay)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-primary text-white fw-bold">
+                            @GetDayName((int)dayGroup.Key)
+                        </div>
+                        <div class="card-body p-0">
+                            <ul class="list-group list-group-flush">
+                                @foreach (var lesson in dayGroup.OrderBy(l => l.LessonSlot.StartTime))
+                                {
+                                    <li class="list-group-item p-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="me-3">
+                                                <span class="badge bg-dark mb-2">
+                                                    @lesson.LessonSlot.StartTime.ToString("HH:mm") - @lesson.LessonSlot.EndTime.ToString("HH:mm")
+                                                </span>
+                                                <h6 class="mb-1 fw-bold">@lesson.Subject.Name</h6>
+                                                <div class="small text-muted">
+                                                    <i class="bi bi-geo-alt"></i> @lesson.LessonType
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                @foreach (var lect in lesson.Lecturers)
+                                                {
+                                                    <div class="small fw-medium text-secondary">@lect.Surname @lect.Name[0].</div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@functions {
+    string GetDayName(int day) => day switch
+    {
+        1 => "Понеділок",
+        2 => "Вівторок",
+        3 => "Середа",
+        4 => "Четвер",
+        5 => "П'ятниця",
+        6 => "Субота",
+        7 => "Неділя",
+        _ => "Невідомий день"
+    };
+}

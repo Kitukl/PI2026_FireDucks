@@ -1,0 +1,32 @@
+﻿@model IEnumerable<StudyHub.Core.DTOs.LessonSlotDto>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Дзвінки та часові слоти</h2>
+        <a asp-action="LessonSlotCreate" class="btn btn-primary">
+            Додати пару
+        </a>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        @foreach (var item in Model.OrderBy(s => s.StartTime))
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center py-4">
+                        <div class="display-6 fw-bold text-primary mb-2">
+                            @item.StartTime.ToString("HH:mm") — @item.EndTime.ToString("HH:mm")
+                        </div>
+                        <p class="text-muted small">ID: @item.Id.ToString().Substring(0, 8)...</p>
+                        <div class="d-flex justify-content-center gap-2 mt-3">
+                            <a asp-action="LessonSlotEdit" asp-route-id="@item.Id" class="btn btn-outline-warning btn-sm px-3">Редагувати</a>
+                            <form asp-action="LessonSlotDelete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Видалити цей часовий слот?')">
+                                <button type="submit" class="btn btn-outline-danger btn-sm px-3">Видалити</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

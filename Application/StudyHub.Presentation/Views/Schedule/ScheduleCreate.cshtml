@@ -1,0 +1,22 @@
+﻿@model StudyHub.Core.DTOs.ScheduleDto
+
+<h2>Створення розкладу</h2>
+
+<form asp-action="ScheduleCreate">
+    <input type="hidden" asp-for="Group.Id" />
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>Налаштування для групи ID: @Model.Group.Id</h5>
+            <div class="form-check">
+                <input asp-for="HeadmanUpdate" class="form-check-input" />
+                <label asp-for="HeadmanUpdate" class="form-check-label">Дозволити старості редагувати</label>
+            </div>
+        </div>
+    </div>
+
+    <div id="lessons-container">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Зберегти розклад</button>
+</form>

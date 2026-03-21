@@ -2,6 +2,7 @@
 using StudyHub.Core.DTOs;
 using StudyHub.Core.Schedules.Interfaces;
 using StudyHub.Domain.Entities;
+using System.Text.RegularExpressions;
 using Task = System.Threading.Tasks.Task;
 
 namespace StudyHub.Infrastructure.Repositories;
@@ -13,6 +14,31 @@ public class ScheduleRepository : IScheduleRepository
     public ScheduleRepository(SDbContext context)
     {
         _context = context;
+    }
+
+    public async Task<Schedule?> GetById(Guid id)
+    {
+        return await _context.Schedules
+            .Include(s => s.Group)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Subject)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Lecturers)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.LessonsSlot)
+            .FirstOrDefaultAsync(s => s.Id == id);
+    }
+    public async Task<List<Schedule>> GetAll()
+    {
+        return await _context.Schedules
+            .Include(s => s.Group)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Subject)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Lecturers)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.LessonsSlot)
+            .ToListAsync();
     }
 
     public async Task<Schedule?> GetByGroupIdAsync(Guid groupId)

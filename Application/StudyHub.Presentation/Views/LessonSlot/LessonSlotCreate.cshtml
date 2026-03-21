@@ -1,0 +1,31 @@
+﻿@model StudyHub.Core.DTOs.LessonSlotDto
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white text-center py-3">
+                    <h5 class="mb-0">Налаштування часу пари</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="LessonSlotCreate">
+                        <div class="mb-3">
+                            <label asp-for="StartTime" class="form-label">Початок заняття</label>
+                            <input asp-for="StartTime" type="time" class="form-control form-control-lg" />
+                            <span asp-validation-for="StartTime" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label asp-for="EndTime" class="form-label">Кінець заняття</label>
+                            <input asp-for="EndTime" type="time" class="form-control form-control-lg" />
+                            <span asp-validation-for="EndTime" class="text-danger small"></span>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">Зберегти слот</button>
+                            <a asp-action="LessonSlotsList" class="btn btn-link text-secondary">Скасувати</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
