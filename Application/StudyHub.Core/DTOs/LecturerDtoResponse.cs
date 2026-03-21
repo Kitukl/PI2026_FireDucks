@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace StudyHub.Core.DTOs
 {
-    public class ScheduleDayDto
+    public class LecturerDtoResponse
     {
         public Guid Id { get; set; }
-        public DayOfWeek Day { get; set; }
+        public string Name { get; set; }
+        public string Surname { get; set; }
     }
 }

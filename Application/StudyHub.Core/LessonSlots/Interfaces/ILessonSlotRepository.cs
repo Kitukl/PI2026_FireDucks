@@ -1,18 +1,14 @@
-﻿using StudyHub.Core.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using StudyHub.Domain.Entities;
+using Task = System.Threading.Tasks.Task;
 
 namespace StudyHub.Core.LessonSlots.Interfaces
 {
     public interface ILessonSlotRepository
     {
-        Task<LessonSlotDto?> GetById(Guid id);
-        Task<List<LessonSlotDto?>> GetAll();
-        Task AddLessonSlot(LessonSlotDto lesson);
+        Task<LessonsSlot?> GetById(Guid id);
+        Task<List<LessonsSlot>> GetAll();
+        Task AddLessonSlot(LessonsSlot lesson);
         Task DeleteLessonSlot(Guid id);
-        Task UpdateLessonSlot(LessonSlotDto lesson);
+        Task UpdateLessonSlot(LessonsSlot lesson);
     }
 }

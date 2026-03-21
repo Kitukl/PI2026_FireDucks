@@ -1,18 +1,14 @@
-﻿using StudyHub.Core.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using StudyHub.Domain.Entities;
+using Task = System.Threading.Tasks.Task;
 
 namespace StudyHub.Core.Subjects.Interfaces
 {
     public interface ISubjectRepository
     {
-        Task<SubjectDto?> GetById(Guid id);
-        Task<List<SubjectDto?>> GetAll();
-        Task AddSubject(SubjectDto lesson);
+        Task<Subject?> GetById(Guid id);
+        Task<List<Subject>> GetAll();
+        Task AddSubject(Subject lesson);
         Task DeleteSubject(Guid id);
-        Task UpdateSubject(SubjectDto lesson);
+        Task UpdateSubject(Subject lesson);
     }
 }

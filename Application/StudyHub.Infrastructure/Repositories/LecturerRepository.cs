@@ -15,62 +15,86 @@ public class LecturerRepository : ILecturerRepository
         _context = context;
     }
 
-    public async Task<LecturerDto?> GetById(Guid id)
+    public async Task<Lecturer?> GetById(Guid id)
     {
         return await _context.Lecturers
-            .AsNoTracking()
-            .Where(l => l.Id == id)
-            .Select(l => new LecturerDto
-            {
-                Id = l.Id,
-                Name = l.Name,
-                Surname = l.Surname,
-                Lessons = l.Lessons.Select(les => new SubjectDto
-                {
-                    Id = les.Subject.Id,
-                    Name = les.Subject.Name
-                }).ToList()
-            })
-            .FirstOrDefaultAsync();
+            .Include(l => l.Lessons)
+                .ThenInclude(lesson => lesson.Subject)
+            .Include(l => l.Lessons)
+                .ThenInclude(lesson => lesson.LessonsSlot)
+            .FirstOrDefaultAsync(l => l.Id == id);
     }
 
-    public async Task<List<LecturerDto?>> GetAll()
+    public async Task<List<Lecturer>> GetAll()
     {
         return await _context.Lecturers
             .AsNoTracking()
-            .Select(l => new LecturerDto
-            {
-                Id = l.Id,
-                Name = l.Name,
-                Surname = l.Surname
-            })
             .ToListAsync();
     }
 
-    public async Task AddLecturer(LecturerDto lecturerDto)
+    public async Task AddLecturer(Lecturer lecturer)
     {
-        var lecturer = new Lecturer
+        if (lecturer.Lessons != null && lecturer.Lessons.Any())
         {
-            Id = lecturerDto.Id == Guid.Empty ? Guid.NewGuid() : lecturerDto.Id,
-            Name = lecturerDto.Name,
-            Surname = lecturerDto.Surname
-        };
+            var processedLessons = new List<Lesson>();
+
+            foreach (var incomingLesson in lecturer.Lessons)
+            {
+                var dbLesson = await _context.Lessons.FindAsync(incomingLesson.Id);
+
+                if (dbLesson != null)
+                {
+                    processedLessons.Add(dbLesson);
+                }
+                else
+                {
+                    if (incomingLesson.Subject != null)
+                    {
+                        var dbSubject = await _context.Subjects.FindAsync(incomingLesson.Subject.Id);
+                        if (dbSubject != null) incomingLesson.Subject = dbSubject;
+                    }
+
+                    if (incomingLesson.LessonsSlot != null)
+                    {
+                        var dbSlot = await _context.LessonsSlots.FindAsync(incomingLesson.LessonsSlot.Id);
+                        if (dbSlot != null) incomingLesson.LessonsSlot = dbSlot;
+                    }
+
+                    processedLessons.Add(incomingLesson);
+                }
+            }
+
+            lecturer.Lessons = processedLessons;
+        }
 
         await _context.Lecturers.AddAsync(lecturer);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateLecturer(LecturerDto lecturerDto)
+    public async Task UpdateLecturer(Lecturer lecturer)
     {
-        var lecturer = await _context.Lecturers.FindAsync(lecturerDto.Id);
-        if (lecturer != null)
-        {
-            lecturer.Name = lecturerDto.Name;
-            lecturer.Surname = lecturerDto.Surname;
+        var existingLecturer = await _context.Lecturers
+            .Include(l => l.Lessons)
+            .FirstOrDefaultAsync(l => l.Id == lecturer.Id);
 
-            _context.Lecturers.Update(lecturer);
-            await _context.SaveChangesAsync();
+        if (existingLecturer == null) return;
+
+        existingLecturer.Name = lecturer.Name;
+        existingLecturer.Surname = lecturer.Surname;
+
+        if (lecturer.Lessons != null)
+        {
+            existingLecturer.Lessons.Clear();
+
+            foreach (var lesson in lecturer.Lessons)
+            {
+                var dbLesson = await _context.Lessons.FindAsync(lesson.Id);
+
+                existingLecturer.Lessons.Add(dbLesson ?? lesson);
+            }
         }
+
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteLecturer(Guid id)

@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace StudyHub.Core.DTOs
 {
-    public class ScheduleDayDto
+    public class ScheduleHeadmanRightsUpdateDtoRequest
     {
         public Guid Id { get; set; }
-        public DayOfWeek Day { get; set; }
+        public bool CanHeadmanUpdate { get; set; }
     }
 }

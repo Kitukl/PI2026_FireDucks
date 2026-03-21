@@ -1,23 +1,20 @@
-﻿using StudyHub.Core.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using StudyHub.Domain.Entities;
+using Schedule = StudyHub.Domain.Entities.Schedule;
+using Task = System.Threading.Tasks.Task;
 
-namespace StudyHub.Core.Schedule.Interfaces
+namespace StudyHub.Core.Schedules.Interfaces
 {
     public interface IScheduleRepository
     {
-        Task<ScheduleDto?> GetByGroupIdAsync(Guid groupId);
-        Task<List<LessonDto>> GetLessonsByDay(Guid id, int Day);
-        Task AddSchedule(ScheduleDto schedule);
+        Task<Schedule?> GetByGroupIdAsync(Guid groupId);
+        Task<List<Lesson>> GetLessonsByDay(Guid id, DayOfWeek Day);
+        Task AddSchedule(Schedule schedule);
         Task DeleteScheduleForGroup(Guid groupId);
         Task DeleteAllAsync();
-        Task UpdateScheduleAsync(ScheduleDto schedule);
-        Task UpdateHeadmanRights(ScheduleHeadmanRightsUpdateDto dto);
+        Task UpdateScheduleAsync(Schedule schedule);
+        Task UpdateHeadmanRights(Schedule schedule);
         Task<bool> GetHeadmanUpdateRights(Guid groupId);
-        Task SetScheduleAutoUpdate();
+        Task SetScheduleAutoUpdate(bool value);
         Task SetScheduleAutoUpdateInterval(uint interval);
     }
 }

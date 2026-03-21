@@ -1,18 +1,14 @@
-﻿using StudyHub.Core.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using StudyHub.Domain.Entities;
+using Task = System.Threading.Tasks.Task;
 
 namespace StudyHub.Core.Lecturers.Interfaces
 {
     public interface ILecturerRepository
     {
-        Task<LecturerDto?> GetById(Guid id);
-        Task<List<LecturerDto?>> GetAll();
-        Task AddLecturer(LecturerDto lesson);
+        Task<Lecturer?> GetById(Guid id);
+        Task<List<Lecturer>> GetAll();
+        Task AddLecturer(Lecturer lesson);
         Task DeleteLecturer(Guid id);
-        Task UpdateLecturer(LecturerDto lesson);
+        Task UpdateLecturer(Lecturer lesson);
     }
 }

@@ -15,6 +15,6 @@ namespace StudyHub.Core.DTOs
         public SubjectDto Subject { get; set; }
         public LessonSlotDto LessonSlot { get; set; }
 
-        public List<LecturerDto> Lecturers { get; set; }
+        public List<LecturerDtoResponse> Lecturers { get; set; }
     }
 }
