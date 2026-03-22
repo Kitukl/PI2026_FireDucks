@@ -21,7 +21,8 @@ public class GetUserHandler : IRequestHandler<GetUserRequest, UserDto>
         User user = await _userRepository.GetUserById(request.Id);
         return new UserDto
         {
-            GroupName = user.Group.Name,
+            Id = user.Id,
+            GroupName = user.Group?.Name,
             Name = user.Name,
             Surname = user.Surname,
             Roles = await _userRepository.GetRolesByUser(user)
