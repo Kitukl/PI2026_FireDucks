@@ -20,7 +20,7 @@
             {
                 <tr>
                     <td class="border">@user.Name @user.Surname</td>
-                    <td class="border">@string.Join(", ", user.Roles ?? new List<string>())</td>
+                    <td class="border">@string.Join(", ", user.Roles)</td>
                     <td class="border">@user.GroupName</td>
                     <td>
                         <a asp-action="GetUser" asp-controller="Admin" asp-route-id="@user.Id">Edit</a> 

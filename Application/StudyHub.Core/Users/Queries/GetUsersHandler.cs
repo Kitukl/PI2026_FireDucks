@@ -23,7 +23,8 @@ public class GetUsersHandler : IRequestHandler<GetUsersRequest, IEnumerable<User
             Id =  c.Id,
             Surname =  c.Surname,
             Name = c.Name,
-            GroupName = c.Group?.Name
+            GroupName = c.Group?.Name,
+            Roles = _userRepository.GetRolesByUser(c).Result,
         }).ToList();
     }
 }
