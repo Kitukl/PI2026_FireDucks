@@ -4,61 +4,86 @@
     Layout = "_Layout";
 }
 
-<h2>Edit user</h2>
+<div class="container mt-4">
+    <h2>Edit user: @Model.Name @Model.Surname</h2>
+    <hr />
 
-<form asp-action="GetUser" method="post">
+    <div class="row">
+        <div class="col-md-6">
+            <form asp-action="UpdateUser" method="post">
+                <input type="hidden" asp-for="Id"/>
 
-    <input type="hidden" asp-for="Id"/>
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label">Name</label>
+                    <input asp-for="Name" class="form-control"/>
+                </div>
 
-    <div class="mb-3">
-        <label>Name</label>
-        <input asp-for="Name" class="form-control"/>
+                <div class="mb-3">
+                    <label asp-for="Surname" class="form-label">Surname</label>
+                    <input asp-for="Surname" class="form-control"/>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="GroupName" class="form-label">Group</label>
+                    <input asp-for="GroupName" class="form-control"/>
+                </div>
+
+                <div class="mb-3">
+                    <label>Photo URL</label>
+                    <input name="PhotoUrl" value="@(Model as dynamic).PhotoUrl" class="form-control" />
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+        
+        <div class="col-md-6">
+            <h3>Roles</h3>
+    
+            <form asp-action="AddUserRole" method="post" class="mb-3 d-flex gap-2">
+                <input type="hidden" name="Id" value="@Model.Id"/>
+        
+                <select name="Role" class="form-select">
+                    <option selected disabled>-- Select role to add --</option>
+                    @foreach (var availableRole in Model.AvailableRoles.Where(r => !Model.Roles.Contains(r)))
+                    {
+                        <option value="@availableRole">@availableRole</option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-success">Add</button>
+            </form>
+
+            <table class="table table-striped border">
+                <thead>
+                <tr>
+                    <th>Current Role</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (!Model.Roles.Any())
+                {
+                    <tr>
+                        <td colspan="2" class="text-muted text-center">No roles assigned</td>
+                    </tr>
+                }
+                @foreach (var role in Model.Roles)
+                {
+                    <tr>
+                        <td class="align-middle">@role</td>
+                        <td class="text-end">
+                            <form asp-action="RemoveUserRole" method="post" style="display:inline;">
+                                <input type="hidden" name="Id" value="@Model.Id"/>
+                                <input type="hidden" name="Role" value="@role"/>
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    Remove
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>   
     </div>
-
-    <div class="mb-3">
-        <label>Surname</label>
-        <input asp-for="Surname" class="form-control"/>
-    </div>
-
-    <div class="mb-3">
-        <label>Group</label>
-        <input asp-for="GroupName" class="form-control"/>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Save</button>
-
-</form>
-
-<h3 class="mt-4">Roles</h3>
-
-<table class="table">
-    <thead>
-    <tr>
-        <th>Role</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-
-    @foreach (var role in Model.Roles)
-    {
-        <tr>
-            <td>@role</td>
-
-            <td>
-                <form asp-action="RemoveUserRole" method="post">
-
-                    <input type="hidden" name="Id" value="@Model.Id"/>
-                    <input type="hidden" name="RoleName" value="@role"/>
-
-                    <button type="submit" class="btn btn-danger btn-sm">
-                        Remove
-                    </button>
-
-                </form>
-            </td>
-        </tr>
-    }
-
-    </tbody>
-</table>
+</div>
