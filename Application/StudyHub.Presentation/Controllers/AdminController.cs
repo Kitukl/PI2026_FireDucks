@@ -20,7 +20,6 @@ public class AdminController(IMediator mediator) : Controller
         
         var viewModel = new SystemStatisticViewModel()
         {
-            UserRoleCount = new Dictionary<string, int>(),
             CreatedAt = user.CreatedAt,
             UserActivityPerMonth = user.UserActivityPerMonth,
             GropedTaskCount = taskStatusCount,
