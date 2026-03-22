@@ -21,7 +21,7 @@ public class UserRepository : IUserRepository
 
     public async Task<IEnumerable<User>> GetUsersAsync()
     {
-        return await _context.Users.ToListAsync();
+        return await _context.Users.Include(u=>u.Group).ToListAsync();
     }
 
     public async Task Delete(Guid userId)
