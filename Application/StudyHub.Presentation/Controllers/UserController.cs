@@ -2,10 +2,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Core.Users.Commands;
 using StudyHub.Domain.Entities;
+using StudyHub.Domain.Enums;
 
 namespace Application.Controllers;
 
@@ -78,5 +80,13 @@ public class UserController : Controller
     {
         await _signInManager.SignOutAsync();
         return RedirectToAction("Index", "Home");
+    }
+    
+    [Authorize(Roles = nameof(Role.Leader))]
+    [HttpPut]
+    public async Task<IActionResult> AddUserToGroup(AddUserToGroupCommand request)
+    {
+        await _mediator.Send(request);
+        return View();
     }
 }
