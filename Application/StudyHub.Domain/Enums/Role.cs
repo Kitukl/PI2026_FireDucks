@@ -1,4 +1,4 @@
-namespace StudyHub.Domain.Entities.enums;
+namespace StudyHub.Domain.Enums;
 
 public enum Role
 {

@@ -27,11 +27,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .WithMany(g => g.Users)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(u => u.Schedule)
-            .WithMany(s => s.Users)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasMany(u => u.Statistics)
             .WithMany(s => s.Users);
+
+        builder.HasOne(u => u.Reminder);
     }
 }

@@ -1,0 +1,20 @@
+﻿@model StudyHub.Core.Users.Commands.RegisterUserCommand
+
+@{
+    ViewData["Title"] = "Реєстрація";
+}
+
+<h1>Реєстрація</h1>
+
+<form asp-action="Register" method="post">
+    @Html.AntiForgeryToken()
+    
+    <div class="text-danger" asp-validation-summary="ModelOnly"></div>
+
+    <input asp-for="Email" class="form-control" placeholder="Email" />
+    <input asp-for="Name" class="form-control" placeholder="Ім'я" />
+    <input asp-for="Surname" class="form-control" placeholder="Прізвище" />
+    <input asp-for="GroupName" class="form-control" placeholder="Назва групи" />
+
+    <button type="submit" class="btn btn-primary">Зареєструватися</button>
+</form>

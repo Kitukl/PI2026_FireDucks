@@ -8,6 +8,7 @@ public class Schedule
     public bool IsAutoUpdate { get; set; }
     public bool CanHeadmanUpdate { get; set; }
     public Group Group { get; set; }
+    public Guid GroupId { get; set; }
+    
     public ICollection<Lesson> Lessons { get; set; }
-    public ICollection<User> Users { get; set; }
 }

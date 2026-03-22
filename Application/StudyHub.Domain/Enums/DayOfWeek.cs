@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StudyHub.Domain.Entities.enums
+namespace StudyHub.Domain.Enums
 {
     public enum DayOfWeek
     {

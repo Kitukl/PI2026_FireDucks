@@ -1,14 +1,18 @@
-using StudyHub.Core.DTOs;
+using StudyHub.Domain.Entities;
+using StudyHub.Domain.Enums;
+using Task = System.Threading.Tasks.Task;
 
 namespace StudyHub.Core.Users.Interfaces;
 
 public interface IUserRepository
 {
-    Task<Dictionary<string,int>> GetUsersCountByRoleAsync();
-    Task<IEnumerable<UserDto>> GetUsersAsync();
+    Task<IEnumerable<User>> GetUsersAsync();
     Task Delete(Guid userId);
-    Task Update(UserUpdateDto userUpdateDto);
-    Task AddRole(UserRoleUpdateDto userRoleUpdateDto);
-    Task RemoveRole(UserRoleUpdateDto userRoleUpdateDto);
-    Task<UserDto> GetUserById(Guid requestId);
+    Task<User> Update(User userUpdateDto);
+    Task AddRole(Role userRole, Guid userId);
+    Task RemoveRole(Role userRole, Guid userId);
+    Task<User> GetUserById(Guid requestId);
+    Task<User> CreateUser(User user);
+    Task<List<string>> GetRolesByUser(User user);
+    Task AddExternalLogin(User user, string provider, string providerKey);
 }
