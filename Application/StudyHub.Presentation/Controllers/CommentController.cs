@@ -2,10 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Core.Comments.Commands;
 using StudyHub.Core.Comments.Queries;
-using StudyHub.Core.DTOs;
-using StudyHub.Core.Tasks.Commands;
-using StudyHub.Core.Tasks.Queries;
-
 namespace Application.Controllers;
 
 [Route("comments")]
