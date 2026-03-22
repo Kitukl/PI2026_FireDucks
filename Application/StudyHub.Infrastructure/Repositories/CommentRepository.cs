@@ -13,22 +13,9 @@ public class CommentRepository : ICommentRepository
         _context = context;
     }
     
-    public async Task<List<Comment>> GetCommentsAsync()
+    public async Task<List<Comment>> GetCommentsAsync(Guid taskid)
     {
-        return await _context.Comments.ToListAsync();
-    }
-
-    public async Task<Guid> UpdateCommentAsync(Comment newComment)
-    {
-        var currentComment = await _context.Comments.FirstOrDefaultAsync(c => c.Id == newComment.Id);
-
-        if (currentComment is not null)
-        {
-            currentComment.Description = newComment.Description;
-            await _context.SaveChangesAsync();
-        }
-
-        return newComment.Id;
+        return await _context.Comments.Where(c => c.Task.Id == taskid).ToListAsync();
     }
 
     public async Task<Guid> CreateCommentAsync(Comment comment)

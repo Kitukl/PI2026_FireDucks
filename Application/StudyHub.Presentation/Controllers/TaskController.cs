@@ -47,9 +47,19 @@ public class TaskController : Controller
     }
     
     [HttpPost]
-    public async Task<IActionResult> GetTask(CreateTaskCommand command)
+    public async Task<IActionResult> CreateTask(CreateTaskCommand command)
     {
         var taskId = await _mediator.Send(command);
+        return View();
+    }
+    
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteTask(Guid id)
+    {
+        var taskId = await _mediator.Send(new DeleteCommand()
+        {
+            Id = id
+        });
         return View();
     }
 }
