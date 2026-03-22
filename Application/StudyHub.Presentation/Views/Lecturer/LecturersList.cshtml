@@ -1,0 +1,32 @@
+﻿@model IEnumerable<StudyHub.Core.DTOs.LecturerDtoResponse>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Викладацький склад</h2>
+    <a asp-action="LecturerCreate" class="btn btn-primary">Додати викладача</a>
+</div>
+
+<table class="table table-hover">
+    <thead class="table-light">
+        <tr>
+            <th>Прізвище та ім'я</th>
+            <th class="text-end">Дії</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td><strong>@item.Surname</strong> @item.Name</td>
+                <td class="text-end">
+                    <div class="btn-group">
+                        <a asp-action="LecturerEdit" asp-route-id="@item.Id" class="btn btn-outline-warning btn-sm">Редагувати</a>
+                        <a asp-action="LecturerDetails" asp-route-id="@item.Id" class="btn btn-outline-info btn-sm">Деталі</a>
+                        <form asp-action="LecturerDelete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Видалити викладача?')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Видалити</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,39 @@
+﻿@model IEnumerable<StudyHub.Core.DTOs.SubjectDto>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Навчальні предмети</h2>
+        <a asp-action="SubjectCreate" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-lg"></i> Додати предмет
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Назва дисципліни</th>
+                        <th class="text-muted small">ID</th>
+                        <th class="text-end pe-4">Дії</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-bold">@item.Name</td>
+                            <td class="text-muted small">@item.Id</td>
+                            <td class="text-end pe-4">
+                                <a asp-action="SubjectEdit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning me-2">Редагувати</a>
+                                <form asp-action="SubjectDelete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Видалити цей предмет?')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Видалити</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

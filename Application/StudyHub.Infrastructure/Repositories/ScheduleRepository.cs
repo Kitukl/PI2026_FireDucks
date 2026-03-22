@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudyHub.Core.DTOs;
-using StudyHub.Core.Schedule.Interfaces;
+using StudyHub.Core.Schedules.Interfaces;
 using StudyHub.Domain.Entities;
+using System.Text.RegularExpressions;
 using Task = System.Threading.Tasks.Task;
 
 namespace StudyHub.Infrastructure.Repositories;
@@ -15,103 +16,132 @@ public class ScheduleRepository : IScheduleRepository
         _context = context;
     }
 
-    public async Task<ScheduleDto?> GetByGroupIdAsync(Guid groupId)
+    public async Task<Schedule?> GetById(Guid id)
     {
         return await _context.Schedules
-            .AsNoTracking()
-            .Where(s => s.Group.Id == groupId)
-            .Select(s => new ScheduleDto
-            {
-                Id = s.Id,
-                UpdateAt = s.UpdatedAt,
-                HeadmanUpdate = s.CanHeadmanUpdate,
-                IsAutoUpdate = s.IsAutoUpdate,
-                Group = s.Group != null ? new GroupDto
-                {
-                    Id = s.Group.Id,
-                    Name = s.Group.Name
-                } : null,
-                Lessons = s.Lessons.Select(l => new LessonDto
-                {
-                    Id = l.Id,
-                    Day = l.Day,
-                    LessonType = l.LessonType,
-                    Subject = new SubjectDto
-                    {
-                        Id = l.Subject.Id,
-                        Name = l.Subject.Name
-                    },
-                    LessonSlot = new LessonSlotDto
-                    {
-                        Id = l.LessonsSlot.Id,
-                        StartTime = l.LessonsSlot.StartTime,
-                        EndTime = l.LessonsSlot.EndTime
-                    },
-                    Lecturers = l.Lecturers.Select(lec => new LecturerDto
-                    {
-                        Id = lec.Id,
-                        Name = lec.Name,
-                        Surname = lec.Surname
-                    }).ToList()
-                }).ToList()
-            })
-            .FirstOrDefaultAsync();
+            .Include(s => s.Group)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Subject)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Lecturers)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.LessonsSlot)
+            .FirstOrDefaultAsync(s => s.Id == id);
     }
-
-    public async Task<List<LessonDto>> GetLessonsByDay(Guid id, int day)
+    public async Task<List<Schedule>> GetAll()
     {
-        var targetDay = (DayOfWeek)day;
-
-        return await _context.Lessons
-            .AsNoTracking()
-            .Where(l => l.Schedules.Any(s => s.Id == id) && l.Day == targetDay)
-            .Select(l => new LessonDto
-            {
-                Id = l.Id,
-                Day = l.Day,
-                LessonType = l.LessonType,
-                Subject = new SubjectDto { Id = l.Subject.Id, Name = l.Subject.Name },
-                LessonSlot = new LessonSlotDto { Id = l.LessonsSlot.Id, StartTime = l.LessonsSlot.StartTime, EndTime = l.LessonsSlot.EndTime },
-                Lecturers = l.Lecturers.Select(x => new LecturerDto { Id = x.Id, Name = x.Name, Surname = x.Surname }).ToList()
-            })
+        return await _context.Schedules
+            .Include(s => s.Group)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Subject)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Lecturers)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.LessonsSlot)
             .ToListAsync();
     }
 
-    public async Task AddSchedule(ScheduleDto scheduleDto)
+    public async Task<Schedule?> GetByGroupIdAsync(Guid groupId)
     {
-        var schedule = new Schedule
+        return await _context.Schedules
+            .Include(s => s.Group)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Subject)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Lecturers)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.LessonsSlot)
+            .FirstOrDefaultAsync(s => s.Group.Id == groupId);
+    }
+
+    public async Task<List<Lesson>> GetLessonsByDay(Guid scheduleId, DayOfWeek day)
+    {
+        var schedule = await _context.Schedules
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Subject)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.Lecturers)
+            .Include(s => s.Lessons)
+                .ThenInclude(l => l.LessonsSlot)
+            .FirstOrDefaultAsync(s => s.Id == scheduleId);
+
+        return schedule?.Lessons.Where(l => l.Day == day).ToList() ?? new List<Lesson>();
+    }
+
+    public async Task AddSchedule(Schedule schedule)
+    {
+        if (schedule.Group != null)
         {
-            Id = scheduleDto.Id == Guid.Empty ? Guid.NewGuid() : scheduleDto.Id,
-            UpdatedAt = scheduleDto.UpdateAt,
-            CanHeadmanUpdate = scheduleDto.HeadmanUpdate,
-            IsAutoUpdate = scheduleDto.IsAutoUpdate,
-            Group = new Group { Id = scheduleDto.Group.Id, Name = scheduleDto.Group.Name},
-            Lessons = scheduleDto.Lessons?.Select(x => new Lesson
+            var dbGroup = await _context.Groups.FindAsync(schedule.Group.Id);
+            if (dbGroup != null) schedule.Group = dbGroup;
+        }
+
+        if (schedule.Lessons != null && schedule.Lessons.Any())
+        {
+            var processedLessons = new List<Lesson>();
+            foreach (var lesson in schedule.Lessons)
             {
-                Id = x.Id == Guid.Empty ? Guid.NewGuid() : x.Id,
-                Day = x.Day,
-                LessonType = x.LessonType,
-                Subject = new Subject
+                var dbLesson = await _context.Lessons.FindAsync(lesson.Id);
+                if (dbLesson != null)
                 {
-                    Id = x.Subject?.Id == Guid.Empty ? Guid.NewGuid() : (x.Subject?.Id ?? Guid.NewGuid()),
-                    Name = x.Subject?.Name ?? string.Empty
-                },
-                LessonsSlot = new LessonsSlot
+                    processedLessons.Add(dbLesson);
+                }
+                else
                 {
-                    Id = x.LessonSlot?.Id == Guid.Empty ? Guid.NewGuid() : (x.LessonSlot?.Id ?? Guid.NewGuid()),
-                    StartTime = x.LessonSlot?.StartTime ?? new TimeOnly(),
-                    EndTime = x.LessonSlot?.EndTime ?? new TimeOnly()
-                },
-                Lecturers = x.Lecturers?.Select(l => new Lecturer
-                {
-                    Id = l.Id == Guid.Empty ? Guid.NewGuid() : l.Id,
-                    Name = l.Name,
-                    Surname = l.Surname,
-                }).ToList() ?? new List<Lecturer>()
-            }).ToList() ?? new List<Lesson>()
-        };
+                    if (lesson.Subject != null)
+                    {
+                        var dbSubj = await _context.Subjects.FindAsync(lesson.Subject.Id);
+                        if (dbSubj != null) lesson.Subject = dbSubj;
+                    }
+
+                    if (lesson.LessonsSlot != null)
+                    {
+                        var dbSlot = await _context.LessonsSlots.FindAsync(lesson.LessonsSlot.Id);
+                        if (dbSlot != null) lesson.LessonsSlot = dbSlot;
+                    }
+
+                    if (lesson.Lecturers != null)
+                    {
+                        var processedLecturers = new List<Lecturer>();
+                        foreach (var lect in lesson.Lecturers)
+                        {
+                            var dbLect = await _context.Lecturers.FindAsync(lect.Id);
+                            processedLecturers.Add(dbLect ?? lect);
+                        }
+                        lesson.Lecturers = processedLecturers;
+                    }
+                    processedLessons.Add(lesson);
+                }
+            }
+            schedule.Lessons = processedLessons;
+        }
 
         await _context.Schedules.AddAsync(schedule);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateScheduleAsync(Schedule schedule)
+    {
+        var existingSchedule = await _context.Schedules
+            .Include(s => s.Lessons)
+            .FirstOrDefaultAsync(s => s.Id == schedule.Id);
+
+        if (existingSchedule == null) return;
+
+        existingSchedule.UpdatedAt = schedule.UpdatedAt;
+        existingSchedule.CanHeadmanUpdate = schedule.CanHeadmanUpdate;
+        existingSchedule.IsAutoUpdate = schedule.IsAutoUpdate;
+
+        if (schedule.Lessons != null)
+        {
+            existingSchedule.Lessons.Clear();
+            foreach (var lesson in schedule.Lessons)
+            {
+                var dbLesson = await _context.Lessons.FindAsync(lesson.Id);
+                existingSchedule.Lessons.Add(dbLesson ?? lesson);
+            }
+        }
+
         await _context.SaveChangesAsync();
     }
 
@@ -127,63 +157,16 @@ public class ScheduleRepository : IScheduleRepository
 
     public async Task DeleteAllAsync()
     {
-        var schedules = await _context.Schedules.ToListAsync();
-        _context.Schedules.RemoveRange(schedules);
+        _context.Schedules.RemoveRange(_context.Schedules);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateScheduleAsync(ScheduleDto scheduleDto)
+    public async Task UpdateHeadmanRights(Schedule schedule)
     {
-        var schedule = await _context.Schedules
-            .Include(s => s.Lessons)
-            .FirstOrDefaultAsync(s => s.Id == scheduleDto.Id);
-
-        if (schedule != null)
+        var dbSchedule = await _context.Schedules.FindAsync(schedule.Id);
+        if (dbSchedule != null)
         {
-            schedule.UpdatedAt = scheduleDto.UpdateAt;
-            schedule.CanHeadmanUpdate = scheduleDto.HeadmanUpdate;
-            schedule.IsAutoUpdate = scheduleDto.IsAutoUpdate;
-
-            if (schedule.Lessons.Any())
-            {
-                _context.Lessons.RemoveRange(schedule.Lessons);
-            }
-
-            schedule.Lessons = scheduleDto.Lessons?.Select(x => new Lesson
-            {
-                Id = x.Id == Guid.Empty ? Guid.NewGuid() : x.Id,
-                Day = x.Day,
-                LessonType = x.LessonType,
-                Subject = new Subject
-                {
-                    Id = x.Subject?.Id == Guid.Empty ? Guid.NewGuid() : (x.Subject?.Id ?? Guid.NewGuid()),
-                    Name = x.Subject?.Name ?? string.Empty
-                },
-                LessonsSlot = new LessonsSlot
-                {
-                    Id = x.LessonSlot?.Id == Guid.Empty ? Guid.NewGuid() : (x.LessonSlot?.Id ?? Guid.NewGuid()),
-                    StartTime = x.LessonSlot?.StartTime ?? new TimeOnly(),
-                    EndTime = x.LessonSlot?.EndTime ?? new TimeOnly()
-                },
-                Lecturers = x.Lecturers?.Select(l => new Lecturer
-                {
-                    Id = l.Id == Guid.Empty ? Guid.NewGuid() : l.Id,
-                    Name = l.Name,
-                    Surname = l.Surname,
-                }).ToList() ?? new List<Lecturer>()
-            }).ToList() ?? new List<Lesson>();
-
-            _context.Schedules.Update(schedule);
-            await _context.SaveChangesAsync();
-        }
-    }
-
-    public async Task UpdateHeadmanRights(ScheduleHeadmanRightsUpdateDto dto)
-    {
-        var schedule = await _context.Schedules.FindAsync(dto.Id);
-        if (schedule != null)
-        {
-            schedule.CanHeadmanUpdate = dto.CanHeadmanUpdate;
+            dbSchedule.CanHeadmanUpdate = schedule.CanHeadmanUpdate;
             await _context.SaveChangesAsync();
         }
     }
@@ -193,27 +176,18 @@ public class ScheduleRepository : IScheduleRepository
         var schedule = await _context.Schedules
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Group.Id == groupId);
-
         return schedule?.CanHeadmanUpdate ?? false;
     }
 
-    public async Task SetScheduleAutoUpdate()
+    public async Task SetScheduleAutoUpdate(bool value)
     {
-        var schedules = await _context.Schedules.ToListAsync();
-        foreach (var schedule in schedules)
-        {
-            schedule.IsAutoUpdate = true;
-        }
+        await _context.Schedules.ExecuteUpdateAsync(s => s.SetProperty(b => b.IsAutoUpdate, value));
         await _context.SaveChangesAsync();
     }
 
     public async Task SetScheduleAutoUpdateInterval(uint interval)
     {
-        var schedules = await _context.Schedules.ToListAsync();
-        foreach (var schedule in schedules)
-        {
-            schedule.UpdateInterval = interval;
-        }
+        await _context.Schedules.ExecuteUpdateAsync(s => s.SetProperty(b => b.UpdateInterval, interval));
         await _context.SaveChangesAsync();
     }
 }

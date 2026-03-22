@@ -15,94 +15,88 @@ public class LessonRepository : ILessonRepository
         _context = context;
     }
 
-    public async Task<LessonDto?> GetById(Guid id)
+    public async Task<Lesson?> GetById(Guid id)
     {
         return await _context.Lessons
-            .AsNoTracking()
-            .Where(l => l.Id == id)
-            .Select(l => new LessonDto
-            {
-                Id = l.Id,
-                Day = l.Day,
-                LessonType = l.LessonType,
-                Subject = new SubjectDto { Id = l.Subject.Id, Name = l.Subject.Name },
-                LessonSlot = new LessonSlotDto { Id = l.LessonsSlot.Id, StartTime = l.LessonsSlot.StartTime, EndTime = l.LessonsSlot.EndTime },
-                Lecturers = l.Lecturers.Select(lec => new LecturerDto { Id = lec.Id, Name = lec.Name, Surname = lec.Surname }).ToList()
-            })
-            .FirstOrDefaultAsync();
+            .Include(l => l.Subject)
+            .Include(l => l.LessonsSlot)
+            .Include(l => l.Lecturers)
+            .FirstOrDefaultAsync(l => l.Id == id);
     }
 
-    public async Task<List<LessonDto?>> GetAll()
+    public async Task<List<Lesson>> GetAll()
     {
         return await _context.Lessons
+            .Include(l => l.Subject)
+            .Include(l => l.LessonsSlot)
+            .Include(l => l.Lecturers)
             .AsNoTracking()
-            .Select(l => new LessonDto
-            {
-                Id = l.Id,
-                Day = l.Day,
-                LessonType = l.LessonType,
-                Subject = new SubjectDto { Id = l.Subject.Id, Name = l.Subject.Name }
-            })
             .ToListAsync();
     }
 
-    public async Task AddLesson(LessonDto lessonDto)
+    public async Task AddLesson(Lesson lesson)
     {
-        var lesson = new Lesson
+        if (lesson.Subject != null)
         {
-            Id = lessonDto.Id == Guid.Empty ? Guid.NewGuid() : lessonDto.Id,
-            Day = lessonDto.Day,
-            LessonType = lessonDto.LessonType,
-            Lecturers = lessonDto.Lecturers.Select(x => new Lecturer
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Surname = x.Surname,
-            }).ToList(),
-            Subject = new Subject { Id = lessonDto.Subject.Id, Name = lessonDto.Subject.Name},
-            LessonsSlot = new LessonsSlot
-            {
-                Id = lessonDto.Id,
-                StartTime = lessonDto.LessonSlot.StartTime,
-                EndTime = lessonDto.LessonSlot.EndTime
-            }
+            var dbSubject = await _context.Subjects.FindAsync(lesson.Subject.Id);
+            if (dbSubject != null) lesson.Subject = dbSubject;
+        }
 
-        };
+        if (lesson.LessonsSlot != null)
+        {
+            var dbSlot = await _context.LessonsSlots.FindAsync(lesson.LessonsSlot.Id);
+            if (dbSlot != null) lesson.LessonsSlot = dbSlot;
+        }
+
+        if (lesson.Lecturers != null && lesson.Lecturers.Any())
+        {
+            var processedLecturers = new List<Lecturer>();
+            foreach (var lecturer in lesson.Lecturers)
+            {
+                var dbLecturer = await _context.Lecturers.FindAsync(lecturer.Id);
+                processedLecturers.Add(dbLecturer ?? lecturer);
+            }
+            lesson.Lecturers = processedLecturers;
+        }
 
         await _context.Lessons.AddAsync(lesson);
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateLesson(LessonDto lessonDto)
+    public async Task UpdateLesson(Lesson lesson)
     {
-        var lesson = await _context.Lessons.FindAsync(lessonDto.Id);
-        if (lesson != null)
+        var existingLesson = await _context.Lessons
+            .Include(l => l.Lecturers)
+            .FirstOrDefaultAsync(l => l.Id == lesson.Id);
+
+        if (existingLesson == null) return;
+
+        existingLesson.Day = lesson.Day;
+        existingLesson.LessonType = lesson.LessonType;
+
+        if (lesson.Subject != null)
         {
-            lesson.Day = lessonDto.Day;
-            lesson.LessonType = lessonDto.LessonType;
-            if ( lesson.Lecturers.Any() )
-            {
-                _context.Lecturers.RemoveRange(lesson.Lecturers);
-            }
-
-            lesson.Lecturers = lessonDto.Lecturers.Select(x => new Lecturer
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Surname = x.Surname,
-            }).ToList();
-
-            lesson.Subject = new Subject { Id = lessonDto.Subject.Id, Name = lessonDto.Subject.Name };
-            lesson.LessonsSlot = new LessonsSlot
-            {
-                Id = lessonDto.Id,
-                StartTime = lessonDto.LessonSlot.StartTime,
-                EndTime = lessonDto.LessonSlot.EndTime
-            };
-
-            _context.Lessons.Update(lesson);
-            await _context.SaveChangesAsync();
+            var dbSubject = await _context.Subjects.FindAsync(lesson.Subject.Id);
+            existingLesson.Subject = dbSubject ?? lesson.Subject;
         }
+
+        if (lesson.LessonsSlot != null)
+        {
+            var dbSlot = await _context.LessonsSlots.FindAsync(lesson.LessonsSlot.Id);
+            existingLesson.LessonsSlot = dbSlot ?? lesson.LessonsSlot;
+        }
+
+        if (lesson.Lecturers != null)
+        {
+            existingLesson.Lecturers.Clear();
+            foreach (var lecturer in lesson.Lecturers)
+            {
+                var dbLecturer = await _context.Lecturers.FindAsync(lecturer.Id);
+                existingLesson.Lecturers.Add(dbLecturer ?? lecturer);
+            }
+        }
+
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteLesson(Guid id)

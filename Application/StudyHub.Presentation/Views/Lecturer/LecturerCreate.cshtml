@@ -1,0 +1,99 @@
+﻿@model StudyHub.Core.DTOs.LecturerDtoRequest
+
+<div class="container mt-4">
+    <h2>Створення профілю викладача</h2>
+    <hr />
+
+    <form asp-action="Create">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label">Ім'я</label>
+                    <input asp-for="Name" class="form-control" placeholder="Введіть ім'я" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Surname" class="form-label">Прізвище</label>
+                    <input asp-for="Surname" class="form-control" placeholder="Введіть прізвище" />
+                    <span asp-validation-for="Surname" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Попереднє призначення уроків</h5>
+                <button type="button" id="btnAddLesson" class="btn btn-success btn-sm">+ Додати рядок</button>
+            </div>
+            <div class="card-body">
+                <table class="table" id="lessonsTable">
+                    <thead>
+                        <tr>
+                            <th>День</th>
+                            <th>Тип заняття</th>
+                            <th>Предмет</th>
+                            <th>Часовий слот</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary px-4">Зберегти</button>
+            <a asp-action="Index" class="btn btn-link text-secondary">Скасувати</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        let index = 0;
+
+        $("#btnAddLesson").click(function () {
+            const row = `
+                <tr>
+                    <td>
+                        <select name="lecturer.Lessons[${index}].Day" class="form-select">
+                            <option value="1">Понеділок</option>
+                            <option value="2">Вівторок</option>
+                            <option value="3">Середа</option>
+                            <option value="4">Четвер</option>
+                            <option value="5">П'ятниця</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input name="lecturer.Lessons[${index}].LessonType" class="form-control" placeholder="Напр. Лекція" />
+                    </td>
+                    <td>
+                        <select name="lecturer.Lessons[${index}].Subject.Id" class="form-select">
+                            @foreach (var s in (SelectList)ViewBag.Subjects)
+                            {
+                                    <option value="@s.Value">@s.Text</option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <select name="lecturer.Lessons[${index}].LessonSlot.Id" class="form-select">
+                            @foreach (var s in (SelectList)ViewBag.Slots)
+                            {
+                                    <option value="@s.Value">@s.Text</option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-outline-danger remove-row">✕</button>
+                    </td>
+                </tr>`;
+            $("#lessonsTable tbody").append(row);
+            index++;
+        });
+
+        $(document).on("click", ".remove-row", function () {
+            $(this).closest("tr").remove();
+        });
+    </script>
+}

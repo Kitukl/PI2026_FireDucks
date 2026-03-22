@@ -15,50 +15,80 @@ public class SubjectRepository : ISubjectRepository
         _context = context;
     }
 
-    public async Task<SubjectDto?> GetById(Guid id)
+    public async Task<Subject?> GetById(Guid id)
     {
-        return await _context.Subjects
-            .AsNoTracking()
-            .Where(s => s.Id == id)
-            .Select(s => new SubjectDto
-            {
-                Id = s.Id,
-                Name = s.Name
-            })
-            .FirstOrDefaultAsync();
+        return await _context.Subjects.FindAsync(id);
     }
 
-    public async Task<List<SubjectDto?>> GetAll()
+    public async Task<List<Subject>> GetAll()
     {
         return await _context.Subjects
             .AsNoTracking()
-            .Select(s => new SubjectDto
-            {
-                Id = s.Id,
-                Name = s.Name
-            })
             .ToListAsync();
     }
 
-    public async Task AddSubject(SubjectDto subjectDto)
+    public async Task AddSubject(Subject subject)
     {
-        var subject = new Subject
+        var dbSubject = await _context.Subjects.FindAsync(subject.Id);
+        if (dbSubject == null)
         {
-            Id = subjectDto.Id == Guid.Empty ? Guid.NewGuid() : subjectDto.Id,
-            Name = subjectDto.Name
-        };
+            await _context.Subjects.AddAsync(subject);
+            await _context.SaveChangesAsync();
+            return;
+        }
+        else
+        {
+            dbSubject.Name = subject.Name;
+            if (subject.Lessons != null)
+            {
+                dbSubject.Lessons.Clear();
+                foreach (var lesson in subject.Lessons)
+                {
+                    var dbLesson = await _context.Lessons.FindAsync(lesson.Id);
+                    dbSubject.Lessons.Add(dbLesson ?? lesson);
+                }
+            }
 
-        await _context.Subjects.AddAsync(subject);
-        await _context.SaveChangesAsync();
+            if (subject.Tasks != null)
+            {
+                dbSubject.Tasks.Clear();
+                foreach (var task in subject.Tasks)
+                {
+                    var dbTask = await _context.Tasks.FindAsync(task.Id);
+                    dbSubject.Tasks.Add(dbTask ?? task);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
     }
 
-    public async Task UpdateSubject(SubjectDto subjectDto)
+    public async Task UpdateSubject(Subject subject)
     {
-        var subject = await _context.Subjects.FindAsync(subjectDto.Id);
-        if (subject != null)
+        var dbSubject = await _context.Subjects.FindAsync(subject.Id);
+        if (dbSubject != null)
         {
-            subject.Name = subjectDto.Name;
-            _context.Subjects.Update(subject);
+            dbSubject.Name = subject.Name;
+            if (subject.Lessons != null)
+            {
+                dbSubject.Lessons.Clear();
+                foreach(var lesson in subject.Lessons)
+                {
+                    var dbLesson = await _context.Lessons.FindAsync(lesson.Id);
+                    dbSubject.Lessons.Add(dbLesson ?? lesson);
+                }
+            }
+
+            if (subject.Tasks != null)
+            {
+                dbSubject.Tasks.Clear();
+                foreach (var task in subject.Tasks)
+                {
+                    var dbTask = await _context.Tasks.FindAsync(task.Id);
+                    dbSubject.Tasks.Add(dbTask ?? task);
+                }
+            }
+
             await _context.SaveChangesAsync();
         }
     }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudyHub.Core.DTOs;
 using StudyHub.Core.LessonSlots.Interfaces;
+using StudyHub.Core.Subjects.Interfaces;
 using StudyHub.Domain.Entities;
 
 using Task = System.Threading.Tasks.Task;
@@ -16,56 +17,35 @@ public class LessonSlotRepository : ILessonSlotRepository
         _context = context;
     }
 
-    public async Task<LessonSlotDto?> GetById(Guid id)
+    public async Task<LessonsSlot?> GetById(Guid id)
     {
-        return await _context.LessonsSlots
-            .AsNoTracking()
-            .Where(ls => ls.Id == id)
-            .Select(ls => new LessonSlotDto
-            {
-                Id = ls.Id,
-                StartTime = ls.StartTime,
-                EndTime = ls.EndTime,
-                Lessons = ls.Lessons.Select(l => new SubjectDto { Id = l.Subject.Id, Name = l.Subject.Name }).ToList()
-            })
-            .FirstOrDefaultAsync();
+        return await _context.LessonsSlots.FindAsync(id);
     }
 
-    public async Task<List<LessonSlotDto?>> GetAll()
+    public async Task<List<LessonsSlot>> GetAll()
     {
         return await _context.LessonsSlots
             .AsNoTracking()
-            .Select(ls => new LessonSlotDto
-            {
-                Id = ls.Id,
-                StartTime = ls.StartTime,
-                EndTime = ls.EndTime
-            })
             .ToListAsync();
     }
 
-    public async Task AddLessonSlot(LessonSlotDto slotDto)
+    public async Task AddLessonSlot(LessonsSlot lessonSlot)
     {
-        var slot = new LessonsSlot
+        var dbSlot = await _context.LessonsSlots.FindAsync(lessonSlot.Id);
+        if (dbSlot == null)
         {
-            Id = slotDto.Id == Guid.Empty ? Guid.NewGuid() : slotDto.Id,
-            StartTime = slotDto.StartTime,
-            EndTime = slotDto.EndTime
-        };
-
-        await _context.LessonsSlots.AddAsync(slot);
-        await _context.SaveChangesAsync();
+            await _context.LessonsSlots.AddAsync(lessonSlot);
+            await _context.SaveChangesAsync();
+        }
     }
 
-    public async Task UpdateLessonSlot(LessonSlotDto slotDto)
+    public async Task UpdateLessonSlot(LessonsSlot lessonSlot)
     {
-        var slot = await _context.LessonsSlots.FindAsync(slotDto.Id);
-        if (slot != null)
+        var dbSlot = await _context.LessonsSlots.FindAsync(lessonSlot.Id);
+        if (dbSlot != null)
         {
-            slot.StartTime = slotDto.StartTime;
-            slot.EndTime = slotDto.EndTime;
-
-            _context.LessonsSlots.Update(slot);
+            dbSlot.StartTime = lessonSlot.StartTime;
+            dbSlot.EndTime = lessonSlot.EndTime;
             await _context.SaveChangesAsync();
         }
     }

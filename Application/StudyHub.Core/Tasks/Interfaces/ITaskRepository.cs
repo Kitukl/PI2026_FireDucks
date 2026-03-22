@@ -1,12 +1,13 @@
 using StudyHub.Domain.Entities;
+using Task = StudyHub.Domain.Entities.Task;
 
 namespace StudyHub.Core.Tasks.Interfaces;
 
 public interface ITaskRepository
 {
-    Task<Task?> GetTaskAsync(Guid Id);
-    Task<List<Task>> GetTasksAsync();
-    Task<Guid> AddTaskAsync(Task task);
-    Task<Guid> UpdateTaskAsync(Task task);
-    Task<Guid> DeleteTaskAsync(Guid Id);
+    System.Threading.Tasks.Task<Task?> GetTaskAsync(Guid Id);
+    System.Threading.Tasks.Task<List<Task>> GetTasksAsync();
+    System.Threading.Tasks.Task<Guid> AddTaskAsync(Task task);
+    System.Threading.Tasks.Task<Guid> UpdateTaskAsync(Task task);
+    System.Threading.Tasks.Task<Guid> DeleteTaskAsync(Guid Id);
 }
