@@ -16,6 +16,6 @@ public class Task
     
     public User User { get; set; }
 
-    public ICollection<Statistic> Statistics { get; set; }
-    public ICollection<Comment> Comments { get; set; }
+    public ICollection<Statistic>? Statistics { get; set; }
+    public ICollection<Comment>? Comments { get; set; }
 }

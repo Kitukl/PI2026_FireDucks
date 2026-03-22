@@ -38,7 +38,6 @@ public class UserController : Controller
     [HttpGet("callback")]
     public async Task<IActionResult> ExternalCallback()
     {
-        // 1. Отримуємо дані від Microsoft
         var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
         
         if (!result.Succeeded || result.Principal == null)
@@ -51,7 +50,6 @@ public class UserController : Controller
 
         if (string.IsNullOrEmpty(email)) return RedirectToAction("Index", "Home");
 
-        // 2. Викликаємо твій Handler (він перевірить, чи є юзер, або створить нового)
         var command = new RegisterUserCommand
         {
             Email = email,
@@ -64,15 +62,12 @@ public class UserController : Controller
 
         await _mediator.Send(command);
 
-        // 3. ФІКС КУКІВ: Знаходимо цього юзера в базі та логінимо його сесію
         var user = await _userManager.FindByEmailAsync(email);
         if (user != null)
         {
-            // isPersistent: true дозволяє не логінитись знову після закриття браузера
             await _signInManager.SignInAsync(user, isPersistent: true);
         }
-
-        // 4. Очищуємо тимчасові куки Microsoft (ExternalScheme)
+        
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
         return RedirectToAction("Index", "Home");
