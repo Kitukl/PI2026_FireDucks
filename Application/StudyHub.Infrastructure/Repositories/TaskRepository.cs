@@ -32,16 +32,10 @@ public class TaskRepository : ITaskRepository
     }
     public async Task<Guid> UpdateTaskAsync(UserTask task)
     {
-        var userTask = await _context.Tasks.FirstOrDefaultAsync(f => f.Id == task.Id) ?? throw new Exception("Task not found");
-        
-        userTask.Title = task.Title;
-        userTask.Status = task.Status;
-        userTask.Deadline = task.Deadline;
-        userTask.Subject = task.Subject;
-
+        _context.Update(task);
         await _context.SaveChangesAsync();
 
-        return userTask.Id;
+        return task.Id;
     }
 
     public async Task<Guid> DeleteTaskAsync(Guid id)
