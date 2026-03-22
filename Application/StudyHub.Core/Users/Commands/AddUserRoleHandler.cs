@@ -1,22 +1,26 @@
 using MediatR;
-using StudyHub.Core.DTOs;
 using StudyHub.Core.Users.Interfaces;
+using StudyHub.Domain.Enums;
 
 namespace StudyHub.Core.Users.Commands;
 
-public record AddUserRoleCommand(UserRoleUpdateDto UserRole) : IRequest;
-
-public class AddUserRoleHandler : IRequestHandler<AddUserRoleCommand>
+public class AddUserRoleCommand : IRequest
 {
-    private readonly IUserRepository userRepository;
+    public Guid UserId { get; set; }
+    public Role Role { get; set; }
+}
+
+public class AddUserRoleCommandHandler : IRequestHandler<AddUserRoleCommand>
+{
+    private readonly IUserRepository _userRepository;
     
-    public AddUserRoleHandler(IUserRepository userRepository)
+    public AddUserRoleCommandHandler(IUserRepository userRepository)
     {
-        this.userRepository = userRepository;
+        _userRepository = userRepository;
     }
     
     public async Task Handle(AddUserRoleCommand request, CancellationToken cancellationToken)
     { 
-        await userRepository.AddRole(request.UserRole);
+        await _userRepository.AddRole(request.Role, request.UserId);
     }
 }

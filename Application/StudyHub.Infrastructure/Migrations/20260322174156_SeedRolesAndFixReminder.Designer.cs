@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StudyHub.Infrastructure;
@@ -11,9 +12,11 @@ using StudyHub.Infrastructure;
 namespace StudyHub.Infrastructure.Migrations
 {
     [DbContext(typeof(SDbContext))]
-    partial class SDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260322174156_SeedRolesAndFixReminder")]
+    partial class SeedRolesAndFixReminder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -81,19 +84,19 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("31e31b47-3096-474e-a38e-407207eef6fb"),
+                            Id = new Guid("6aae3aaa-3ac5-47f7-b9bb-7185a9f0ffb6"),
                             Name = "Student",
                             NormalizedName = "STUDENT"
                         },
                         new
                         {
-                            Id = new Guid("693207f1-8574-4fe7-aaf9-c7b31dd23a6e"),
+                            Id = new Guid("506f89fd-27cf-40a5-b29f-3de520591cac"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("f563e27a-d472-4dea-a632-27efb6fc9d26"),
+                            Id = new Guid("fbbb817a-99a1-4c10-8362-766bd0608cd0"),
                             Name = "Leader",
                             NormalizedName = "LEADER"
                         });
@@ -567,6 +570,7 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("MicrosoftId")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
@@ -592,6 +596,7 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("PhotoUrl")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid>("ReminderId")

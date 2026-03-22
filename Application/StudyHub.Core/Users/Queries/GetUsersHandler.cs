@@ -8,15 +8,21 @@ public record GetUsersRequest : IRequest<IEnumerable<UserDto>>;
 
 public class GetUsersHandler : IRequestHandler<GetUsersRequest, IEnumerable<UserDto>>
 {
-    private readonly IUserRepository userRepository;
+    private readonly IUserRepository _userRepository;
     
     public GetUsersHandler(IUserRepository userRepository)
     {
-        this.userRepository = userRepository;
+        _userRepository = userRepository;
     }
     
     public async Task<IEnumerable<UserDto>> Handle(GetUsersRequest request, CancellationToken cancellationToken)
     {
-        return await userRepository.GetUsersAsync();
+        var response =  await _userRepository.GetUsersAsync();
+        return response.Select(c => new UserDto
+        {
+            GroupName = c.Group.Name,
+            Name = c.Name,
+            Surname = c.Surname
+        });
     }
 }

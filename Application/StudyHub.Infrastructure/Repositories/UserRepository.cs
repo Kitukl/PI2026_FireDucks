@@ -1,92 +1,87 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Core.DTOs;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Domain.Entities;
-using StudyHub.Domain.Entities.enums;
+using StudyHub.Domain.Enums;
 using Task = System.Threading.Tasks.Task;
 
 
 namespace StudyHub.Infrastructure.Repositories;
 
-public class UserRepository(SDbContext context,UserManager<User> userManager) : IUserRepository
+public class UserRepository : IUserRepository
 {
-    public async Task<Dictionary<string, int>> GetUsersCountByRoleAsync()
+    private readonly SDbContext _context;
+    private readonly UserManager<User> _userManager;
+
+    public UserRepository(SDbContext context, UserManager<User> userManager)
     {
-        return await context.UserRoles
-            .Join(context.Roles, 
-                ur => ur.RoleId, 
-                r => r.Id, 
-                (ur, r) => r.Name)
-            .GroupBy(roleName => roleName)
-            .Select(g => new { RoleName = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.RoleName, x => x.Count);
+        _context = context;
+        _userManager = userManager;
     }
 
-    public async Task<IEnumerable<UserDto>> GetUsersAsync()
+    public async Task<IEnumerable<User>> GetUsersAsync()
     {
-        return await context.Users
-            .Include(u => u.Group)
-            .AsNoTracking()
-            .Select(u => new UserDto 
-            {
-                Id = u.Id,
-                Name = u.Name,
-                Surname = u.Surname,
-                GroupName = u.Group.Name,
-                Roles = userManager.GetRolesAsync(u).Result.ToList()
-            })
-            .ToListAsync();
+        return await _context.Users.ToListAsync();
     }
 
     public async Task Delete(Guid userId)
     {
-        await context.Users
+        await _context.Users
             .Where(u => u.Id == userId)
             .ExecuteDeleteAsync();
     }
     
-    public async Task Update(UserUpdateDto userUpdateDto)
+    public async Task<User> Update(User userUpdate)
     {
-        var user = await context.Users.FirstAsync(u => u.Id == userUpdateDto.Id);
+        var user = await _context.Users.FirstAsync(u => u.Id == userUpdate.Id);
 
-        user.Name = userUpdateDto.Name;
-        user.Surname = userUpdateDto.Surname;
-        user.PhotoUrl = user.PhotoUrl;
+        user.Name = userUpdate.Name;
+        user.Surname = userUpdate.Surname;
+        user.PhotoUrl = userUpdate.PhotoUrl;
+        user.Group = userUpdate.Group;
         
-        var group = await context.Groups
-            .FirstOrDefaultAsync(g => g.Name == userUpdateDto.GroupName) ?? new Group();
+        await _context.SaveChangesAsync();
 
-        user.Group = group;
-        
-        await context.SaveChangesAsync();
+        return user;
+    }
+
+    public async Task AddRole(Role userRole, Guid userId)
+    {
+        var user = await _context.Users.FirstAsync(u => u.Id == userId); 
+        await _userManager.AddToRoleAsync(user, userRole.ToString());
+    }
+
+    public async Task RemoveRole(Role userRole, Guid userId)
+    {
+        var user = await _context.Users.FirstAsync(u => u.Id == userId);
+        await _userManager.RemoveFromRoleAsync(user, userRole.ToString());
+    }
+
+    public async Task<User> GetUserById(Guid requestId)
+    {
+        return await _userManager.FindByIdAsync(requestId.ToString()) ?? throw new Exception("User not found");
+    }
+    public async Task<User> CreateUser(User user)
+    {
+        var result = await _userManager.CreateAsync(user);
+        if (!result.Succeeded) throw new Exception("Помилка створення");
+        return user;
+    }
+
+    public async Task<List<string>> GetRolesByUser(User user)
+    {
+        var roles = await _userManager.GetRolesAsync(user);
+        return roles.ToList();
     }
     
-    public async Task AddRole(UserRoleUpdateDto userRoleUpdateDto)
+    public async Task AddExternalLogin(User user, string provider, string providerKey)
     {
-        var user = await context.Users.FirstAsync(u => u.Id == userRoleUpdateDto.Id); 
-        
-        await userManager.AddToRoleAsync(user, userRoleUpdateDto.Role.ToString());
-    }
+        var info = new UserLoginInfo(provider, providerKey, provider);
+        var result = await _userManager.AddLoginAsync(user, info);
     
-    public async Task RemoveRole(UserRoleUpdateDto userRoleUpdateDto)
-    {
-        var user = await context.Users.FirstAsync(u => u.Id == userRoleUpdateDto.Id);
-
-        await userManager.RemoveFromRoleAsync(user, userRoleUpdateDto.Role.ToString());
-    }
-
-    public async Task<UserDto> GetUserById(Guid requestId)
-    {
-        var user =  await context.Users.FirstAsync(u => u.Id == requestId);
-        
-        return new UserDto()
+        if (!result.Succeeded)
         {
-            Id = user.Id,
-            Name = user.Name,
-            Surname = user.Surname,
-            GroupName = user.Group.Name,
-            Roles = userManager.GetRolesAsync(user).Result.ToList(),
-        };
+            throw new Exception("Не вдалося прив'язати зовнішній акаунт");
+        }
     }
 }

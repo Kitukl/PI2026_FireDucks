@@ -3,18 +3,22 @@ using StudyHub.Core.Users.Interfaces;
 
 namespace StudyHub.Core.Users.Commands;
 
-public record DeleteUserCommand(Guid Id) : IRequest;
-
-public class DeleteUserHandler : IRequestHandler<DeleteUserCommand>
+public class DeleteUserCommand : IRequest<Guid>
 {
-    private readonly IUserRepository userRepository;
+    public Guid UserId { get; set; }
+}
+
+public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Guid>
+{
+    private readonly IUserRepository _userRepository;
     
-    public DeleteUserHandler(IUserRepository userRepository)
+    public DeleteUserCommandHandler(IUserRepository userRepository)
     {
-        this.userRepository = userRepository;
+        _userRepository = userRepository;
     }
-    public async Task Handle(DeleteUserCommand command, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
-        await userRepository.Delete(command.Id);
+        await _userRepository.Delete(request.UserId);
+        return request.UserId;
     }
 }

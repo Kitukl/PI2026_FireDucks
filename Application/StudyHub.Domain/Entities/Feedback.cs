@@ -1,3 +1,5 @@
+using StudyHub.Domain.Enums;
+
 namespace StudyHub.Domain.Entities;
 
 public class Feedback

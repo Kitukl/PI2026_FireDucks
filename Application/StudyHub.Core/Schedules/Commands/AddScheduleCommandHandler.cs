@@ -25,8 +25,8 @@ namespace StudyHub.Core.Schedules.Commands
                 UpdatedAt = request.dto.UpdateAt,
                 CanHeadmanUpdate = request.dto.HeadmanUpdate,
                 IsAutoUpdate = request.dto.IsAutoUpdate,
-                Group = new Group { Id = request.dto.Group.Id, Name = request.dto.Group.Name },
-                Lessons = request.dto.Lessons?.Select(x => new Lesson
+                Group = new Domain.Entities.Group { Id = request.dto.Group.Id, Name = request.dto.Group.Name },
+                Lessons = request.dto.Lessons.Select(x => new Lesson
                 {
                     Id = x.Id == Guid.Empty ? Guid.NewGuid() : x.Id,
                     Day = x.Day,

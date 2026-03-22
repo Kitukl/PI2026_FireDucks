@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StudyHub.Infrastructure;
@@ -11,9 +12,11 @@ using StudyHub.Infrastructure;
 namespace StudyHub.Infrastructure.Migrations
 {
     [DbContext(typeof(SDbContext))]
-    partial class SDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260322172228_ChangeStructure3")]
+    partial class ChangeStructure3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -77,26 +80,6 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("31e31b47-3096-474e-a38e-407207eef6fb"),
-                            Name = "Student",
-                            NormalizedName = "STUDENT"
-                        },
-                        new
-                        {
-                            Id = new Guid("693207f1-8574-4fe7-aaf9-c7b31dd23a6e"),
-                            Name = "Admin",
-                            NormalizedName = "ADMIN"
-                        },
-                        new
-                        {
-                            Id = new Guid("f563e27a-d472-4dea-a632-27efb6fc9d26"),
-                            Name = "Leader",
-                            NormalizedName = "LEADER"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -408,7 +391,7 @@ namespace StudyHub.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Reminders");
+                    b.ToTable("Reminder");
                 });
 
             modelBuilder.Entity("StudyHub.Domain.Entities.Schedule", b =>
@@ -567,6 +550,7 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("MicrosoftId")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
@@ -592,6 +576,7 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("PhotoUrl")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid>("ReminderId")

@@ -1,4 +1,4 @@
-using StudyHub.Domain.Entities.enums;
+using StudyHub.Domain.Enums;
 
 namespace StudyHub.Core.DTOs;
 

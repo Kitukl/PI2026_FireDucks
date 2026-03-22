@@ -1,3 +1,5 @@
+using StudyHub.Domain.Enums;
+
 namespace StudyHub.Domain.Entities;
 
 public class Task
@@ -16,12 +18,4 @@ public class Task
 
     public ICollection<Statistic> Statistics { get; set; }
     public ICollection<Comment> Comments { get; set; }
-}
-
-public enum Status
-{
-    ToDo,
-    InProgress,
-    ForReview,
-    Done
 }

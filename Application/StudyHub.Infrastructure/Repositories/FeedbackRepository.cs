@@ -1,21 +1,22 @@
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Core.Statistics.Interfaces;
+using StudyHub.Core.Feedbacks.Interfaces;
 using StudyHub.Domain.Entities;
+using StudyHub.Domain.Enums;
 
 namespace StudyHub.Infrastructure.Repositories;
 
 public class FeedbackRepository : IFeedbackRepository
 {
-    private readonly StudyHubDbContext _context;
+    private readonly SDbContext _context;
 
-    public FeedbackRepository(StudyHubDbContext context)
+    public FeedbackRepository(SDbContext context)
     {
         _context = context;
     }
 
-    public async Task<Feedback?> GetFeedbackAsync(Guid Id) 
+    public async Task<Feedback?> GetFeedbackAsync(Guid id) 
     { 
-        return await _context.Feedbacks.FindAsync(Id);
+        return await _context.Feedbacks.FirstOrDefaultAsync(c => c.Id == id);
     }
     public async Task<List<Feedback>> GetFeedbacksAsync()
     {
@@ -24,26 +25,25 @@ public class FeedbackRepository : IFeedbackRepository
     public async Task<Guid> AddFeedbackAsync(Feedback feedback)
     {
         await _context.Feedbacks.AddAsync(feedback);
+        await _context.SaveChangesAsync();
+        
         return feedback.Id;
     }
     public async Task<Guid> UpdateFeedbackAsync(Feedback feedback)
     {
-        var userFeedback = await _context.Feedback.FirstOrDefaultAsync(f => f.Id == feedback.Id);
+        var userFeedback = await _context.Feedbacks.FirstOrDefaultAsync(f => f.Id == feedback.Id) ?? throw new Exception("Feedback not found");
+        
+        userFeedback.Category = feedback.Category;
+        userFeedback.Status = feedback.Status;
+        userFeedback.UpdatedAt = DateTime.UtcNow;
 
-        if (userFeedback != null)
+        if (feedback.Status == Status.Resolved)
         {
-            userFeedback.Category = feedback.Category;
-            userFeedback.Status = feedback.Status;
-            userFeedback.UpdatedAt = DateTime.UtcNow;
-
-            if (feedback.Status == Status.Resolved)
-            {
-                userFeedback.ResolvedAt = DateTime.UtcNow;
-            }
-
-            await _context.SaveChangesAsync();
+            userFeedback.ResolvedAt = DateTime.UtcNow;
         }
 
-        return userFeedback.Id.ToString();
+        await _context.SaveChangesAsync();
+
+        return userFeedback.Id;
     }
 }

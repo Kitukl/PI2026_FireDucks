@@ -1,3 +1,5 @@
+using StudyHub.Domain.Entities;
+
 namespace StudyHub.Core.DTOs;
 
 public class UserDto
