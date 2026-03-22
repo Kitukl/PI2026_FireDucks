@@ -89,4 +89,12 @@ public class UserController : Controller
         await _mediator.Send(request);
         return View();
     }
+    
+    [Authorize(Roles = nameof(Role.Leader))]
+    [HttpPut]
+    public async Task<IActionResult> RemoveUserFromGroup(RemoveUserFromGroupCommand request)
+    {
+        await _mediator.Send(request);
+        return View();
+    }
 }
