@@ -17,15 +17,15 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasMany(u => u.Feedbacks)
             .WithOne(f => f.User)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(u => u.Tasks)
             .WithOne(t => t.User)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(u => u.Group)
             .WithMany(g => g.Users)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(u => u.Statistics)
             .WithMany(s => s.Users);
