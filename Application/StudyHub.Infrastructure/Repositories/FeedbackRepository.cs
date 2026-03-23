@@ -31,19 +31,9 @@ public class FeedbackRepository : IFeedbackRepository
     }
     public async Task<Guid> UpdateFeedbackAsync(Feedback feedback)
     {
-        var userFeedback = await _context.Feedbacks.FirstOrDefaultAsync(f => f.Id == feedback.Id) ?? throw new Exception("Feedback not found");
-        
-        userFeedback.Category = feedback.Category;
-        userFeedback.Status = feedback.Status;
-        userFeedback.UpdatedAt = DateTime.UtcNow;
-
-        if (feedback.Status == Status.Resolved)
-        {
-            userFeedback.ResolvedAt = DateTime.UtcNow;
-        }
-
+        _context.Update(feedback);
         await _context.SaveChangesAsync();
 
-        return userFeedback.Id;
+        return feedback.Id;
     }
 }
