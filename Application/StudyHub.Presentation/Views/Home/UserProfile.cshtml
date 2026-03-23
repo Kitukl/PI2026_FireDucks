@@ -1,0 +1,109 @@
+@using StudyHub.Domain.Entities
+@{
+    ViewData["Title"] = "User profile";
+    var fullName = (string?)ViewBag.FullName ?? "Name Surname";
+    var photoUrl = (string?)ViewBag.PhotoUrl ?? Url.Content("~/images/no-photo.png");
+    var feedbackTypes = Enum.GetValues<FeedbackType>();
+    var categories = Enum.GetValues<Category>();
+    var timeTypes = Enum.GetValues<TimeType>();
+    var reminderOffsets = Enumerable.Range(1, 10);
+}
+
+<section class="user-profile-page">
+    <div class="user-profile-grid">
+        <section class="user-profile-left">
+            <div class="user-photo-card">
+                <button class="user-photo-btn" type="button">Choose Profile Photo</button>
+                <div class="user-photo-frame">
+                    <img src="@photoUrl" alt="Profile photo" />
+                </div>
+            </div>
+
+            <h1 class="user-profile-name">@fullName</h1>
+
+            <fieldset class="user-settings-card js-user-settings" data-enabled="true">
+                <legend>Settings</legend>
+
+                <div class="user-settings-controls" aria-hidden="true">
+                    <button type="button" class="user-settings-icon is-muted js-user-settings-muted" title="Mute notifications">
+                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                            <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zM18 16v-5.5c0-2.9-1.6-5.35-4.5-6.04V3.5a1.5 1.5 0 1 0-3 0v.96C7.6 5.15 6 7.6 6 10.5V16l-2 2v1h16v-1l-2-2zM4 4.9 5.4 3.5 20.5 18.6 19.1 20z"></path>
+                        </svg>
+                    </button>
+
+                    <button type="button" class="user-settings-toggle js-user-settings-toggle" title="Notifications toggle" aria-pressed="true">
+                        <span class="user-settings-knob"></span>
+                    </button>
+                    <input class="js-user-settings-value" type="hidden" value="true" />
+
+                    <button type="button" class="user-settings-icon js-user-settings-bell" title="Enable reminders">
+                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                            <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zM18 16v-5.5c0-2.9-1.6-5.35-4.5-6.04V3.5a1.5 1.5 0 1 0-3 0v.96C7.6 5.15 6 7.6 6 10.5V16l-2 2v1h16v-1l-2-2z"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <label class="user-reminder-row">
+                    <span>Send a reminder</span>
+                    <select class="js-user-reminder-offset" aria-label="Reminder offset">
+                        @foreach (var offset in reminderOffsets)
+                        {
+                            <option selected="@(offset == 2 ? "selected" : null)">@offset</option>
+                        }
+                    </select>
+                    <select class="js-user-reminder-type" aria-label="Reminder unit">
+                        @foreach (var timeType in timeTypes)
+                        {
+                            <option selected="@(timeType == TimeType.Day ? "selected" : null)">@timeType</option>
+                        }
+                    </select>
+                    <span>before due date</span>
+                </label>
+            </fieldset>
+        </section>
+
+        <section class="user-profile-right">
+            <article class="user-contact-card">
+                <header class="user-contact-head">
+                    <h2>Contact form</h2>
+                    <button type="button" class="user-contact-help" aria-label="Help">?</button>
+                </header>
+
+                <label class="user-contact-row">
+                    <span>Type:</span>
+                    <select>
+                        @foreach (var type in feedbackTypes)
+                        {
+                            <option selected="@(type == FeedbackType.Request ? "selected" : null)">@type</option>
+                        }
+                    </select>
+                </label>
+
+                <label class="user-contact-row">
+                    <span>Category:</span>
+                    <select>
+                        @foreach (var category in categories)
+                        {
+                            <option selected="@(category == Category.Improvement ? "selected" : null)">@category</option>
+                        }
+                    </select>
+                </label>
+
+                <input class="user-contact-subject" type="text" placeholder="Subject" />
+
+                <div class="task-view-editor js-rich-editor user-contact-editor">
+                    <div class="task-view-editor-head">
+                        <div class="task-view-editor-tools" aria-label="Feedback formatting">
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="bold" aria-label="Bold">B</button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="italic" aria-label="Italic"><em>I</em></button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="underline" aria-label="Underline"><u>U</u></button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="strikeThrough" aria-label="Strike through"><s>S</s></button>
+                        </div>
+                        <button class="task-view-comment-btn" type="button">Send request</button>
+                    </div>
+                    <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Please describe your question/problem here..."></div>
+                </div>
+            </article>
+        </section>
+    </div>
+</section>

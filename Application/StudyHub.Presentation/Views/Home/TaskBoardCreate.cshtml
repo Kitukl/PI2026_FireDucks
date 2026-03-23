@@ -1,0 +1,202 @@
+﻿@{
+    ViewData["Title"] = "Create task";
+}
+
+<section class="taskboard-page taskboard-create-page">
+    <div class="taskboard-toolbar">
+        <label class="taskboard-search" for="task-search-create">
+            <span class="taskboard-search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.06l4.24 4.24-1.42 1.42-4.24-4.24A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"></path>
+                </svg>
+            </span>
+            <input id="task-search-create" type="search" placeholder="Search" aria-label="Search tasks" />
+        </label>
+
+        <div class="taskboard-filter-control js-task-filter-control">
+            <button class="taskboard-filter-btn js-task-filter-toggle" type="button" aria-expanded="false">
+                <span class="taskboard-filter-icon">&#9776;</span>
+                Filter by
+            </button>
+
+            <div class="taskboard-filter-dropdown" hidden>
+                <button class="taskboard-filter-all js-task-filter-all" type="button">Unselect all</button>
+                <label class="taskboard-filter-option"><input class="js-task-filter-checkbox" type="checkbox" value="Subject#A" checked />Subject#A</label>
+                <label class="taskboard-filter-option"><input class="js-task-filter-checkbox" type="checkbox" value="Subject#B" checked />Subject#B</label>
+                <label class="taskboard-filter-option"><input class="js-task-filter-checkbox" type="checkbox" value="Subject#C" checked />Subject#C</label>
+                <label class="taskboard-filter-option"><input class="js-task-filter-checkbox" type="checkbox" value="Subject#D" checked />Subject#D</label>
+                <label class="taskboard-filter-option"><input class="js-task-filter-checkbox" type="checkbox" value="Subject#E" checked />Subject#E</label>
+                <label class="taskboard-filter-option"><input class="js-task-filter-checkbox" type="checkbox" value="Subject#F" checked />Subject#F</label>
+                <label class="taskboard-filter-option"><input class="js-task-filter-checkbox" type="checkbox" value="Subject#G" checked />Subject#G</label>
+            </div>
+        </div>
+
+        <a class="taskboard-create-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardCreate">Create task</a>
+    </div>
+
+    <div class="taskboard-grid">
+        <aside class="taskboard-sidebar">
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Own tasks <button class="taskboard-radio js-task-scope-filter" type="button" data-scope="own" aria-label="Show own tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>0</strong></li>
+                    <li><span>In progress</span><strong>1</strong></li>
+                    <li><span>For review</span><strong>2</strong></li>
+                    <li><span>Done</span><strong>1</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Group tasks <button class="taskboard-radio js-task-scope-filter" type="button" data-scope="group" aria-label="Show group tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>1</strong></li>
+                    <li><span>In progress</span><strong>1</strong></li>
+                    <li><span>For review</span><strong>1</strong></li>
+                    <li><span>Done</span><strong>1</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">All tasks <button class="taskboard-radio js-task-scope-filter active" type="button" data-scope="all" aria-label="Show all tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>1</strong></li>
+                    <li><span>In progress</span><strong>2</strong></li>
+                    <li><span>For review</span><strong>3</strong></li>
+                    <li><span>Done</span><strong>2</strong></li>
+                </ul>
+            </div>
+
+            @if (User.IsInRole("Leader"))
+            {
+                <a class="taskboard-manage-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardReviewGroup">Manage group</a>
+            }
+        </aside>
+
+        <div class="taskboard-columns-scroll">
+            <section class="taskboard-column">
+                <h2>To do</h2>
+                <article class="task-card">
+                    <header>
+                        <h3>New Task#7</h3>
+                        <span class="task-card-status"></span>
+                    </header>
+                    <p>Subject#A</p>
+                    <div class="task-card-meta">
+                        <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
+                        <span class="task-card-badge">&#128100;</span>
+                    </div>
+                    <footer>A-3</footer>
+                </article>
+            </section>
+
+            <section class="taskboard-column">
+                <h2>In progress</h2>
+                <article class="task-card">
+                    <header>
+                        <h3>New Task#8</h3>
+                        <span class="task-card-status"></span>
+                    </header>
+                    <p>Subject#B</p>
+                    <div class="task-card-meta">
+                        <span></span>
+                        <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                    </div>
+                    <footer>B-2</footer>
+                </article>
+            </section>
+
+            <section class="taskboard-column">
+                <h2>For review</h2>
+                <article class="task-card">
+                    <header>
+                        <h3>New Task#6</h3>
+                        <span class="task-card-state soft" aria-hidden="true"></span>
+                    </header>
+                    <p>Subject#B</p>
+                    <div class="task-card-meta">
+                        <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
+                        <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                    </div>
+                    <footer>B-3</footer>
+                </article>
+            </section>
+
+            <section class="taskboard-column">
+                <h2>Done</h2>
+                <article class="task-card">
+                    <header>
+                        <h3>New Task#1</h3>
+                        <span class="task-card-state">&#10006;</span>
+                    </header>
+                    <p>Subject#A</p>
+                    <div class="task-card-meta">
+                        <span></span>
+                        <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                    </div>
+                    <footer>A-1</footer>
+                </article>
+            </section>
+        </div>
+    </div>
+
+    <div class="task-modal-backdrop" aria-hidden="true"></div>
+
+    <section class="task-create-modal" role="dialog" aria-modal="true" aria-label="Create task">
+        <form class="task-create-form" method="post" action="#">
+            <div class="task-create-top">
+                <label class="visually-hidden" for="task-title">Task name</label>
+                <input id="task-title" class="task-create-name-input" type="text" name="title" placeholder="Name your task..." />
+                <a class="task-create-cancel" asp-area="" asp-controller="Home" asp-action="TaskBoard">Cancel</a>
+            </div>
+
+            <div class="task-create-fieldset">
+                <h2>Description</h2>
+                <div class="task-view-editor js-rich-editor task-create-description-editor">
+                    <div class="task-view-editor-head">
+                        <div class="task-view-editor-tools" aria-label="Description formatting">
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="bold" aria-label="Bold">B</button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="italic" aria-label="Italic"><em>I</em></button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="underline" aria-label="Underline"><u>U</u></button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="strikeThrough" aria-label="Strike through"><s>S</s></button>
+                        </div>
+                    </div>
+                    <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Describe what needs to be done..."></div>
+                    <textarea class="visually-hidden js-rich-editor-hidden" name="description"></textarea>
+                </div>
+            </div>
+
+            <div class="task-create-fieldset task-create-details">
+                <h2>Details</h2>
+                <div class="task-create-row">
+                    <label class="task-create-inline-field">
+                        <span>Subject:</span>
+                        <select name="subject">
+                            <option>Subject#A</option>
+                            <option>Subject#B</option>
+                            <option>Subject#C</option>
+                        </select>
+                    </label>
+
+                    <label class="task-create-inline-field task-create-date-field">
+                        <span>Due date:</span>
+                        <input type="date" name="dueDate" value="2026-03-03" />
+                    </label>
+
+                    <label class="task-create-checkbox">
+                        <input type="checkbox" name="isGroupTask" checked />
+                        <span class="task-create-group-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                <path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path>
+                            </svg>
+                        </span>
+                        <span>Group task</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="task-create-actions">
+                <button type="submit" class="task-create-submit">Create task</button>
+            </div>
+        </form>
+    </section>
+</section>

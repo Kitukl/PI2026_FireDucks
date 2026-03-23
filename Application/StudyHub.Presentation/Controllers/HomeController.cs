@@ -43,6 +43,60 @@ public class HomeController : Controller
         return View();
     }
 
+    [HttpGet("/myprofile")]
+    [HttpGet("/UserProfile")]
+    public async Task<IActionResult> UserProfile()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null)
+            {
+                ViewBag.FullName = $"{user.Name} {user.Surname}".Trim();
+                ViewBag.PhotoUrl = string.IsNullOrWhiteSpace(user.PhotoUrl)
+                    ? Url.Content("~/images/no-photo.png")
+                    : user.PhotoUrl;
+            }
+        }
+
+        ViewBag.FullName ??= "Name Surname";
+        ViewBag.PhotoUrl ??= Url.Content("~/images/no-photo.png");
+
+        return View();
+    }
+
+    [HttpGet("/TaskBoard")]
+    public IActionResult TaskBoard()
+    {
+        return View();
+    }
+
+    [HttpGet("/TaskBoard/Create")]
+    [HttpGet("/TaskBoard/CreateTask")]
+    public IActionResult TaskBoardCreate()
+    {
+        return View();
+    }
+
+    [HttpGet("/TaskBoard/ViewTask/{taskCode?}")]
+    public IActionResult TaskBoardViewTask(string? taskCode)
+    {
+        ViewBag.TaskCode = string.IsNullOrWhiteSpace(taskCode) ? "A-3" : taskCode;
+        return View();
+    }
+
+    [HttpGet("/TaskBoard/ReviewGroup")]
+    public IActionResult TaskBoardReviewGroup()
+    {
+        return View();
+    }
+
+    [HttpGet("/Storage")]
+    public IActionResult Storage()
+    {
+        return View();
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {

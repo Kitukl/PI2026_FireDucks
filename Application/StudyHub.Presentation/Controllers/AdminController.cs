@@ -101,4 +101,18 @@ public class AdminController(IMediator mediator) : Controller
     
         return RedirectToAction("GetUser", new { id = dto.Id });
     }
+
+    [HttpGet("/Admin/Requests")]
+    public IActionResult Requests()
+    {
+        return View();
+    }
+
+    [HttpGet("/Admin/Requests/View/{feedbackId?}")]
+    public IActionResult RequestView(string? feedbackId)
+    {
+        ViewBag.FeedbackId = string.IsNullOrWhiteSpace(feedbackId) ? "1" : feedbackId;
+        ViewBag.OpenRequestModal = true;
+        return View("Requests");
+    }
 }

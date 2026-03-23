@@ -1,0 +1,84 @@
+@using StudyHub.Domain.Enums
+@{
+    ViewData["Title"] = "Request";
+
+    var feedbackId = (string?)ViewBag.FeedbackId ?? "1";
+
+    var allowedStatuses = Enum.GetValues<Status>()
+        .Where(status => status is Status.ToDo or Status.InProgress or Status.Resolved)
+        .ToList();
+
+    string StatusLabel(Status status) => status switch
+    {
+        Status.ToDo => "To do",
+        Status.InProgress => "In progress",
+        Status.Resolved => "Resolved",
+        _ => status.ToString()
+    };
+}
+
+<style>
+.admin-request-view-page { background: #fff; border: 1px solid #d2d8e0; border-radius: 12px; padding: 16px; margin-top: 10px; }
+.admin-request-view-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.admin-request-view-top h1 { margin: 0; font-size: 2rem; }
+.admin-request-view-top select, .admin-request-view-top a { min-height: 36px; border: 1px solid #8d97a4; border-radius: 8px; background: #fff; padding: 6px 10px; text-decoration: none; color: #202838; }
+.admin-request-view-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 14px; }
+.admin-request-block { border: 1px solid #d9dfe8; border-radius: 10px; padding: 10px; }
+.admin-request-block h2 { margin: 0 0 8px; font-size: 1.2rem; }
+.admin-request-description { min-height: 180px; border: 1px solid #8d97a4; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+.admin-request-editor { border: 1px solid #8d97a4; border-radius: 8px; overflow: hidden; }
+.admin-request-editor-head { border-bottom: 1px solid #d9dfe8; min-height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #f7fafc; }
+.admin-request-tools { display: inline-flex; gap: 5px; }
+.admin-request-tools button, .admin-request-editor-head button { min-width: 28px; height: 28px; border: 1px solid #b8c0cb; border-radius: 7px; background: #fff; }
+.admin-request-input { min-height: 80px; padding: 10px; color: #6f7784; }
+.admin-request-details dl { margin: 0; display: grid; grid-template-columns: 80px 1fr; row-gap: 8px; column-gap: 8px; }
+.admin-request-details dt { color: #646e7f; }
+</style>
+
+<section class="admin-request-view-page">
+    <div class="admin-request-view-top">
+        <h1>Request#@feedbackId</h1>
+
+        <div style="display: inline-flex; align-items: center; gap: 8px;">
+            <select aria-label="Status">
+                @foreach (var status in allowedStatuses)
+                {
+                    <option selected="@(status == Status.Resolved ? "selected" : null)">@StatusLabel(status)</option>
+                }
+            </select>
+            <a asp-controller="Admin" asp-action="Requests">&lt; Back to the list</a>
+        </div>
+    </div>
+
+    <div class="admin-request-view-grid">
+        <article class="admin-request-block">
+            <h2>Description</h2>
+            <div class="admin-request-description">Description of the request.</div>
+
+            <div class="admin-request-editor">
+                <div class="admin-request-editor-head">
+                    <div class="admin-request-tools" aria-hidden="true">
+                        <button type="button">B</button>
+                        <button type="button"><em>I</em></button>
+                        <button type="button"><u>U</u></button>
+                        <button type="button"><s>S</s></button>
+                    </div>
+                    <button type="button">Send</button>
+                </div>
+                <div class="admin-request-input">Write a comment...</div>
+            </div>
+        </article>
+
+        <aside class="admin-request-block admin-request-details">
+            <h2>Details</h2>
+            <dl>
+                <dt>User:</dt><dd>Name Surname#1</dd>
+                <dt>Category:</dt><dd>Improvement</dd>
+                <dt>Type:</dt><dd>Request</dd>
+                <dt>Created:</dt><dd>05.01.2026</dd>
+                <dt>Updated:</dt><dd>08.01.2026</dd>
+                <dt>Resolved:</dt><dd>08.01.2026</dd>
+            </dl>
+        </aside>
+    </div>
+</section>
