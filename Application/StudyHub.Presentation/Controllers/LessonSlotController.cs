@@ -22,7 +22,7 @@ namespace StudyHub.Mvc.Controllers
             return View(slots);
         }
 
-        public IActionResult Create()
+        public IActionResult LessonSlotCreate()
         {
             return View(new LessonSlotDto());
         }
@@ -31,6 +31,13 @@ namespace StudyHub.Mvc.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LessonSlotCreate(LessonSlotDto lessonSlot)
         {
+            ModelState.Remove("Lessons");
+
+            if (!ModelState.IsValid)
+            {
+                return View(lessonSlot);
+            }
+
             if (ModelState.IsValid)
             {
                 await _mediator.Send(new AddLessonSlotRequest(lessonSlot));

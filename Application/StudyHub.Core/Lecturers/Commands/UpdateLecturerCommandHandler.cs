@@ -26,7 +26,7 @@ namespace StudyHub.Core.Lecturers.Commands
                 Surname = request.lecturer.Surname,
                 Lessons = request.lecturer.Lessons.Select(l => new Lesson
                 {
-                    Id = l.Id == Guid.Empty ? Guid.NewGuid() : l.Id,
+                    Id = l.Id, // == Guid.Empty ? Guid.NewGuid() : l.Id,
                     Day = l.Day,
                     LessonType = l.LessonType,
                     Lecturers = l.Lecturers.Select(x => new Lecturer
@@ -38,7 +38,7 @@ namespace StudyHub.Core.Lecturers.Commands
                     Subject = new Subject { Id = l.Subject.Id, Name = l.Subject.Name },
                     LessonsSlot = new LessonsSlot
                     {
-                        Id = l.Id,
+                        Id = l.LessonSlot.Id,
                         StartTime = l.LessonSlot.StartTime,
                         EndTime = l.LessonSlot.EndTime
                     }

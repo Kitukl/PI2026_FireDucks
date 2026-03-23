@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StudyHub.Infrastructure;
@@ -11,9 +12,11 @@ using StudyHub.Infrastructure;
 namespace StudyHub.Infrastructure.Migrations
 {
     [DbContext(typeof(SDbContext))]
-    partial class SDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260322204813_AddedGroupIdToSchedule")]
+    partial class AddedGroupIdToSchedule
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -81,19 +84,19 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("fb373214-cbcb-44aa-9a6e-27f94e6710f3"),
+                            Id = new Guid("dfda33d0-7f60-4e50-a329-1f33409b4545"),
                             Name = "Student",
                             NormalizedName = "STUDENT"
                         },
                         new
                         {
-                            Id = new Guid("bfa9c394-49ea-41a2-9ec5-bea6aae73dc8"),
+                            Id = new Guid("00ee26fe-188e-47cf-b1a4-02fbdbe9b1de"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("7f7da207-10a3-459f-abb4-552ffa806c22"),
+                            Id = new Guid("26b16825-b5b9-44a2-a511-79a88fbb58ed"),
                             Name = "Leader",
                             NormalizedName = "LEADER"
                         });
@@ -425,6 +428,9 @@ namespace StudyHub.Infrastructure.Migrations
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("GroupId1")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsAutoUpdate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -439,6 +445,9 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GroupId")
+                        .IsUnique();
+
+                    b.HasIndex("GroupId1")
                         .IsUnique();
 
                     b.ToTable("Schedules");
@@ -777,10 +786,14 @@ namespace StudyHub.Infrastructure.Migrations
             modelBuilder.Entity("StudyHub.Domain.Entities.Schedule", b =>
                 {
                     b.HasOne("StudyHub.Domain.Entities.Group", "Group")
-                        .WithOne("Schedule")
+                        .WithOne()
                         .HasForeignKey("StudyHub.Domain.Entities.Schedule", "GroupId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("StudyHub.Domain.Entities.Group", null)
+                        .WithOne("Schedule")
+                        .HasForeignKey("StudyHub.Domain.Entities.Schedule", "GroupId1");
 
                     b.Navigation("Group");
                 });

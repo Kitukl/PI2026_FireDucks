@@ -4,19 +4,19 @@
     <h2>Редагування викладача</h2>
     <hr />
 
-    <form asp-action="Edit">
-        <input type="hidden" asp-for="Id" />
+    <form asp-action="LecturerEdit">
+        <input type="hidden" name="lecturer.Id" value="@Model.Id" />
 
         <div class="row">
             <div class="col-md-6">
                 <div class="mb-3">
                     <label asp-for="Name" class="form-label">Ім'я</label>
-                    <input asp-for="Name" class="form-control" />
+                    <input name="lecturer.Name" value="@Model.Name" class="form-control" />
                     <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label asp-for="Surname" class="form-label">Прізвище</label>
-                    <input asp-for="Surname" class="form-control" />
+                    <input name="lecturer.Surname" value="@Model.Surname" class="form-control" />
                     <span asp-validation-for="Surname" class="text-danger"></span>
                 </div>
             </div>
@@ -42,6 +42,7 @@
                         @for (int i = 0; i < Model.Lessons.Count; i++)
                         {
                             <tr>
+                                <input type="hidden" name="lecturer.Lessons[@i].Id" value="@Model.Lessons[i].Id" />
                                 <td>
                                     <select name="lecturer.Lessons[@i].Day" class="form-select">
                                         <option value="1" selected="@(Model.Lessons[i].Day == DayOfWeek.Monday)">Понеділок</option>
@@ -82,7 +83,7 @@
 
         <div class="mt-4">
             <button type="submit" class="btn btn-success px-4">Зберегти зміни</button>
-            <a asp-action="Index" class="btn btn-secondary">Скасувати</a>
+            <a asp-action="LecturersList" class="btn btn-secondary">Скасувати</a>
         </div>
     </form>
 </div>
@@ -94,6 +95,7 @@
         $("#btnAddLesson").click(function () {
             const row = `
                 <tr>
+                    <input type="hidden" name="lecturer.Lessons[${index}].Id" value="00000000-0000-0000-0000-000000000000" />
                     <td>
                         <select name="lecturer.Lessons[${index}].Day" class="form-select">
                             <option value="1">Понеділок</option>

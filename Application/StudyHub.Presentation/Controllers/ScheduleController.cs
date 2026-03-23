@@ -27,13 +27,9 @@ namespace StudyHub.Mvc.Controllers
             return View(schedules);
         }
 
-        public async Task<IActionResult> ScheduleCreate()
-        {
-            await PrepareGroupsViewBag();
-            return View(new ScheduleDto { Lessons = new List<LessonDto>() });
-        }
 
-        public IActionResult Create(Guid? groupId)
+
+        public IActionResult ScheduleCreate(Guid? groupId)
         {
             var model = new ScheduleDto
             {
@@ -67,7 +63,7 @@ namespace StudyHub.Mvc.Controllers
 
         public async Task<IActionResult> ScheduleDetails(Guid id)
         {
-            var schedule = await _mediator.Send(new GetScheduleByGroupIdRequest(id));
+            var schedule = await _mediator.Send(new GetScheduleByIdRequest(id));
 
             if (schedule == null)
             {
@@ -81,13 +77,61 @@ namespace StudyHub.Mvc.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScheduleEdit(Guid id, ScheduleDto schedule)
         {
+            // ДОДАЙ ОСЬ ЦЕЙ РЯДОК:
+            schedule.Id = id; // Примусово беремо ID з URL і кладемо в об'єкт
+
+            // Далі твій існуючий код:
+            ModelState.Remove("Group.Name");
+            ModelState.Remove("schedule.Group.Name");
+
+            if (schedule.Lessons != null)
+            {
+                for (int i = 0; i < schedule.Lessons.Count; i++)
+                {
+                    ModelState.Remove($"schedule.Lessons[{i}].Subject.Name");
+                    ModelState.Remove($"schedule.Lessons[{i}].LessonType");
+                }
+            }
+
             if (ModelState.IsValid)
             {
                 await _mediator.Send(new UpdateScheduleRequest(schedule));
                 return RedirectToAction(nameof(SchedulesList));
             }
+
+            await ReloadLessonsNames(schedule);
             await PrepareLessonsViewBag();
             return View(schedule);
+        }
+
+        private async Task ReloadLessonsNames(ScheduleDto dto)
+        {
+            if (dto.Lessons == null) return;
+            foreach (var lesson in dto.Lessons)
+            {
+                var dbLesson = await _context.Lessons
+                    .Include(l => l.Subject)
+                    .FirstOrDefaultAsync(l => l.Id == lesson.Id);
+                if (dbLesson != null)
+                {
+                    lesson.Subject = new SubjectDto { Name = dbLesson.Subject.Name };
+                    lesson.LessonType = dbLesson.LessonType;
+                }
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ScheduleDelete(Guid id)
+        {
+            var schedule = await _mediator.Send(new GetScheduleByIdRequest(id));
+
+            if (schedule != null && schedule.Group != null)
+            {
+                await _mediator.Send(new DeleteScheduleForGroupRequest(schedule.Group.Id));
+            }
+
+            return RedirectToAction(nameof(SchedulesList));
         }
 
         private async Task PrepareGroupsViewBag()

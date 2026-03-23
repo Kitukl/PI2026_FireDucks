@@ -12,7 +12,7 @@ namespace StudyHub.Core.DTOs
         public DateTime UpdateAt { get; set; }
         public bool HeadmanUpdate { get; set; }
         public bool IsAutoUpdate { get; set; }
-        public List<LessonDto> Lessons { get; set; }
-        public GroupDto Group { get; set; }
+        public List<LessonDto> Lessons { get; set; } = new List<LessonDto>();
+        public GroupDto Group { get; set; } = new GroupDto();
     }
 }

@@ -10,6 +10,11 @@
     volumes:
       - azurite_data:/data
 
+  presentation:
+    build:
+      context: .
+      dockerfile: StudyHub.Presentation/Dockerfile
+
   postgres:
     image: postgres:15-alpine
     container_name: fireducks_postgres
@@ -19,7 +24,7 @@
       POSTGRES_PASSWORD: 435762198Ok
       POSTGRES_DB: fireducks_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
