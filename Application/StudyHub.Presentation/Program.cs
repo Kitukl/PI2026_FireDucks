@@ -49,16 +49,19 @@ public class Program
         builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
         
-        builder.Services.AddAuthentication()
-            .AddMicrosoftAccount(options =>
-            {
-                options.ClientId = builder.Configuration["Authentication:Microsoft:ClientId"] ??
-                                   throw new Exception("Null client id");
-                options.ClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"] ??
-                                       throw new Exception("Null client secrets");
+        var authenticationBuilder = builder.Services.AddAuthentication();
+        var microsoftClientId = builder.Configuration["Authentication:Microsoft:ClientId"];
+        var microsoftClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"];
 
+        if (!string.IsNullOrWhiteSpace(microsoftClientId) && !string.IsNullOrWhiteSpace(microsoftClientSecret))
+        {
+            authenticationBuilder.AddMicrosoftAccount(options =>
+            {
+                options.ClientId = microsoftClientId;
+                options.ClientSecret = microsoftClientSecret;
                 options.SignInScheme = IdentityConstants.ExternalScheme;
             });
+        }
         
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));

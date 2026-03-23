@@ -1,7 +1,7 @@
 @using StudyHub.Domain.Entities
 @{
     ViewData["Title"] = "User profile";
-    var fullName = (string?)ViewBag.FullName ?? "Name Surname";
+    var fullName = (string?)ViewBag.FullName ?? "Гість";
     var photoUrl = (string?)ViewBag.PhotoUrl ?? Url.Content("~/images/no-photo.png");
     var feedbackTypes = Enum.GetValues<FeedbackType>();
     var categories = Enum.GetValues<Category>();
@@ -69,40 +69,55 @@
                     <button type="button" class="user-contact-help" aria-label="Help">?</button>
                 </header>
 
-                <label class="user-contact-row">
-                    <span>Type:</span>
-                    <select>
-                        @foreach (var type in feedbackTypes)
-                        {
-                            <option selected="@(type == FeedbackType.Request ? "selected" : null)">@type</option>
-                        }
-                    </select>
-                </label>
+                @if (TempData["ProfileFeedbackSuccess"] is string successMessage)
+                {
+                    <p class="user-profile-form-success">@successMessage</p>
+                }
 
-                <label class="user-contact-row">
-                    <span>Category:</span>
-                    <select>
-                        @foreach (var category in categories)
-                        {
-                            <option selected="@(category == Category.Improvement ? "selected" : null)">@category</option>
-                        }
-                    </select>
-                </label>
+                @if (TempData["ProfileFeedbackError"] is string errorMessage)
+                {
+                    <p class="user-profile-form-error">@errorMessage</p>
+                }
 
-                <input class="user-contact-subject" type="text" placeholder="Subject" />
+                <form asp-controller="Home" asp-action="UserProfileSendRequest" method="post">
+                    @Html.AntiForgeryToken()
 
-                <div class="task-view-editor js-rich-editor user-contact-editor">
-                    <div class="task-view-editor-head">
-                        <div class="task-view-editor-tools" aria-label="Feedback formatting">
-                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="bold" aria-label="Bold">B</button>
-                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="italic" aria-label="Italic"><em>I</em></button>
-                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="underline" aria-label="Underline"><u>U</u></button>
-                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="strikeThrough" aria-label="Strike through"><s>S</s></button>
+                    <label class="user-contact-row">
+                        <span>Type:</span>
+                        <select name="feedbackType">
+                            @foreach (var type in feedbackTypes)
+                            {
+                                <option value="@type" selected="@(type == FeedbackType.Request ? "selected" : null)">@type</option>
+                            }
+                        </select>
+                    </label>
+
+                    <label class="user-contact-row">
+                        <span>Category:</span>
+                        <select name="category">
+                            @foreach (var category in categories)
+                            {
+                                <option value="@category" selected="@(category == Category.Improvement ? "selected" : null)">@category</option>
+                            }
+                        </select>
+                    </label>
+
+                    <input class="user-contact-subject" name="subject" type="text" placeholder="Subject" />
+
+                    <div class="task-view-editor js-rich-editor user-contact-editor">
+                        <div class="task-view-editor-head">
+                            <div class="task-view-editor-tools" aria-label="Feedback formatting">
+                                <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="bold" aria-label="Bold">B</button>
+                                <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="italic" aria-label="Italic"><em>I</em></button>
+                                <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="underline" aria-label="Underline"><u>U</u></button>
+                                <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="strikeThrough" aria-label="Strike through"><s>S</s></button>
+                            </div>
+                            <button class="task-view-comment-btn" type="submit">Send request</button>
                         </div>
-                        <button class="task-view-comment-btn" type="button">Send request</button>
+                        <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Please describe your question/problem here..."></div>
+                        <textarea class="visually-hidden js-rich-editor-hidden" name="description"></textarea>
                     </div>
-                    <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Please describe your question/problem here..."></div>
-                </div>
+                </form>
             </article>
         </section>
     </div>

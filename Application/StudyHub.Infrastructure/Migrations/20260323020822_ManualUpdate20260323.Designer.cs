@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StudyHub.Infrastructure;
@@ -11,9 +12,11 @@ using StudyHub.Infrastructure;
 namespace StudyHub.Infrastructure.Migrations
 {
     [DbContext(typeof(SDbContext))]
-    partial class SDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260323020822_ManualUpdate20260323")]
+    partial class ManualUpdate20260323
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -81,19 +84,19 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("f5ff6bb3-aafb-4ea6-9008-77e7a15d535a"),
+                            Id = new Guid("007de892-0eee-45a0-9fce-41011682225c"),
                             Name = "Student",
                             NormalizedName = "STUDENT"
                         },
                         new
                         {
-                            Id = new Guid("2147d302-d856-42a6-a08c-e46f012107f9"),
+                            Id = new Guid("c7c59087-369b-4abf-86df-8404c89595b8"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("f64771e4-20fc-4675-9bc9-c230eeb1f2bf"),
+                            Id = new Guid("b3ba6948-7e2e-4640-830d-7ca858c51ae4"),
                             Name = "Leader",
                             NormalizedName = "LEADER"
                         });
@@ -502,10 +505,6 @@ namespace StudyHub.Infrastructure.Migrations
 
                     b.Property<DateTime>("Deadline")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<bool>("IsGroupTask")
                         .HasColumnType("boolean");
