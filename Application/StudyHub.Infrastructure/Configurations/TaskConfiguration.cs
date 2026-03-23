@@ -11,7 +11,6 @@ public class TaskConfiguration : IEntityTypeConfiguration<StudyHub.Domain.Entiti
 
         builder.Property(t => t.Title).HasMaxLength(200).IsRequired();
         builder.Property(t => t.Deadline).IsRequired();
-        builder.Property(t => t.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
 
         builder.HasOne(t => t.Subject)

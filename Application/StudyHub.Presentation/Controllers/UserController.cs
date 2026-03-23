@@ -18,7 +18,6 @@ public class UserController : Controller
     private readonly UserManager<User> _userManager;
     private readonly SignInManager<User> _signInManager;
 
-    // Додаємо менеджери Identity через конструктор
     public UserController(
         ISender mediator, 
         UserManager<User> userManager, 
@@ -30,8 +29,15 @@ public class UserController : Controller
     }
     
     [HttpGet("login-microsoft")]
-    public IActionResult LoginMicrosoft()
+    public async Task<IActionResult> LoginMicrosoft()
     {
+        var schemeProvider = HttpContext.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
+        var microsoftScheme = await schemeProvider.GetSchemeAsync(MicrosoftAccountDefaults.AuthenticationScheme);
+        if (microsoftScheme == null)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
         var redirectUrl = Url.Action("ExternalCallback", "User"); 
         var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
         return Challenge(properties, MicrosoftAccountDefaults.AuthenticationScheme);

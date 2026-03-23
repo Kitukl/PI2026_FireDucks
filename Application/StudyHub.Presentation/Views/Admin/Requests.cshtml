@@ -1,12 +1,10 @@
 @using StudyHub.Domain.Enums
+@using StudyHub.Domain.Entities
+@model Application.Models.AdminRequestsViewModel
 @{
     ViewData["Title"] = "Requests";
-    var modalFeedbackId = (string?)ViewBag.FeedbackId ?? "1";
-    var isModalOpen = (bool?)ViewBag.OpenRequestModal == true;
-
-    var allowedStatuses = Enum.GetValues<Status>()
-        .Where(status => status is Status.ToDo or Status.InProgress or Status.Resolved)
-        .ToList();
+    var isModalOpen = Model.OpenRequestModal;
+    var allowedStatuses = Model.AllowedStatuses;
 
     string StatusLabel(Status status) => status switch
     {
@@ -16,18 +14,52 @@
         _ => status.ToString()
     };
 
-    var rows = new[]
+    string FeedbackTypeLabel(FeedbackType type) => type switch
     {
-        new { Id = "1", Subject = "Please add new functionality", Reporter = "Name Surname#1", Type = "Request", Category = "Improvement", Status = Status.InProgress, Created = "05.01.2026", Resolved = "" },
-        new { Id = "2", Subject = "Update my group", Reporter = "Name Surname#2", Type = "Request", Category = "User management", Status = Status.InProgress, Created = "05.01.2026", Resolved = "" },
-        new { Id = "3", Subject = "App performance is slow!!! URGENT", Reporter = "Name Surname#3", Type = "Issue", Category = "General", Status = Status.Resolved, Created = "04.01.2026", Resolved = "08.01.2026" },
-        new { Id = "4", Subject = "My schedule should be updated", Reporter = "Name Surname#4", Type = "Request", Category = "Schedule", Status = Status.ToDo, Created = "06.01.2026", Resolved = "" },
-        new { Id = "5", Subject = "How many file can I have in storage?", Reporter = "Name Surname#5", Type = "Question", Category = "Storage", Status = Status.InProgress, Created = "06.01.2026", Resolved = "" },
-        new { Id = "6", Subject = "Drag&Drop issue", Reporter = "Name Surname#6", Type = "Issue", Category = "Task board", Status = Status.Resolved, Created = "02.01.2026", Resolved = "07.01.2026" },
-        new { Id = "7", Subject = "How to turn off the notifications?", Reporter = "Name Surname#7", Type = "Question", Category = "User profile", Status = Status.ToDo, Created = "06.01.2026", Resolved = "" }
+        FeedbackType.Issue => "Issue",
+        FeedbackType.Request => "Request",
+        FeedbackType.Question => "Question",
+        _ => type.ToString()
     };
 
-    var activeRequest = rows.FirstOrDefault(row => row.Id == modalFeedbackId) ?? rows[0];
+    string CategoryLabel(Category category) => category switch
+    {
+        Category.UserManagement => "User management",
+        Category.TaskBoard => "Task board",
+        Category.UserProfile => "User profile",
+        _ => category.ToString()
+    };
+
+    (string Subject, string Body) ParseRequestSummary(string? rawDescription)
+    {
+        var description = (rawDescription ?? string.Empty)
+            .Replace("\r\n", "\n")
+            .Trim();
+
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return ("(No subject)", string.Empty);
+        }
+
+        var lines = description.Split('\n', 2, StringSplitOptions.None);
+        var firstLine = lines[0].Trim();
+        const string subjectPrefix = "Subject:";
+
+        if (firstLine.StartsWith(subjectPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var subject = firstLine[subjectPrefix.Length..].Trim();
+            var body = lines.Length > 1 ? lines[1].Trim() : string.Empty;
+
+            return (string.IsNullOrWhiteSpace(subject) ? "(No subject)" : subject, body);
+        }
+
+        return (firstLine, description);
+    }
+
+    var activeRequest = Model.ActiveRequest;
+    var activeSummary = activeRequest == null
+        ? ("(No subject)", string.Empty)
+        : ParseRequestSummary(activeRequest.Description);
 }
 
 <style>
@@ -91,15 +123,16 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in rows)
+            @foreach (var row in Model.Requests)
             {
                 var statusClass = row.Status == Status.Resolved ? "resolved" : row.Status == Status.InProgress ? "progress" : "todo";
+                var summary = ParseRequestSummary(row.Description);
 
-                <tr class="js-admin-request-row" data-status="@row.Status">
-                    <td><a class="admin-requests-view-link" asp-controller="Admin" asp-action="RequestView" asp-route-feedbackId="@row.Id">@row.Subject</a></td>
-                    <td>@row.Reporter</td>
-                    <td>@row.Type</td>
-                    <td>@row.Category</td>
+                <tr class="js-admin-request-row" data-status="@row.Status" data-feedback-id="@row.Id">
+                    <td><a class="admin-requests-view-link" asp-controller="Admin" asp-action="RequestView" asp-route-feedbackId="@row.Id" title="@row.Description">@summary.Item1</a></td>
+                    <td>@row.CreatorFullname</td>
+                    <td>@FeedbackTypeLabel(row.FeedbackType)</td>
+                    <td>@CategoryLabel(row.Category)</td>
                     <td><span class="admin-requests-status @statusClass">@StatusLabel(row.Status)</span></td>
                 </tr>
             }
@@ -107,21 +140,25 @@
     </table>
 </section>
 
-@if (isModalOpen)
+@if (isModalOpen && activeRequest != null)
 {
     <div class="admin-requests-backdrop" aria-hidden="true"></div>
 
     <section class="admin-request-review-modal" role="dialog" aria-modal="true" aria-label="Request review">
         <div class="admin-request-review-top">
-            <h2>Request#@activeRequest.Id</h2>
+            <h2>@activeSummary.Item1</h2>
 
             <div class="admin-request-review-tools">
-                <select class="js-admin-review-status" aria-label="Status">
-                    @foreach (var status in allowedStatuses)
-                    {
-                        <option value="@status" selected="@(status == activeRequest.Status ? "selected" : null)">@StatusLabel(status)</option>
-                    }
-                </select>
+                <form asp-controller="Admin" asp-action="UpdateRequestStatus" method="post" class="admin-request-review-tools js-admin-review-status-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="feedbackId" value="@activeRequest.Id" />
+                    <select class="js-admin-review-status" name="status" aria-label="Status">
+                        @foreach (var status in allowedStatuses)
+                        {
+                            <option value="@status" selected="@(status == activeRequest.Status ? "selected" : null)">@StatusLabel(status)</option>
+                        }
+                    </select>
+                </form>
                 <a asp-controller="Admin" asp-action="Requests">&lt; Back to the list</a>
             </div>
         </div>
@@ -129,25 +166,30 @@
         <div class="admin-request-review-grid">
             <article class="admin-request-review-block">
                 <h3>Description</h3>
-                <div class="admin-request-review-description">Description of the request.</div>
+                <div class="admin-request-review-description">
+                    @(string.IsNullOrWhiteSpace(activeSummary.Item2)
+                        ? "No additional description provided."
+                        : activeSummary.Item2)
+                </div>
             </article>
 
             <aside class="admin-request-review-block">
                 <h3>Details</h3>
                 <div class="admin-request-review-details">
                     <dl>
-                        <dt>User:</dt><dd>@activeRequest.Reporter</dd>
-                        <dt>Category:</dt><dd>@activeRequest.Category</dd>
-                        <dt>Type:</dt><dd>@activeRequest.Type</dd>
+                        <dt>Request:</dt><dd>#@activeRequest.Id.ToString()[..8]</dd>
+                        <dt>User:</dt><dd>@activeRequest.CreatorFullname</dd>
+                        <dt>Category:</dt><dd>@CategoryLabel(activeRequest.Category)</dd>
+                        <dt>Type:</dt><dd>@FeedbackTypeLabel(activeRequest.FeedbackType)</dd>
                     </dl>
                 </div>
 
                 <div class="admin-request-review-meta">
                     <div class="admin-request-review-meta-row">
-                        <span>Created:</span><span>@activeRequest.Created</span>
+                        <span>Created:</span><span>@activeRequest.CreatedAt.ToString("dd.MM.yyyy")</span>
                     </div>
-                    <div class="admin-request-review-meta-row admin-request-review-resolved js-admin-review-resolved-row">
-                        <span>Resolved:</span><span>@activeRequest.Resolved</span>
+                    <div class="admin-request-review-meta-row admin-request-review-resolved js-admin-review-resolved-row @(activeRequest.Status == Status.Resolved ? "is-visible" : string.Empty)">
+                        <span>Resolved:</span><span>@(activeRequest.ResolvedAt?.ToString("dd.MM.yyyy") ?? "")</span>
                     </div>
                 </div>
             </aside>
@@ -161,6 +203,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const statusFilter = document.querySelector(".js-admin-requests-status-filter");
     const rows = Array.from(document.querySelectorAll(".js-admin-request-row"));
     const reviewStatus = document.querySelector(".js-admin-review-status");
+    const reviewStatusForm = document.querySelector(".js-admin-review-status-form");
     const resolvedRow = document.querySelector(".js-admin-review-resolved-row");
 
     if (!searchInput || !statusFilter || rows.length === 0) {
@@ -185,6 +228,12 @@ document.addEventListener("DOMContentLoaded", function () {
     searchInput.addEventListener("input", applyAdminRequestFilters);
     statusFilter.addEventListener("change", applyAdminRequestFilters);
 
+    function statusClassByValue(value) {
+        if (value === "Resolved") return "resolved";
+        if (value === "InProgress") return "progress";
+        return "todo";
+    }
+
     if (reviewStatus && resolvedRow) {
         function syncResolvedMeta() {
             resolvedRow.classList.toggle("is-visible", reviewStatus.value === "Resolved");
@@ -192,6 +241,48 @@ document.addEventListener("DOMContentLoaded", function () {
 
         reviewStatus.addEventListener("change", syncResolvedMeta);
         syncResolvedMeta();
+    }
+
+    if (reviewStatus && reviewStatusForm) {
+        reviewStatus.addEventListener("change", async function () {
+            const formData = new FormData(reviewStatusForm);
+            reviewStatus.disabled = true;
+
+            try {
+                const response = await fetch(reviewStatusForm.action, {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error("Status update failed.");
+                }
+
+                const payload = await response.json();
+                const row = document.querySelector('.js-admin-request-row[data-feedback-id="' + payload.feedbackId + '"]');
+                if (row) {
+                    row.dataset.status = payload.status;
+
+                    const badge = row.querySelector(".admin-requests-status");
+                    if (badge) {
+                        badge.textContent = payload.statusLabel;
+                        badge.classList.remove("todo", "progress", "resolved");
+                        badge.classList.add(statusClassByValue(payload.status));
+                    }
+                }
+
+                if (typeof applyAdminRequestFilters === "function") {
+                    applyAdminRequestFilters();
+                }
+            } catch {
+                window.location.reload();
+            } finally {
+                reviewStatus.disabled = false;
+            }
+        });
     }
 });
 </script>

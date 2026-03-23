@@ -2,10 +2,13 @@ using Application.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Core.DTOs;
+using StudyHub.Core.Feedbacks.Commands;
+using StudyHub.Core.Feedbacks.Queries;
 using StudyHub.Core.Statistics.Queries;
 using StudyHub.Core.Tasks.Queries;
 using StudyHub.Core.Users.Commands;
 using StudyHub.Core.Users.Queries;
+using StudyHub.Domain.Entities;
 using StudyHub.Domain.Enums;
 
 namespace Application.Controllers;
@@ -103,16 +106,101 @@ public class AdminController(IMediator mediator) : Controller
     }
 
     [HttpGet("/Admin/Requests")]
-    public IActionResult Requests()
+    public async Task<IActionResult> Requests()
     {
-        return View();
+        var feedbacks = await mediator.Send(new GetFeedbacksCommand());
+        var model = BuildRequestsViewModel(feedbacks, null, false);
+        return View(model);
     }
 
     [HttpGet("/Admin/Requests/View/{feedbackId?}")]
-    public IActionResult RequestView(string? feedbackId)
+    public async Task<IActionResult> RequestView(string? feedbackId)
     {
-        ViewBag.FeedbackId = string.IsNullOrWhiteSpace(feedbackId) ? "1" : feedbackId;
-        ViewBag.OpenRequestModal = true;
-        return View("Requests");
+        var feedbacks = await mediator.Send(new GetFeedbacksCommand());
+
+        Feedback? activeRequest = null;
+        if (!string.IsNullOrWhiteSpace(feedbackId) && Guid.TryParse(feedbackId, out var parsedId))
+        {
+            activeRequest = feedbacks.FirstOrDefault(item => item.Id == parsedId);
+            if (activeRequest == null)
+            {
+                try
+                {
+                    activeRequest = await mediator.Send(new GetFeedbackCommand { Id = parsedId });
+                }
+                catch
+                {
+                    activeRequest = null;
+                }
+            }
+        }
+
+        var model = BuildRequestsViewModel(feedbacks, activeRequest, true);
+        return View("Requests", model);
+    }
+
+    [HttpPost("/Admin/Requests/UpdateStatus")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateRequestStatus(Guid feedbackId, Status status)
+    {
+        var allowedStatuses = new[] { Status.ToDo, Status.InProgress, Status.Resolved };
+        if (!allowedStatuses.Contains(status))
+        {
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return BadRequest(new { message = "Unsupported status." });
+            }
+
+            return RedirectToAction(nameof(RequestView), new { feedbackId });
+        }
+
+        await mediator.Send(new UpdateFeedbackCommand
+        {
+            Id = feedbackId,
+            Status = status
+        });
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            return Ok(new
+            {
+                feedbackId,
+                status = status.ToString(),
+                statusLabel = status switch
+                {
+                    Status.ToDo => "To do",
+                    Status.InProgress => "In progress",
+                    Status.Resolved => "Resolved",
+                    _ => status.ToString()
+                }
+            });
+        }
+
+        return RedirectToAction(nameof(RequestView), new { feedbackId });
+    }
+
+    private static AdminRequestsViewModel BuildRequestsViewModel(
+        IEnumerable<Feedback> feedbacks,
+        Feedback? activeRequest,
+        bool openModal)
+    {
+        var allowedStatuses = new[] { Status.ToDo, Status.InProgress, Status.Resolved };
+
+        var filteredRequests = feedbacks
+            .Where(request => allowedStatuses.Contains(request.Status))
+            .OrderByDescending(request => request.CreatedAt)
+            .ToList();
+
+        if (activeRequest == null)
+        {
+            activeRequest = filteredRequests.FirstOrDefault();
+        }
+
+        return new AdminRequestsViewModel
+        {
+            Requests = filteredRequests,
+            ActiveRequest = activeRequest,
+            OpenRequestModal = openModal && activeRequest != null
+        };
     }
 }

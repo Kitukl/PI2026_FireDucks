@@ -284,6 +284,18 @@ document.addEventListener("DOMContentLoaded", function () {
 				return;
 			}
 
+			const cardLink = card.querySelector("footer a");
+			if (cardLink && cardLink.getAttribute("href")) {
+				window.location.href = cardLink.getAttribute("href");
+				return;
+			}
+
+			const taskId = card.dataset.taskId;
+			if (taskId) {
+				window.location.href = "/TaskBoard/ViewTask/" + encodeURIComponent(taskId);
+				return;
+			}
+
 			const taskCode = (card.querySelector("footer")?.textContent || "").trim();
 			if (!taskCode) {
 				window.location.href = "/TaskBoard/ViewTask";
@@ -330,6 +342,11 @@ document.addEventListener("DOMContentLoaded", function () {
 						menu.hidden = true;
 						toggle.setAttribute("aria-expanded", "false");
 						syncStatusLabel();
+
+						const form = statusDropdown.closest("form");
+						if (form) {
+							form.submit();
+						}
 					});
 				});
 
@@ -514,6 +531,10 @@ document.addEventListener("DOMContentLoaded", function () {
 			});
 
 			addSelectedButton.addEventListener("click", function () {
+				if (addSelectedButton.dataset.serverSubmit === "true") {
+					return;
+				}
+
 				const selectedOptions = getCheckedOptions();
 				if (selectedOptions.length === 0) {
 					return;
@@ -526,7 +547,7 @@ document.addEventListener("DOMContentLoaded", function () {
 					}
 
 					const name = checkbox.dataset.userName || "Unknown user";
-					const userId = checkbox.value || "mock-user";
+					const userId = checkbox.value || "";
 
 					const row = document.createElement("div");
 					row.className = "group-manage-row";

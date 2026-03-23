@@ -1,36 +1,8 @@
+@model Application.Models.TaskBoardReviewGroupPageViewModel
+@using StudyHub.Domain.Enums
 @{
     ViewData["Title"] = "Review group";
-
-    var groupUsers = new[]
-    {
-        new { UserId = "u-101", Name = "Name Surname#1", Role = "Leader" },
-        new { UserId = "u-102", Name = "Name Surname#2", Role = "Student" },
-        new { UserId = "u-103", Name = "Name Surname#3", Role = "Student" },
-        new { UserId = "u-104", Name = "Name Surname#4", Role = "Student" },
-        new { UserId = "u-105", Name = "Name Surname#5", Role = "Student" },
-        new { UserId = "u-106", Name = "Name Surname#6", Role = "Student" },
-        new { UserId = "u-107", Name = "Name Surname#7", Role = "Student" },
-        new { UserId = "u-108", Name = "Name Surname#8", Role = "Student" },
-        new { UserId = "u-109", Name = "Name Surname#9", Role = "Student" },
-        new { UserId = "u-110", Name = "Name Surname#10", Role = "Student" },
-        new { UserId = "u-111", Name = "Name Surname#11", Role = "Student" },
-        new { UserId = "u-112", Name = "Name Surname#12", Role = "Student" },
-        new { UserId = "u-113", Name = "Name Surname#13", Role = "Student" },
-        new { UserId = "u-114", Name = "Name Surname#14", Role = "Student" },
-        new { UserId = "u-115", Name = "Name Surname#15", Role = "Student" }
-    };
-
-    var unassignedUsers = new[]
-    {
-        new { UserId = "u-201", Name = "Anastasiia Kravchenko" },
-        new { UserId = "u-202", Name = "Roman Hrytsenko" },
-        new { UserId = "u-203", Name = "Olha Buryk" },
-        new { UserId = "u-204", Name = "Iryna Koval" },
-        new { UserId = "u-205", Name = "Maksym Borovyk" },
-        new { UserId = "u-206", Name = "Yaroslav Stepanenko" },
-        new { UserId = "u-207", Name = "Maria Klymenko" },
-        new { UserId = "u-208", Name = "Sofiia Vashchenko" }
-    };
+    var board = Model.Board;
 }
 
 <section class="taskboard-page group-manage-page js-group-manage">
@@ -57,30 +29,30 @@
             <div class="taskboard-sidebar-group">
                 <div class="taskboard-sidebar-title">Own tasks <button class="taskboard-radio" type="button" aria-label="Show own tasks"></button></div>
                 <ul>
-                    <li><span>To do</span><strong>0</strong></li>
-                    <li><span>In progress</span><strong>1</strong></li>
-                    <li><span>For review</span><strong>2</strong></li>
-                    <li><span>Done</span><strong>1</strong></li>
+                    <li><span>To do</span><strong>@board.CountTasks(false, Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(false, Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(false, Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(false, Status.Done) + board.CountTasks(false, Status.Resolved))</strong></li>
                 </ul>
             </div>
 
             <div class="taskboard-sidebar-group">
                 <div class="taskboard-sidebar-title">Group tasks <button class="taskboard-radio" type="button" aria-label="Show group tasks"></button></div>
                 <ul>
-                    <li><span>To do</span><strong>1</strong></li>
-                    <li><span>In progress</span><strong>1</strong></li>
-                    <li><span>For review</span><strong>1</strong></li>
-                    <li><span>Done</span><strong>1</strong></li>
+                    <li><span>To do</span><strong>@board.CountTasks(true, Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(true, Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(true, Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(true, Status.Done) + board.CountTasks(true, Status.Resolved))</strong></li>
                 </ul>
             </div>
 
             <div class="taskboard-sidebar-group">
                 <div class="taskboard-sidebar-title">All tasks <button class="taskboard-radio active" type="button" aria-label="Show all tasks"></button></div>
                 <ul>
-                    <li><span>To do</span><strong>1</strong></li>
-                    <li><span>In progress</span><strong>2</strong></li>
-                    <li><span>For review</span><strong>3</strong></li>
-                    <li><span>Done</span><strong>2</strong></li>
+                    <li><span>To do</span><strong>@board.CountTasks(Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(Status.Done) + board.CountTasks(Status.Resolved))</strong></li>
                 </ul>
             </div>
 
@@ -102,7 +74,7 @@
 
     <section class="group-manage-modal" role="dialog" aria-modal="true" aria-label="Group user management">
         <div class="group-manage-head">
-            <h1>Group#A</h1>
+            <h1>@Model.GroupName</h1>
             <div class="group-manage-head-actions">
                 <a class="group-manage-back" asp-area="" asp-controller="Home" asp-action="TaskBoard">&lt; Back to board</a>
                 <button type="button" class="group-manage-add-btn js-group-add-toggle">Add user</button>
@@ -119,12 +91,16 @@
             </div>
 
             <div class="group-manage-rows js-group-user-rows">
-                @foreach (var user in groupUsers)
+                @foreach (var user in Model.GroupUsers)
                 {
                     <div class="group-manage-row" data-user-id="@user.UserId">
                         <span>@user.Name</span>
                         <span>@user.Role</span>
-                        <button type="button" class="group-manage-remove-btn">Remove</button>
+                        <form asp-controller="Home" asp-action="TaskBoardReviewGroupRemoveUser" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="userId" value="@user.UserId" />
+                            <button type="submit" class="group-manage-remove-btn">Remove</button>
+                        </form>
                     </div>
                 }
             </div>
@@ -136,22 +112,26 @@
                 <input id="group-add-user-search" class="js-group-user-search" type="search" placeholder="Type user name..." />
             </div>
 
-            <div class="group-manage-available js-group-available-list" aria-live="polite">
-                @foreach (var user in unassignedUsers)
-                {
-                    <label class="group-manage-option" data-name="@user.Name.ToLowerInvariant()">
-                        <input class="js-group-user-checkbox" type="checkbox" value="@user.UserId" data-user-name="@user.Name" />
-                        <span>@user.Name</span>
-                    </label>
-                }
-            </div>
+            <form asp-controller="Home" asp-action="TaskBoardReviewGroupAddUsers" method="post">
+                @Html.AntiForgeryToken()
 
-            <div class="group-manage-add-actions">
-                <button type="button" class="group-manage-secondary js-group-toggle-selection">Select all</button>
-                <button type="button" class="group-manage-primary js-group-add-selected" disabled>Add selected</button>
-            </div>
+                <div class="group-manage-available js-group-available-list" aria-live="polite">
+                    @foreach (var user in Model.UnassignedUsers)
+                    {
+                        <label class="group-manage-option" data-name="@user.Name.ToLowerInvariant()">
+                            <input class="js-group-user-checkbox" type="checkbox" name="selectedUserIds" value="@user.UserId" data-user-name="@user.Name" />
+                            <span>@user.Name</span>
+                        </label>
+                    }
+                </div>
 
-            <p class="group-manage-selection js-group-selection-summary">0 selected</p>
+                <div class="group-manage-add-actions">
+                    <button type="button" class="group-manage-secondary js-group-toggle-selection">Select all</button>
+                    <button type="submit" class="group-manage-primary js-group-add-selected" data-server-submit="true" disabled>Add selected</button>
+                </div>
+
+                <p class="group-manage-selection js-group-selection-summary">0 selected</p>
+            </form>
         </section>
     </section>
 </section>

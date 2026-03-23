@@ -21,9 +21,16 @@ public class UpdateFeedbackCommandHandler : IRequestHandler<UpdateFeedbackComman
     public async Task<Guid> Handle(UpdateFeedbackCommand request, CancellationToken cancellationToken)
     {
         var feedback = await _feedbackRepository.GetFeedbackAsync(request.Id) ?? throw new Exception("Feedback not found");
+        feedback.Status = request.Status;
+        feedback.UpdatedAt = DateTime.UtcNow;
+
         if (request.Status == Status.Resolved)
         {
             feedback.ResolvedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            feedback.ResolvedAt = null;
         }
 
         return await _feedbackRepository.UpdateFeedbackAsync(feedback);

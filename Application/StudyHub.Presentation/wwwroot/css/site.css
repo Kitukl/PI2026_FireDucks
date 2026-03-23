@@ -1231,6 +1231,11 @@ body {
   line-height: 1.45;
 }
 
+.task-view-comments .task-view-comment-input {
+  min-height: 72px;
+  padding: 10px 12px;
+}
+
 .task-create-description-editor .task-view-comment-input {
   min-height: 170px;
 }

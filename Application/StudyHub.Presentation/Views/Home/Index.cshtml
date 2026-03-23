@@ -1,23 +1,9 @@
-﻿@{
+﻿@model Application.Models.DashboardViewModel
+@{
     ViewData["Title"] = "Dashboard";
-
-    var taskPool = new[]
-    {
-        new { Title = "New Task#2", Subject = "Subject#C", Code = "C-2", IsGroup = false, Deadline = DateTime.Today.AddDays(0), Status = "IN_PROGRESS" },
-        new { Title = "New Task#6", Subject = "Subject#B", Code = "B-3", IsGroup = true, Deadline = DateTime.Today.AddDays(4), Status = "TODO" },
-        new { Title = "New Task#4", Subject = "Subject#B", Code = "B-1", IsGroup = true, Deadline = DateTime.Today.AddDays(2), Status = "FOR_REVIEW" },
-        new { Title = "New Task#9", Subject = "Subject#D", Code = "D-2", IsGroup = true, Deadline = DateTime.Today.AddDays(4), Status = "DONE" },
-        new { Title = "New Task#11", Subject = "Subject#A", Code = "A-4", IsGroup = false, Deadline = DateTime.Today.AddDays(5), Status = "DONE" }
-    };
-
-    var quickTasks = taskPool
-        .Where(task => !string.Equals(task.Status, "DONE", StringComparison.OrdinalIgnoreCase))
-        .OrderBy(task => task.Deadline)
-        .Take(3)
-        .ToList();
 }
 
-<h1 class="dashboard-welcome">Welcome, @ViewBag.FullName</h1>
+<h1 class="dashboard-welcome">Welcome, @Model.FullName</h1>
 
 <section class="dashboard-page">
     <div class="dashboard-grid">
@@ -31,7 +17,7 @@
                     <header>Top priority tasks</header>
 
                     <div class="dashboard-task-list">
-                        @foreach (var task in quickTasks)
+                        @foreach (var task in Model.QuickTasks)
                         {
                             var dayDiff = (task.Deadline.Date - DateTime.Today).Days;
                             var deadlineLabel = dayDiff <= 0 ? "Today" : $"{dayDiff}D";
@@ -39,12 +25,12 @@
                             <article class="dashboard-task-item"
                                      role="link"
                                      tabindex="0"
-                                     onclick="window.location.href='@Url.Action("TaskBoardViewTask", "Home", new { taskCode = task.Code })'"
-                                     onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='@Url.Action("TaskBoardViewTask", "Home", new { taskCode = task.Code })'; }">
+                                     onclick="window.location.href='@Url.Action("TaskBoardViewTask", "Home", new { taskCode = task.Id })'"
+                                     onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='@Url.Action("TaskBoardViewTask", "Home", new { taskCode = task.Id })'; }">
                                 <div class="dashboard-task-item-top">
                                     <h3>@task.Title</h3>
                                     <div class="dashboard-task-icons" aria-hidden="true">
-                                        @if (task.IsGroup)
+                                        @if (task.IsGroupTask)
                                         {
                                             <span class="dashboard-task-group-icon"></span>
                                         }
@@ -52,8 +38,8 @@
                                     </div>
                                 </div>
                                 <div class="dashboard-task-item-bottom">
-                                    <span class="dashboard-task-subject">@task.Subject</span>
-                                    <span class="dashboard-task-code">@task.Code</span>
+                                    <span class="dashboard-task-subject">@task.SubjectName</span>
+                                    <span class="dashboard-task-code">@task.TaskCode</span>
                                 </div>
                             </article>
                         }

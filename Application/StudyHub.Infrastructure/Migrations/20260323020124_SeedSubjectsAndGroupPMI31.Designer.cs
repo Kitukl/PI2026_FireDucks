@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StudyHub.Infrastructure;
@@ -11,9 +12,11 @@ using StudyHub.Infrastructure;
 namespace StudyHub.Infrastructure.Migrations
 {
     [DbContext(typeof(SDbContext))]
-    partial class SDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260323020124_SeedSubjectsAndGroupPMI31")]
+    partial class SeedSubjectsAndGroupPMI31
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -81,19 +84,19 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("f5ff6bb3-aafb-4ea6-9008-77e7a15d535a"),
+                            Id = new Guid("44da2e5d-bec5-400c-b84c-f453ebc496d8"),
                             Name = "Student",
                             NormalizedName = "STUDENT"
                         },
                         new
                         {
-                            Id = new Guid("2147d302-d856-42a6-a08c-e46f012107f9"),
+                            Id = new Guid("bf81d410-cfcd-4a7b-95d1-ea7fe7dfaa58"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("f64771e4-20fc-4675-9bc9-c230eeb1f2bf"),
+                            Id = new Guid("b96127bc-76c3-4e4f-bbb8-0a3bef685230"),
                             Name = "Leader",
                             NormalizedName = "LEADER"
                         });
@@ -498,14 +501,12 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<DateTime>("Deadline")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<bool>("IsGroupTask")
                         .HasColumnType("boolean");
