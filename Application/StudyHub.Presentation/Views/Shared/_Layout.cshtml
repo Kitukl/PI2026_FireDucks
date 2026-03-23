@@ -9,39 +9,89 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/StudyHub.Presentation.styles.css" asp-append-version="true"/>
 </head>
-<body>
-<header>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-        <div class="container-fluid">
-            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">StudyHub.Presentation</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                    </li>
-                </ul>
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var isAdminRoute = currentController.StartsWith("Admin", StringComparison.OrdinalIgnoreCase);
+}
+<body class="@(isAdminRoute ? "admin-body" : "app-body")">
+@if (!isAdminRoute)
+{
+    <header class="sh-header">
+        <div class="sh-header-top">
+            <a class="sh-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                <span class="sh-brand-icon" aria-hidden="true">
+                    <img src="~/images/SHLogo.png" alt="" />
+                </span>
+                <span class="sh-brand-text"><span class="sh-brand-study">STUDY</span><span class="sh-brand-hub">HUB</span></span>
+            </a>
+
+            <nav class="sh-nav" aria-label="Primary">
+                <a class="sh-nav-link @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)"
+                   asp-area="" asp-controller="Home" asp-action="Index">Dashboard</a>
+                                         <a class="sh-nav-link @(currentController == "Home" && (currentAction == "TaskBoard" || currentAction == "TaskBoardCreate" || currentAction == "TaskBoardViewTask" || currentAction == "TaskBoardReviewGroup") ? "active" : string.Empty)"
+                   asp-area="" asp-controller="Home" asp-action="TaskBoard">Task board</a>
+                <a class="sh-nav-link @(currentController == "Schedule" ? "active" : string.Empty)"
+                   asp-area="" asp-controller="Schedule" asp-action="SchedulesList">Schedule</a>
+                     <a class="sh-nav-link @(currentController == "Home" && currentAction == "Storage" ? "active" : string.Empty)"
+                         asp-area="" asp-controller="Home" asp-action="Storage">Storage</a>
+            </nav>
+
+            <div class="sh-user-actions">
+                <a class="sh-icon-btn" asp-area="" asp-controller="Home" asp-action="UserProfile" aria-label="Profile">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M12 13.2c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2.4c-3.34 0-10 1.68-10 5v1.2h20V20.6c0-3.32-6.66-5-10-5z"></path>
+                    </svg>
+                </a>
+                <a class="sh-logout-btn" asp-area="" asp-controller="User" asp-action="Logout">Log out</a>
             </div>
         </div>
-    </nav>
-</header>
-<div class="container">
-    <main role="main" class="pb-3">
+    </header>
+}
+else
+{
+    <header class="sh-header sh-header-admin">
+        <div class="sh-header-top sh-header-top-admin">
+            <a class="sh-brand" asp-area="" asp-controller="Admin" asp-action="Dashboard">
+                <span class="sh-brand-icon" aria-hidden="true">
+                    <img src="~/images/SHLogo.png" alt="" />
+                </span>
+                <span class="sh-brand-text"><span class="sh-brand-study">STUDY</span><span class="sh-brand-hub">HUB</span></span>
+                <span class="sh-admin-label">Administration</span>
+            </a>
+
+            <nav class="sh-nav" aria-label="Admin primary">
+                <a class="sh-nav-link @(currentController == "Admin" && currentAction == "Dashboard" ? "active" : string.Empty)"
+                   asp-area="" asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+                <a class="sh-nav-link @(currentController == "Admin" && (currentAction == "Users" || currentAction == "GetUser") ? "active" : string.Empty)"
+                   asp-area="" asp-controller="Admin" asp-action="Users">User requests</a>
+                <a class="sh-nav-link @(currentController == "Admin" && (currentAction == "Requests" || currentAction == "RequestView") ? "active" : string.Empty)"
+                   asp-area="" asp-controller="Admin" asp-action="Requests">Requests</a>
+                <a class="sh-nav-link @(currentController == "Schedule" ? "active" : string.Empty)"
+                   asp-area="" asp-controller="Schedule" asp-action="SchedulesList">Schedule</a>
+            </nav>
+
+            <div class="sh-user-actions sh-user-actions-admin">
+                <a class="sh-logout-btn" asp-area="" asp-controller="User" asp-action="Logout">Log out</a>
+            </div>
+        </div>
+    </header>
+}
+
+<div class="app-shell">
+    <main role="main" class="@(isAdminRoute ? "pb-3 app-main" : "app-main")">
         @RenderBody()
     </main>
 </div>
 
-<footer class="border-top footer text-muted">
-    <div class="container">
-        &copy; 2026 - StudyHub.Presentation - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-    </div>
-</footer>
+@if (isAdminRoute)
+{
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2026 - StudyHub.Presentation - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+}
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>

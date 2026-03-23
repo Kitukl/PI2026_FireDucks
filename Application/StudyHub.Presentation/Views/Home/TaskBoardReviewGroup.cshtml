@@ -1,0 +1,157 @@
+@{
+    ViewData["Title"] = "Review group";
+
+    var groupUsers = new[]
+    {
+        new { UserId = "u-101", Name = "Name Surname#1", Role = "Leader" },
+        new { UserId = "u-102", Name = "Name Surname#2", Role = "Student" },
+        new { UserId = "u-103", Name = "Name Surname#3", Role = "Student" },
+        new { UserId = "u-104", Name = "Name Surname#4", Role = "Student" },
+        new { UserId = "u-105", Name = "Name Surname#5", Role = "Student" },
+        new { UserId = "u-106", Name = "Name Surname#6", Role = "Student" },
+        new { UserId = "u-107", Name = "Name Surname#7", Role = "Student" },
+        new { UserId = "u-108", Name = "Name Surname#8", Role = "Student" },
+        new { UserId = "u-109", Name = "Name Surname#9", Role = "Student" },
+        new { UserId = "u-110", Name = "Name Surname#10", Role = "Student" },
+        new { UserId = "u-111", Name = "Name Surname#11", Role = "Student" },
+        new { UserId = "u-112", Name = "Name Surname#12", Role = "Student" },
+        new { UserId = "u-113", Name = "Name Surname#13", Role = "Student" },
+        new { UserId = "u-114", Name = "Name Surname#14", Role = "Student" },
+        new { UserId = "u-115", Name = "Name Surname#15", Role = "Student" }
+    };
+
+    var unassignedUsers = new[]
+    {
+        new { UserId = "u-201", Name = "Anastasiia Kravchenko" },
+        new { UserId = "u-202", Name = "Roman Hrytsenko" },
+        new { UserId = "u-203", Name = "Olha Buryk" },
+        new { UserId = "u-204", Name = "Iryna Koval" },
+        new { UserId = "u-205", Name = "Maksym Borovyk" },
+        new { UserId = "u-206", Name = "Yaroslav Stepanenko" },
+        new { UserId = "u-207", Name = "Maria Klymenko" },
+        new { UserId = "u-208", Name = "Sofiia Vashchenko" }
+    };
+}
+
+<section class="taskboard-page group-manage-page js-group-manage">
+    <div class="taskboard-toolbar">
+        <label class="taskboard-search" for="task-search-group">
+            <span class="taskboard-search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.06l4.24 4.24-1.42 1.42-4.24-4.24A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"></path>
+                </svg>
+            </span>
+            <input id="task-search-group" type="search" placeholder="Search" aria-label="Search tasks" />
+        </label>
+
+        <button class="taskboard-filter-btn" type="button" aria-expanded="false">
+            <span class="taskboard-filter-icon">&#9776;</span>
+            Filter by
+        </button>
+
+        <a class="taskboard-create-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardCreate">Create task</a>
+    </div>
+
+    <div class="taskboard-grid">
+        <aside class="taskboard-sidebar">
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Own tasks <button class="taskboard-radio" type="button" aria-label="Show own tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>0</strong></li>
+                    <li><span>In progress</span><strong>1</strong></li>
+                    <li><span>For review</span><strong>2</strong></li>
+                    <li><span>Done</span><strong>1</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Group tasks <button class="taskboard-radio" type="button" aria-label="Show group tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>1</strong></li>
+                    <li><span>In progress</span><strong>1</strong></li>
+                    <li><span>For review</span><strong>1</strong></li>
+                    <li><span>Done</span><strong>1</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">All tasks <button class="taskboard-radio active" type="button" aria-label="Show all tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>1</strong></li>
+                    <li><span>In progress</span><strong>2</strong></li>
+                    <li><span>For review</span><strong>3</strong></li>
+                    <li><span>Done</span><strong>2</strong></li>
+                </ul>
+            </div>
+
+            @if (User.IsInRole("Leader"))
+            {
+                <a class="taskboard-manage-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardReviewGroup">Manage group</a>
+            }
+        </aside>
+
+        <div class="taskboard-columns-scroll">
+            <section class="taskboard-column"><h2>To do</h2></section>
+            <section class="taskboard-column"><h2>In progress</h2></section>
+            <section class="taskboard-column"><h2>For review</h2></section>
+            <section class="taskboard-column"><h2>Done</h2></section>
+        </div>
+    </div>
+
+    <div class="task-modal-backdrop" aria-hidden="true"></div>
+
+    <section class="group-manage-modal" role="dialog" aria-modal="true" aria-label="Group user management">
+        <div class="group-manage-head">
+            <h1>Group#A</h1>
+            <div class="group-manage-head-actions">
+                <a class="group-manage-back" asp-area="" asp-controller="Home" asp-action="TaskBoard">&lt; Back to board</a>
+                <button type="button" class="group-manage-add-btn js-group-add-toggle">Add user</button>
+            </div>
+        </div>
+
+        <h2>Users</h2>
+
+        <div class="group-manage-table" aria-label="Group users">
+            <div class="group-manage-row group-manage-row-head">
+                <span>Name</span>
+                <span>Role</span>
+                <span></span>
+            </div>
+
+            <div class="group-manage-rows js-group-user-rows">
+                @foreach (var user in groupUsers)
+                {
+                    <div class="group-manage-row" data-user-id="@user.UserId">
+                        <span>@user.Name</span>
+                        <span>@user.Role</span>
+                        <button type="button" class="group-manage-remove-btn">Remove</button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <section class="group-manage-add-panel js-group-add-panel" hidden>
+            <div class="group-manage-add-top">
+                <label class="group-manage-add-search" for="group-add-user-search">Name</label>
+                <input id="group-add-user-search" class="js-group-user-search" type="search" placeholder="Type user name..." />
+            </div>
+
+            <div class="group-manage-available js-group-available-list" aria-live="polite">
+                @foreach (var user in unassignedUsers)
+                {
+                    <label class="group-manage-option" data-name="@user.Name.ToLowerInvariant()">
+                        <input class="js-group-user-checkbox" type="checkbox" value="@user.UserId" data-user-name="@user.Name" />
+                        <span>@user.Name</span>
+                    </label>
+                }
+            </div>
+
+            <div class="group-manage-add-actions">
+                <button type="button" class="group-manage-secondary js-group-toggle-selection">Select all</button>
+                <button type="button" class="group-manage-primary js-group-add-selected" disabled>Add selected</button>
+            </div>
+
+            <p class="group-manage-selection js-group-selection-summary">0 selected</p>
+        </section>
+    </section>
+</section>
