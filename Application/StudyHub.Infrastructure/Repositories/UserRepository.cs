@@ -31,14 +31,9 @@ public class UserRepository : IUserRepository
             .ExecuteDeleteAsync();
     }
     
-    public async Task<User> Update(User userUpdate)
+    public async Task<User> Update(User user)
     {
-        var user = await _context.Users.FirstAsync(u => u.Id == userUpdate.Id);
-
-        user.Name = userUpdate.Name;
-        user.Surname = userUpdate.Surname;
-        user.PhotoUrl = userUpdate.PhotoUrl;
-        user.Group = userUpdate.Group;
+        _context.Update(user);
         
         await _context.SaveChangesAsync();
 

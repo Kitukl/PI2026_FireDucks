@@ -12,6 +12,7 @@ public class UpdateUserCommand : IRequest<User>
     public string Photo { get; set; }
     public string Surname { get; set; }
     public string GroupName { get; set; }
+    public Reminder Reminder { get; set; }
 }
 
 public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, User>
@@ -36,6 +37,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, User>
         user.Surname = request.Surname;
         user.PhotoUrl = request.Photo;
         user.Group = group;
+        user.Reminder = request.Reminder;
         
         await _userRepository.Update(user);
 
