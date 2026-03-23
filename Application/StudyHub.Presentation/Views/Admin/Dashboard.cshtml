@@ -34,23 +34,13 @@
                         @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)
                     </strong>
                 </span>
-                <span class="badge bg-primary rounded-pill">@value.ToString("F2") %</span>
+                <span class="badge bg-primary rounded-pill">@value.ToString("F2")</span>
             </li>
         }
     </ul>
 </div>
 
 <div>
-    <h2>Users</h2>
-    <ul class="list-group">
-        @foreach (var (role, count) in Model.UserRoleCount)
-        {
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span> @role : @count</span>
-            </li>
-        }
-    </ul>
-    
     <h2>Tasks</h2>
     @foreach (var (kind, statusDict) in Model.GropedTaskCount)
     {
