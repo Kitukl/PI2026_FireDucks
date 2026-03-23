@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StudyHub.Infrastructure;
@@ -11,9 +12,11 @@ using StudyHub.Infrastructure;
 namespace StudyHub.Infrastructure.Migrations
 {
     [DbContext(typeof(SDbContext))]
-    partial class SDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260322205600_FixScheduleGroupRelationship")]
+    partial class FixScheduleGroupRelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -81,20 +84,19 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("f5ff6bb3-aafb-4ea6-9008-77e7a15d535a"),
+                            Id = new Guid("fb373214-cbcb-44aa-9a6e-27f94e6710f3"),
                             Name = "Student",
                             NormalizedName = "STUDENT"
                         },
                         new
                         {
-
-                            Id = new Guid("2147d302-d856-42a6-a08c-e46f012107f9"),
+                            Id = new Guid("bfa9c394-49ea-41a2-9ec5-bea6aae73dc8"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("f64771e4-20fc-4675-9bc9-c230eeb1f2bf"),
+                            Id = new Guid("7f7da207-10a3-459f-abb4-552ffa806c22"),
                             Name = "Leader",
                             NormalizedName = "LEADER"
                         });
@@ -493,14 +495,12 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<DateTime>("Deadline")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<bool>("IsGroupTask")
                         .HasColumnType("boolean");
@@ -752,7 +752,7 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasOne("StudyHub.Domain.Entities.User", "User")
                         .WithMany("Feedbacks")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -799,7 +799,7 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasOne("StudyHub.Domain.Entities.User", "User")
                         .WithMany("Tasks")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Subject");
@@ -812,7 +812,7 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasOne("StudyHub.Domain.Entities.Group", "Group")
                         .WithMany("Users")
                         .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("StudyHub.Domain.Entities.Reminder", "Reminder")
                         .WithMany()

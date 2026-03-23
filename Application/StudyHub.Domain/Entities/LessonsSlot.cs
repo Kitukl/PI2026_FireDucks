@@ -6,5 +6,5 @@ public class LessonsSlot
     public TimeOnly StartTime { get; set; }
     public TimeOnly EndTime { get; set; }
 
-    public ICollection<Lesson> Lessons { get; set; }
+    public ICollection<Lesson>? Lessons { get; set; }
 }

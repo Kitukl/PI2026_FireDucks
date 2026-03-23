@@ -31,12 +31,9 @@ public class LessonSlotRepository : ILessonSlotRepository
 
     public async Task AddLessonSlot(LessonsSlot lessonSlot)
     {
-        var dbSlot = await _context.LessonsSlots.FindAsync(lessonSlot.Id);
-        if (dbSlot == null)
-        {
-            await _context.LessonsSlots.AddAsync(lessonSlot);
-            await _context.SaveChangesAsync();
-        }
+        await _context.LessonsSlots.AddAsync(lessonSlot);
+        await _context.SaveChangesAsync();
+        
     }
 
     public async Task UpdateLessonSlot(LessonsSlot lessonSlot)

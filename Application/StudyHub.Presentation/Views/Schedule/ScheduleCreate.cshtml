@@ -1,22 +1,64 @@
 ﻿@model StudyHub.Core.DTOs.ScheduleDto
 
-<h2>Створення розкладу</h2>
+<div class="container mt-4">
+    <h2>Створення розкладу</h2>
 
-<form asp-action="ScheduleCreate">
-    <input type="hidden" asp-for="Group.Id" />
+    <form asp-action="ScheduleCreate" method="post">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Оберіть групу</label>
 
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5>Налаштування для групи ID: @Model.Group.Id</h5>
-            <div class="form-check">
-                <input asp-for="HeadmanUpdate" class="form-check-input" />
-                <label asp-for="HeadmanUpdate" class="form-check-label">Дозволити старості редагувати</label>
+                    @if (ViewBag.Groups != null && ((IEnumerable<SelectListItem>)ViewBag.Groups).Any())
+                    {
+                        <select asp-for="Group.Id" class="form-select" asp-items="ViewBag.Groups" id="groupSelect">
+                            <option value="">-- Оберіть групу з переліку --</option>
+                        </select>
+                        @* Додаємо приховане поле для Name, щоб валідатор не сварився *@
+                        <input type="hidden" asp-for="Group.Name" id="groupNameHidden" value="TemporaryName" />
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            Групи не знайдені. <a asp-controller="Group" asp-action="Create" class="alert-link">Створити групу?</a>
+                        </div>
+                    }
+                    <span asp-validation-for="Group.Id" class="text-danger"></span>
+                </div>
+
+                <hr />
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-2">
+                            <input asp-for="HeadmanUpdate" class="form-check-input" type="checkbox" role="switch" />
+                            <label asp-for="HeadmanUpdate" class="form-check-label">Дозволити старості редагувати</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input asp-for="IsAutoUpdate" class="form-check-input" type="checkbox" role="switch" />
+                            <label asp-for="IsAutoUpdate" class="form-check-label">Автоматичне оновлення</label>
+                        </div>
+                    </div>
+                </div>
+
+                @* Вивід усіх помилок для дебагу *@
+                <div asp-validation-summary="All" class="text-danger mt-3 small"></div>
             </div>
         </div>
-    </div>
 
-    <div id="lessons-container">
-    </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">Зберегти розклад</button>
+            <a asp-action="SchedulesList" class="btn btn-outline-secondary">Скасувати</a>
+        </div>
+    </form>
+</div>
 
-    <button type="submit" class="btn btn-primary">Зберегти розклад</button>
-</form>
+@section Scripts {
+    <script>
+        // Коли вибираємо групу, записуємо її текст у приховане поле Name
+        $("#groupSelect").change(function () {
+            const selectedText = $(this).find("option:selected").text();
+            $("#groupNameHidden").val(selectedText);
+        });
+    </script>
+}

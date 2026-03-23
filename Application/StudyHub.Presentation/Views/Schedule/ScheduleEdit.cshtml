@@ -4,27 +4,29 @@
     <h2>Налаштування розкладу: @Model.Group.Name</h2>
     <hr />
 
-    <form asp-action="Edit">
+    <form asp-action="ScheduleEdit">
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="Group.Id" />
+        <input type="hidden" asp-for="Group.Name" />
 
         <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" asp-for="HeadmanUpdate">
-                    <label class="form-check-label" asp-for="HeadmanUpdate">Дозволити старості редагувати</label>
-                </div>
-                <div class="form-check form-switch mt-2">
-                    <input class="form-check-input" type="checkbox" asp-for="IsAutoUpdate">
-                    <label class="form-check-label" asp-for="IsAutoUpdate">Автоматичне оновлення</label>
-                </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" asp-for="HeadmanUpdate">
+                <label class="form-check-label" asp-for="HeadmanUpdate">Дозволити старості</label>
             </div>
+            <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" asp-for="IsAutoUpdate">
+                <label class="form-check-label" asp-for="IsAutoUpdate">Автоматичне оновлення</label>
+            </div>
+            <div asp-validation-summary="All" class="text-danger"></div>
         </div>
 
         <div class="card shadow-sm">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Заняття в розкладі</h5>
-                <button type="button" id="addExistingLesson" class="btn btn-success btn-sm">+ Додати існуючий урок</button>
+                <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#lessonModal">
+                    + Додати існуючий урок
+                </button>
             </div>
             <div class="card-body">
                 <table class="table" id="scheduleLessonsTable">
@@ -39,7 +41,7 @@
                         {
                             <tr>
                                 <td>
-                                    <input type="hidden" name="Lessons[@i].Id" value="@Model.Lessons[i].Id" />
+                                    <input type="hidden" name="schedule.Lessons[@i].Id" value="@Model.Lessons[i].Id" />
                                     <span>@Model.Lessons[i].Subject.Name (@Model.Lessons[i].LessonType) - День @Model.Lessons[i].Day</span>
                                 </td>
                                 <td>
@@ -52,30 +54,58 @@
             </div>
         </div>
 
+        <div class="modal fade" id="lessonModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Виберіть урок зі списку</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="list-group">
+                            @foreach (var lesson in (SelectList)ViewBag.Lessons)
+                            {
+                                <button type="button" class="list-group-item list-group-item-action select-lesson-btn"
+                                        data-id="@lesson.Value" data-text="@lesson.Text">
+                                    @lesson.Text
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="mt-4">
             <button type="submit" class="btn btn-primary px-5">Зберегти розклад</button>
             <a asp-action="SchedulesList" class="btn btn-link">До списку груп</a>
         </div>
     </form>
+
 </div>
 
 @section Scripts {
     <script>
         let lessonCount = @Model.Lessons.Count;
 
-        $("#addExistingLesson").click(function () {
-            let lessonId = prompt("Введіть ID уроку або виберіть зі списку (спрощено)");
-            if (lessonId) {
-                let row = `<tr>
-                    <td>
-                        <input type="hidden" name="Lessons[${lessonCount}].Id" value="${lessonId}" />
-                        <span>Новий обраний урок (ID: ${lessonId})</span>
-                    </td>
-                    <td><button type="button" class="btn btn-danger btn-sm remove-lesson">Видалити</button></td>
-                </tr>`;
-                $("#scheduleLessonsTable tbody").append(row);
-                lessonCount++;
-            }
+        $(".select-lesson-btn").click(function () {
+            const lessonId = $(this).data("id");
+            const lessonText = $(this).data("text");
+
+            const row = `<tr>
+                <td>
+                    <input type="hidden" name="schedule.Lessons[${lessonCount}].Id" value="${lessonId}" />
+                    <span class="fw-bold text-primary">${lessonText}</span>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-lesson">Видалити</button>
+                </td>
+            </tr>`;
+
+            $("#scheduleLessonsTable tbody").append(row);
+            lessonCount++;
+
+            bootstrap.Modal.getInstance(document.getElementById('lessonModal')).hide();
         });
 
         $(document).on("click", ".remove-lesson", function () {

@@ -41,10 +41,12 @@ namespace StudyHub.Mvc.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LecturerCreate(LecturerDtoRequest lecturer)
         {
+            ModelState.Clear();
+
             if (ModelState.IsValid)
             {
                 await _mediator.Send(new AddLecturerRequest(lecturer));
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(LecturersList));
             }
             await PrepareViewBags();
             return View(lecturer);
@@ -69,6 +71,8 @@ namespace StudyHub.Mvc.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LecturerEdit(Guid id, LecturerDtoRequest lecturer)
         {
+            ModelState.Clear();
+
             if (id != lecturer.Id) return BadRequest();
 
             if (ModelState.IsValid)

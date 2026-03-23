@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using StudyHub.Core.DTOs;
 using StudyHub.Core.Schedules.Interfaces;
+using StudyHub.Domain.Entities;
 using Task = System.Threading.Tasks.Task;
 
 namespace StudyHub.Core.Schedules.Commands
@@ -18,12 +19,19 @@ namespace StudyHub.Core.Schedules.Commands
 
         public async Task Handle(UpdateScheduleRequest request, CancellationToken cancellationToken)
         {
-            var schedule = await _repo.GetByGroupIdAsync(request.dto.Id);
-
-            if (schedule != null)
+            var scheduleUpdate = new Schedule
             {
-                await _repo.UpdateScheduleAsync(schedule);
-            }
+                Id = request.dto.Id,
+                IsAutoUpdate = request.dto.IsAutoUpdate,
+                CanHeadmanUpdate = request.dto.HeadmanUpdate,
+                UpdatedAt = DateTime.UtcNow,
+                Lessons = request.dto.Lessons?
+                    .Where(l => l != null)
+                    .Select(l => new Lesson { Id = l.Id })
+                    .ToList() ?? new List<Lesson>()
+            };
+
+            await _repo.UpdateScheduleAsync(scheduleUpdate);
         }
     }
 }

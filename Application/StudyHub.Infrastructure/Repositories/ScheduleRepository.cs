@@ -122,26 +122,35 @@ public class ScheduleRepository : IScheduleRepository
 
     public async Task UpdateScheduleAsync(Schedule schedule)
     {
+        // 1. Завантажуємо існуючий розклад з бази
         var existingSchedule = await _context.Schedules
             .Include(s => s.Lessons)
             .FirstOrDefaultAsync(s => s.Id == schedule.Id);
 
         if (existingSchedule == null) return;
 
-        existingSchedule.UpdatedAt = schedule.UpdatedAt;
-        existingSchedule.CanHeadmanUpdate = schedule.CanHeadmanUpdate;
+        // 2. Оновлюємо базові поля
         existingSchedule.IsAutoUpdate = schedule.IsAutoUpdate;
+        existingSchedule.CanHeadmanUpdate = schedule.CanHeadmanUpdate;
+        existingSchedule.UpdatedAt = schedule.UpdatedAt;
 
-        if (schedule.Lessons != null)
+        // 3. ЗБЕРІГАЄМО ID УРОКІВ ОКРЕМО (це захист від пастки посилань)
+        var newLessonIds = schedule.Lessons.Select(l => l.Id).ToList();
+
+        // 4. Очищаємо старі зв'язки в базі
+        existingSchedule.Lessons.Clear();
+
+        // 5. Додаємо нові уроки за збереженими ID
+        foreach (var lessonId in newLessonIds)
         {
-            existingSchedule.Lessons.Clear();
-            foreach (var lesson in schedule.Lessons)
+            var dbLesson = await _context.Lessons.FindAsync(lessonId);
+            if (dbLesson != null)
             {
-                var dbLesson = await _context.Lessons.FindAsync(lesson.Id);
-                existingSchedule.Lessons.Add(dbLesson ?? lesson);
+                existingSchedule.Lessons.Add(dbLesson);
             }
         }
 
+        // 6. Зберігаємо зміни
         await _context.SaveChangesAsync();
     }
 

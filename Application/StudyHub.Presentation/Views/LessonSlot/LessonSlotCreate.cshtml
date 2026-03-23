@@ -8,7 +8,7 @@
                     <h5 class="mb-0">Налаштування часу пари</h5>
                 </div>
                 <div class="card-body p-4">
-                    <form asp-action="LessonSlotCreate">
+                    <form asp-action="LessonSlotCreate" asp-controller="LessonSlot" method="post">
                         <div class="mb-3">
                             <label asp-for="StartTime" class="form-label">Початок заняття</label>
                             <input asp-for="StartTime" type="time" class="form-control form-control-lg" />

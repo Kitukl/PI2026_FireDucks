@@ -1,0 +1,29 @@
+﻿@model StudyHub.Core.DTOs.GroupDto
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card border-0 shadow">
+                <div class="card-header bg-dark text-white text-center py-3">
+                    <h5 class="mb-0">@(Model.Id == Guid.Empty ? "Нова група" : "Редагування групи")</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="@(Model.Id == Guid.Empty ? "Create" : "Edit")">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="mb-4">
+                            <label asp-for="Name" class="form-label fw-bold">Назва групи</label>
+                            <input asp-for="Name" class="form-control form-control-lg" placeholder="Наприклад: ПІ-21" required />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Зберегти</button>
+                            <a asp-action="Index" class="btn btn-link text-secondary">Скасувати</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
