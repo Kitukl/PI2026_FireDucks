@@ -1,0 +1,197 @@
+﻿@model Application.Models.TaskBoardPageViewModel
+@using StudyHub.Domain.Enums
+@{
+    ViewData["Title"] = "Task board";
+
+    var toDoTasks = Model.Tasks.Where(task => task.Status == Status.ToDo).ToList();
+    var inProgressTasks = Model.Tasks.Where(task => task.Status == Status.InProgress).ToList();
+    var forReviewTasks = Model.Tasks.Where(task => task.Status == Status.ForReview).ToList();
+    var doneTasks = Model.Tasks.Where(task => task.Status is Status.Done or Status.Resolved).ToList();
+
+    string StatusDataValue(Status status) => status switch
+    {
+        Status.ToDo => "todo",
+        Status.InProgress => "in-progress",
+        Status.ForReview => "for-review",
+        _ => "done"
+    };
+}
+
+<section class="taskboard-page">
+    <div class="taskboard-toolbar">
+        <label class="taskboard-search" for="task-search">
+            <span class="taskboard-search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.06l4.24 4.24-1.42 1.42-4.24-4.24A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"></path>
+                </svg>
+            </span>
+            <input id="task-search" type="search" placeholder="Search" aria-label="Search tasks" />
+        </label>
+
+        <div class="taskboard-filter-control js-task-filter-control">
+            <button class="taskboard-filter-btn js-task-filter-toggle" type="button" aria-expanded="false">
+                <span class="taskboard-filter-icon">&#9776;</span>
+                Filter by
+            </button>
+
+            <div class="taskboard-filter-dropdown" hidden>
+                <button class="taskboard-filter-all js-task-filter-all" type="button">Unselect all</button>
+                @foreach (var subject in Model.Subjects)
+                {
+                    <label class="taskboard-filter-option"><input class="js-task-filter-checkbox" type="checkbox" value="@subject" checked />@subject</label>
+                }
+            </div>
+        </div>
+
+        <a class="taskboard-create-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardCreate">Create task</a>
+    </div>
+
+    <div class="taskboard-grid">
+        <aside class="taskboard-sidebar">
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Own tasks <button class="taskboard-radio js-task-scope-filter" type="button" data-scope="own" aria-label="Show own tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@Model.CountTasks(false, Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@Model.CountTasks(false, Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@Model.CountTasks(false, Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(Model.CountTasks(false, Status.Done) + Model.CountTasks(false, Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Group tasks <button class="taskboard-radio js-task-scope-filter" type="button" data-scope="group" aria-label="Show group tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@Model.CountTasks(true, Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@Model.CountTasks(true, Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@Model.CountTasks(true, Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(Model.CountTasks(true, Status.Done) + Model.CountTasks(true, Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">All tasks <button class="taskboard-radio js-task-scope-filter active" type="button" data-scope="all" aria-label="Show all tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@Model.CountTasks(Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@Model.CountTasks(Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@Model.CountTasks(Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(Model.CountTasks(Status.Done) + Model.CountTasks(Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            @if (User.IsInRole("Leader"))
+            {
+                <a class="taskboard-manage-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardReviewGroup">Manage group</a>
+            }
+        </aside>
+
+        <div class="taskboard-columns-scroll">
+            <section class="taskboard-column">
+                <h2>To do</h2>
+                @foreach (var task in toDoTasks)
+                {
+                    <article class="task-card" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
+                        <header>
+                            <h3>@task.Title</h3>
+                            <span class="task-card-status"></span>
+                        </header>
+                        <p>@task.SubjectName</p>
+                        <div class="task-card-meta">
+                            @if (task.IsGroupTask)
+                            {
+                                <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
+                                <span class="task-card-badge">&#128100;</span>
+                            }
+                            else
+                            {
+                                <span></span>
+                                <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                            }
+                        </div>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="Home" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                    </article>
+                }
+            </section>
+
+            <section class="taskboard-column">
+                <h2>In progress</h2>
+                @foreach (var task in inProgressTasks)
+                {
+                    <article class="task-card" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
+                        <header>
+                            <h3>@task.Title</h3>
+                            <span class="task-card-status"></span>
+                        </header>
+                        <p>@task.SubjectName</p>
+                        <div class="task-card-meta">
+                            @if (task.IsGroupTask)
+                            {
+                                <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
+                                <span class="task-card-badge">&#128100;</span>
+                            }
+                            else
+                            {
+                                <span></span>
+                                <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                            }
+                        </div>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="Home" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                    </article>
+                }
+            </section>
+
+            <section class="taskboard-column">
+                <h2>For review</h2>
+                @foreach (var task in forReviewTasks)
+                {
+                    <article class="task-card" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
+                        <header>
+                            <h3>@task.Title</h3>
+                            <span class="task-card-state soft" aria-hidden="true"></span>
+                        </header>
+                        <p>@task.SubjectName</p>
+                        <div class="task-card-meta">
+                            @if (task.IsGroupTask)
+                            {
+                                <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
+                                <span class="task-card-badge">&#128100;</span>
+                            }
+                            else
+                            {
+                                <span></span>
+                                <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                            }
+                        </div>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="Home" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                    </article>
+                }
+            </section>
+
+            <section class="taskboard-column">
+                <h2>Done</h2>
+                @foreach (var task in doneTasks)
+                {
+                    <article class="task-card" data-status="done" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")" data-completed-at="@DateTime.UtcNow.ToString("yyyy-MM-dd")">
+                        <header>
+                            <h3>@task.Title</h3>
+                            <span class="task-card-state">&#10003;</span>
+                        </header>
+                        <p>@task.SubjectName</p>
+                        <div class="task-card-meta">
+                            @if (task.IsGroupTask)
+                            {
+                                <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
+                                <span class="task-card-badge">&#128100;</span>
+                            }
+                            else
+                            {
+                                <span></span>
+                                <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                            }
+                        </div>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="Home" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                    </article>
+                }
+            </section>
+        </div>
+    </div>
+</section>

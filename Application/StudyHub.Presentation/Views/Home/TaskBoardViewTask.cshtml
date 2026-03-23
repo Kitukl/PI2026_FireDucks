@@ -1,0 +1,294 @@
+@model Application.Models.TaskBoardViewTaskPageViewModel
+@using StudyHub.Domain.Enums
+@{
+    ViewData["Title"] = "View task";
+
+    var board = Model.Board;
+    var selectedTask = Model.SelectedTask ?? new Application.Models.TaskBoardTaskCardViewModel
+    {
+        Id = Guid.Empty,
+        Title = "No tasks available",
+        Description = string.Empty,
+        SubjectName = "Unknown",
+        TaskCode = "-",
+        IsGroupTask = false,
+        Status = Status.ToDo,
+        Deadline = DateTime.Today
+    };
+
+    var taskCode = selectedTask.TaskCode;
+    var dueDate = selectedTask.Deadline;
+    var isGroupTask = selectedTask.IsGroupTask;
+    var comments = (Model.Comments ?? []).OrderByDescending(comment => comment.CreatedAt).ToList();
+    var currentUserFullName = ((string?)ViewBag.CurrentUserFullName ?? string.Empty).Trim();
+    var canModerateComments = User.IsInRole(nameof(Role.Leader));
+    var statusValue = selectedTask.Status switch
+    {
+        Status.ToDo => "todo",
+        Status.InProgress => "in-progress",
+        Status.ForReview => "for-review",
+        _ => "done"
+    };
+    var statusLabel = selectedTask.Status switch
+    {
+        Status.ToDo => "To do",
+        Status.InProgress => "In progress",
+        Status.ForReview => "For review",
+        _ => "Done"
+    };
+}
+
+<section class="taskboard-page taskboard-view-page">
+    <div class="taskboard-toolbar">
+        <label class="taskboard-search" for="task-search-view">
+            <span class="taskboard-search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.06l4.24 4.24-1.42 1.42-4.24-4.24A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"></path>
+                </svg>
+            </span>
+            <input id="task-search-view" type="search" placeholder="Search" aria-label="Search tasks" />
+        </label>
+
+        <div class="taskboard-filter-control js-task-filter-control">
+            <button class="taskboard-filter-btn js-task-filter-toggle" type="button" aria-expanded="false">
+                <span class="taskboard-filter-icon">&#9776;</span>
+                Filter by
+            </button>
+
+            <div class="taskboard-filter-dropdown" hidden>
+                <button class="taskboard-filter-all js-task-filter-all" type="button">Unselect all</button>
+                @foreach (var subject in board.Subjects)
+                {
+                    <label class="taskboard-filter-option"><input class="js-task-filter-checkbox" type="checkbox" value="@subject" checked />@subject</label>
+                }
+            </div>
+        </div>
+
+        <a class="taskboard-create-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardCreate">Create task</a>
+    </div>
+
+    <div class="taskboard-grid">
+        <aside class="taskboard-sidebar">
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Own tasks <button class="taskboard-radio js-task-scope-filter" type="button" data-scope="own" aria-label="Show own tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@board.CountTasks(false, Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(false, Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(false, Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(false, Status.Done) + board.CountTasks(false, Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Group tasks <button class="taskboard-radio js-task-scope-filter" type="button" data-scope="group" aria-label="Show group tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@board.CountTasks(true, Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(true, Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(true, Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(true, Status.Done) + board.CountTasks(true, Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">All tasks <button class="taskboard-radio js-task-scope-filter active" type="button" data-scope="all" aria-label="Show all tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@board.CountTasks(Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(Status.Done) + board.CountTasks(Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            @if (User.IsInRole("Leader"))
+            {
+                <a class="taskboard-manage-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardReviewGroup">Manage group</a>
+            }
+        </aside>
+
+        <div class="taskboard-columns-scroll">
+            <section class="taskboard-column">
+                <h2>To do</h2>
+                @if (selectedTask.Status == Status.ToDo)
+                {
+                <article class="task-card" data-status="todo" data-task-id="@selectedTask.Id" data-deadline="@selectedTask.Deadline.ToString("yyyy-MM-dd")">
+                    <header>
+                        <h3>@selectedTask.Title</h3>
+                        <span class="task-card-status"></span>
+                    </header>
+                    <p>@selectedTask.SubjectName</p>
+                    <div class="task-card-meta">
+                        @if (selectedTask.IsGroupTask)
+                        {
+                            <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
+                            <span class="task-card-badge">&#128100;</span>
+                        }
+                        else
+                        {
+                            <span></span>
+                            <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                        }
+                    </div>
+                    <footer>@taskCode</footer>
+                </article>
+                }
+            </section>
+
+            <section class="taskboard-column">
+                <h2>In progress</h2>
+                @if (selectedTask.Status == Status.InProgress)
+                {
+                    <article class="task-card" data-status="in-progress" data-task-id="@selectedTask.Id" data-deadline="@selectedTask.Deadline.ToString("yyyy-MM-dd")">
+                        <header><h3>@selectedTask.Title</h3><span class="task-card-status"></span></header>
+                        <p>@selectedTask.SubjectName</p>
+                        <div class="task-card-meta"><span></span><span class="task-card-badge">&#128105;&#8205;&#128188;</span></div>
+                        <footer>@taskCode</footer>
+                    </article>
+                }
+            </section>
+            <section class="taskboard-column">
+                <h2>For review</h2>
+                @if (selectedTask.Status == Status.ForReview)
+                {
+                    <article class="task-card" data-status="for-review" data-task-id="@selectedTask.Id" data-deadline="@selectedTask.Deadline.ToString("yyyy-MM-dd")">
+                        <header><h3>@selectedTask.Title</h3><span class="task-card-state soft" aria-hidden="true"></span></header>
+                        <p>@selectedTask.SubjectName</p>
+                        <div class="task-card-meta"><span></span><span class="task-card-badge">&#128105;&#8205;&#128188;</span></div>
+                        <footer>@taskCode</footer>
+                    </article>
+                }
+            </section>
+            <section class="taskboard-column">
+                <h2>Done</h2>
+                @if (selectedTask.Status is Status.Done or Status.Resolved)
+                {
+                    <article class="task-card" data-status="done" data-task-id="@selectedTask.Id" data-deadline="@selectedTask.Deadline.ToString("yyyy-MM-dd")" data-completed-at="@DateTime.UtcNow.ToString("yyyy-MM-dd")">
+                        <header><h3>@selectedTask.Title</h3><span class="task-card-state">&#10003;</span></header>
+                        <p>@selectedTask.SubjectName</p>
+                        <div class="task-card-meta"><span></span><span class="task-card-badge">&#128105;&#8205;&#128188;</span></div>
+                        <footer>@taskCode</footer>
+                    </article>
+                }
+            </section>
+        </div>
+    </div>
+
+    <div class="task-modal-backdrop" aria-hidden="true"></div>
+
+    <section class="task-view-modal" role="dialog" aria-modal="true" aria-label="View task">
+        <div class="task-view-shell">
+            <div class="task-view-top">
+                <h1>@selectedTask.Title</h1>
+
+                <div class="task-view-top-tools">
+                    <span class="task-group-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                            <path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path>
+                        </svg>
+                    </span>
+                    <span class="task-deadline-indicator js-task-view-deadline" data-deadline="@dueDate.ToString("yyyy-MM-dd")" data-status="@statusValue" aria-hidden="true"></span>
+                    <form class="task-view-status-dropdown js-status-dropdown" asp-controller="Home" asp-action="TaskBoardViewTaskUpdateStatus" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="taskId" value="@selectedTask.Id" />
+                        <button type="button" class="task-view-status-btn js-status-dropdown-toggle" aria-haspopup="listbox" aria-expanded="false">@statusLabel</button>
+                        <ul class="task-view-status-menu js-status-dropdown-menu" role="listbox" hidden>
+                            <li><button type="button" class="task-view-status-option" data-value="todo">To do</button></li>
+                            <li><button type="button" class="task-view-status-option" data-value="in-progress">In progress</button></li>
+                            <li><button type="button" class="task-view-status-option" data-value="for-review">For review</button></li>
+                            <li><button type="button" class="task-view-status-option" data-value="done">Done</button></li>
+                        </ul>
+                        <select class="task-view-status js-task-view-status visually-hidden" name="status" aria-label="Task status">
+                            <option value="todo" selected="@(statusValue == "todo")">To do</option>
+                            <option value="in-progress" selected="@(statusValue == "in-progress")">In progress</option>
+                            <option value="for-review" selected="@(statusValue == "for-review")">For review</option>
+                            <option value="done" selected="@(statusValue == "done")">Done</option>
+                        </select>
+                    </form>
+                    <a class="task-view-back" asp-area="" asp-controller="Home" asp-action="TaskBoard">&lt; Back to the board</a>
+                </div>
+            </div>
+
+            <div class="task-view-main">
+                <div class="task-view-description">
+                    <h2>Description</h2>
+                    <div class="task-view-textbox">
+                        @(string.IsNullOrWhiteSpace(selectedTask.Description)
+                            ? "No description provided for this task."
+                            : selectedTask.Description)
+                    </div>
+                </div>
+
+                <aside class="task-view-details">
+                    <h2>Details</h2>
+                    <dl>
+                        <div><dt>Subject:</dt><dd>@selectedTask.SubjectName</dd></div>
+                        <div><dt>Due date:</dt><dd>@dueDate.ToString("dd.MM.yyyy")</dd></div>
+                        <div><dt>Task:</dt><dd>@taskCode</dd></div>
+                        <div><dt>Type:</dt><dd>@(selectedTask.IsGroupTask ? "Group task" : "Own task")</dd></div>
+                    </dl>
+                </aside>
+            </div>
+
+            <div class="task-view-comments">
+                <h2>Comments</h2>
+                <div class="task-comment-list">
+                    @if (comments.Count == 0)
+                    {
+                        <p class="task-comment-text">No comments yet.</p>
+                    }
+                    else
+                    {
+                        @foreach (var comment in comments)
+                        {
+                            var canDeleteComment = canModerateComments ||
+                                                   (!string.IsNullOrWhiteSpace(currentUserFullName) &&
+                                                    string.Equals(comment.UserName, currentUserFullName, StringComparison.OrdinalIgnoreCase));
+
+                            <article class="task-comment-item">
+                                <div class="task-comment-main">
+                                    <div class="task-comment-head">
+                                        <span class="task-comment-author">@comment.UserName</span>
+                                    </div>
+                                    <p class="task-comment-text">@comment.Description</p>
+                                </div>
+
+                                @if (canDeleteComment)
+                                {
+                                    <div class="task-comment-actions">
+                                        <form asp-controller="Home" asp-action="TaskBoardViewTaskDeleteComment" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="taskId" value="@selectedTask.Id" />
+                                            <input type="hidden" name="commentId" value="@comment.Id" />
+                                            <button type="submit" class="task-comment-delete-btn">Delete</button>
+                                        </form>
+                                    </div>
+                                }
+                            </article>
+                        }
+                    }
+                </div>
+
+                <form class="task-view-editor js-rich-editor" asp-controller="Home" asp-action="TaskBoardViewTaskAddComment" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="taskId" value="@selectedTask.Id" />
+                    <div class="task-view-editor-head">
+                        <div class="task-view-editor-tools" aria-label="Comment formatting">
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="bold" aria-label="Bold">B</button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="italic" aria-label="Italic"><em>I</em></button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="underline" aria-label="Underline"><u>U</u></button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="strikeThrough" aria-label="Strike through"><s>S</s></button>
+                        </div>
+                        <button class="task-view-comment-btn" type="submit">Add a comment</button>
+                    </div>
+                    <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write a comment..."></div>
+                    <textarea class="visually-hidden js-rich-editor-hidden" name="description"></textarea>
+                </form>
+
+                <form asp-controller="Home" asp-action="TaskBoardViewTaskDelete" method="post" style="margin-top: 16px; display: flex; justify-content: flex-end;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="taskId" value="@selectedTask.Id" />
+                    <button type="submit" class="task-comment-delete-btn">Delete task</button>
+                </form>
+            </div>
+        </div>
+    </section>
+</section>

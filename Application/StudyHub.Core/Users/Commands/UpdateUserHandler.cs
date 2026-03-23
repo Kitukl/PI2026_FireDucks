@@ -12,6 +12,7 @@ public class UpdateUserCommand : IRequest<User>
     public string Photo { get; set; }
     public string Surname { get; set; }
     public string GroupName { get; set; }
+    public Reminder Reminder { get; set; }
 }
 
 public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, User>
@@ -27,16 +28,16 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, User>
 
     public async Task<User> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
     {
+        var user = await _userRepository.GetUserById(request.Id);
+        if (user == null) throw new Exception("User not found");
+        
         var group = await _groupRepository.GetGroupByNameAsync(request.GroupName);
 
-        var user = new User
-        {
-            Id = request.Id,
-            Name = request.Name,
-            PhotoUrl = request.Photo,
-            Surname = request.Surname,
-            Group = group
-        };
+        user.Name = request.Name;
+        user.Surname = request.Surname;
+        user.PhotoUrl = request.Photo;
+        user.Group = group;
+        user.Reminder = request.Reminder;
         
         await _userRepository.Update(user);
 

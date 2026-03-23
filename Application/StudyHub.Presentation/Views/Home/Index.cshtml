@@ -1,8 +1,61 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model Application.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Вітаємо, @ViewBag.FullName!</h1>
-    <p>Ласкаво просимо до StudyHub.</p>
-</div>
+<h1 class="dashboard-welcome">Welcome, @Model.FullName</h1>
+
+<section class="dashboard-page">
+    <div class="dashboard-grid">
+        <div class="dashboard-left">
+            <p class="dashboard-lead">Stay focused, stay organized, and make studying simpler with <span>StudyHub</span>.</p>
+
+            <div class="dashboard-quick-view">
+                <h2>Quick view</h2>
+
+                <div class="dashboard-task-box">
+                    <header>Top priority tasks</header>
+
+                    <div class="dashboard-task-list">
+                        @foreach (var task in Model.QuickTasks)
+                        {
+                            var dayDiff = (task.Deadline.Date - DateTime.Today).Days;
+                            var deadlineLabel = dayDiff <= 0 ? "Today" : $"{dayDiff}D";
+
+                            <article class="dashboard-task-item"
+                                     role="link"
+                                     tabindex="0"
+                                     onclick="window.location.href='@Url.Action("TaskBoardViewTask", "Home", new { taskCode = task.Id })'"
+                                     onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='@Url.Action("TaskBoardViewTask", "Home", new { taskCode = task.Id })'; }">
+                                <div class="dashboard-task-item-top">
+                                    <h3>@task.Title</h3>
+                                    <div class="dashboard-task-icons" aria-hidden="true">
+                                        @if (task.IsGroupTask)
+                                        {
+                                            <span class="dashboard-task-group-icon"></span>
+                                        }
+                                        <span class="dashboard-task-deadline-badge">@deadlineLabel</span>
+                                    </div>
+                                </div>
+                                <div class="dashboard-task-item-bottom">
+                                    <span class="dashboard-task-subject">@task.SubjectName</span>
+                                    <span class="dashboard-task-code">@task.TaskCode</span>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="dashboard-right">
+            <h2>Created by students for students.</h2>
+            <p>Studyhub is a productivity app designed to help you stay organized and never miss a deadline. It lets you manage your tasks with statuses and due dates in a simple kanban board, so you can clearly track your progress.</p>
+
+            <figure class="dashboard-duck-brand">
+                <img src="~/images/FireDucks.png" alt="FireDucks logo" />
+                <figcaption>FireDucks production</figcaption>
+            </figure>
+        </aside>
+    </div>
+</section>

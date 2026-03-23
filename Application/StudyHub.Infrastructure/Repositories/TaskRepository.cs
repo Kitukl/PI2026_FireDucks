@@ -16,15 +16,34 @@ public class TaskRepository : ITaskRepository
 
     public async Task<UserTask> GetTaskAsync(Guid id)
     {
-        var task = await _context.Tasks.FirstOrDefaultAsync(c => c.Id == id) ?? throw new Exception("Task not found");
+        var task = await _context.Tasks
+            .Include(task => task.Subject)
+            .FirstOrDefaultAsync(c => c.Id == id) ?? throw new Exception("Task not found");
+
         return task;
     }
+
     public async Task<List<UserTask>> GetTasksAsync()
     {
-        return await _context.Tasks.ToListAsync();
+        return await _context.Tasks
+            .Include(task => task.Subject)
+            .ToListAsync();
     }
     public async Task<Guid> AddTaskAsync(UserTask task)
     {
+        if (task.Subject != null)
+        {
+            var trackedSubject = _context.Subjects.Local.FirstOrDefault(subject => subject.Id == task.Subject.Id);
+            if (trackedSubject != null)
+            {
+                task.Subject = trackedSubject;
+            }
+            else
+            {
+                _context.Subjects.Attach(task.Subject);
+            }
+        }
+
         await _context.Tasks.AddAsync(task);
         await _context.SaveChangesAsync();
         
@@ -32,20 +51,18 @@ public class TaskRepository : ITaskRepository
     }
     public async Task<Guid> UpdateTaskAsync(UserTask task)
     {
-        var userTask = await _context.Tasks.FirstOrDefaultAsync(f => f.Id == task.Id) ?? throw new Exception("Task not found");
-        
-        userTask.Title = task.Title;
-        userTask.Status = task.Status;
-        userTask.Deadline = task.Deadline;
-        userTask.Subject = task.Subject;
-
+        _context.Update(task);
         await _context.SaveChangesAsync();
 
-        return userTask.Id;
+        return task.Id;
     }
 
     public async Task<Guid> DeleteTaskAsync(Guid id)
     {
+        await _context.Comments
+            .Where(comment => comment.Task.Id == id)
+            .ExecuteDeleteAsync();
+
         await _context.Tasks.Where(f => f.Id == id).ExecuteDeleteAsync();
         return id;
     }

@@ -20,9 +20,11 @@ public class GetUsersHandler : IRequestHandler<GetUsersRequest, IEnumerable<User
         var response =  await _userRepository.GetUsersAsync();
         return response.Select(c => new UserDto
         {
-            GroupName = c.Group.Name,
+            Id =  c.Id,
+            Surname =  c.Surname,
             Name = c.Name,
-            Surname = c.Surname
-        });
+            GroupName = c.Group?.Name,
+            Roles = _userRepository.GetRolesByUser(c).Result,
+        }).ToList();
     }
 }

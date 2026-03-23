@@ -1,0 +1,137 @@
+@model Application.Models.TaskBoardReviewGroupPageViewModel
+@using StudyHub.Domain.Enums
+@{
+    ViewData["Title"] = "Review group";
+    var board = Model.Board;
+}
+
+<section class="taskboard-page group-manage-page js-group-manage">
+    <div class="taskboard-toolbar">
+        <label class="taskboard-search" for="task-search-group">
+            <span class="taskboard-search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.06l4.24 4.24-1.42 1.42-4.24-4.24A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"></path>
+                </svg>
+            </span>
+            <input id="task-search-group" type="search" placeholder="Search" aria-label="Search tasks" />
+        </label>
+
+        <button class="taskboard-filter-btn" type="button" aria-expanded="false">
+            <span class="taskboard-filter-icon">&#9776;</span>
+            Filter by
+        </button>
+
+        <a class="taskboard-create-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardCreate">Create task</a>
+    </div>
+
+    <div class="taskboard-grid">
+        <aside class="taskboard-sidebar">
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Own tasks <button class="taskboard-radio" type="button" aria-label="Show own tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@board.CountTasks(false, Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(false, Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(false, Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(false, Status.Done) + board.CountTasks(false, Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Group tasks <button class="taskboard-radio" type="button" aria-label="Show group tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@board.CountTasks(true, Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(true, Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(true, Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(true, Status.Done) + board.CountTasks(true, Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">All tasks <button class="taskboard-radio active" type="button" aria-label="Show all tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@board.CountTasks(Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(Status.Done) + board.CountTasks(Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            @if (User.IsInRole("Leader"))
+            {
+                <a class="taskboard-manage-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardReviewGroup">Manage group</a>
+            }
+        </aside>
+
+        <div class="taskboard-columns-scroll">
+            <section class="taskboard-column"><h2>To do</h2></section>
+            <section class="taskboard-column"><h2>In progress</h2></section>
+            <section class="taskboard-column"><h2>For review</h2></section>
+            <section class="taskboard-column"><h2>Done</h2></section>
+        </div>
+    </div>
+
+    <div class="task-modal-backdrop" aria-hidden="true"></div>
+
+    <section class="group-manage-modal" role="dialog" aria-modal="true" aria-label="Group user management">
+        <div class="group-manage-head">
+            <h1>@Model.GroupName</h1>
+            <div class="group-manage-head-actions">
+                <a class="group-manage-back" asp-area="" asp-controller="Home" asp-action="TaskBoard">&lt; Back to board</a>
+                <button type="button" class="group-manage-add-btn js-group-add-toggle">Add user</button>
+            </div>
+        </div>
+
+        <h2>Users</h2>
+
+        <div class="group-manage-table" aria-label="Group users">
+            <div class="group-manage-row group-manage-row-head">
+                <span>Name</span>
+                <span>Role</span>
+                <span></span>
+            </div>
+
+            <div class="group-manage-rows js-group-user-rows">
+                @foreach (var user in Model.GroupUsers)
+                {
+                    <div class="group-manage-row" data-user-id="@user.UserId">
+                        <span>@user.Name</span>
+                        <span>@user.Role</span>
+                        <form asp-controller="Home" asp-action="TaskBoardReviewGroupRemoveUser" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="userId" value="@user.UserId" />
+                            <button type="submit" class="group-manage-remove-btn">Remove</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <section class="group-manage-add-panel js-group-add-panel" hidden>
+            <div class="group-manage-add-top">
+                <label class="group-manage-add-search" for="group-add-user-search">Name</label>
+                <input id="group-add-user-search" class="js-group-user-search" type="search" placeholder="Type user name..." />
+            </div>
+
+            <form asp-controller="Home" asp-action="TaskBoardReviewGroupAddUsers" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="group-manage-available js-group-available-list" aria-live="polite">
+                    @foreach (var user in Model.UnassignedUsers)
+                    {
+                        <label class="group-manage-option" data-name="@user.Name.ToLowerInvariant()">
+                            <input class="js-group-user-checkbox" type="checkbox" name="selectedUserIds" value="@user.UserId" data-user-name="@user.Name" />
+                            <span>@user.Name</span>
+                        </label>
+                    }
+                </div>
+
+                <div class="group-manage-add-actions">
+                    <button type="button" class="group-manage-secondary js-group-toggle-selection">Select all</button>
+                    <button type="submit" class="group-manage-primary js-group-add-selected" data-server-submit="true" disabled>Add selected</button>
+                </div>
+
+                <p class="group-manage-selection js-group-selection-summary">0 selected</p>
+            </form>
+        </section>
+    </section>
+</section>

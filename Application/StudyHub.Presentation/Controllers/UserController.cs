@@ -2,10 +2,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Core.Users.Commands;
 using StudyHub.Domain.Entities;
+using StudyHub.Domain.Enums;
 
 namespace Application.Controllers;
 
@@ -16,7 +18,6 @@ public class UserController : Controller
     private readonly UserManager<User> _userManager;
     private readonly SignInManager<User> _signInManager;
 
-    // Додаємо менеджери Identity через конструктор
     public UserController(
         ISender mediator, 
         UserManager<User> userManager, 
@@ -28,8 +29,15 @@ public class UserController : Controller
     }
     
     [HttpGet("login-microsoft")]
-    public IActionResult LoginMicrosoft()
+    public async Task<IActionResult> LoginMicrosoft()
     {
+        var schemeProvider = HttpContext.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
+        var microsoftScheme = await schemeProvider.GetSchemeAsync(MicrosoftAccountDefaults.AuthenticationScheme);
+        if (microsoftScheme == null)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
         var redirectUrl = Url.Action("ExternalCallback", "User"); 
         var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
         return Challenge(properties, MicrosoftAccountDefaults.AuthenticationScheme);
@@ -38,7 +46,6 @@ public class UserController : Controller
     [HttpGet("callback")]
     public async Task<IActionResult> ExternalCallback()
     {
-        // 1. Отримуємо дані від Microsoft
         var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
         
         if (!result.Succeeded || result.Principal == null)
@@ -51,7 +58,6 @@ public class UserController : Controller
 
         if (string.IsNullOrEmpty(email)) return RedirectToAction("Index", "Home");
 
-        // 2. Викликаємо твій Handler (він перевірить, чи є юзер, або створить нового)
         var command = new RegisterUserCommand
         {
             Email = email,
@@ -64,15 +70,12 @@ public class UserController : Controller
 
         await _mediator.Send(command);
 
-        // 3. ФІКС КУКІВ: Знаходимо цього юзера в базі та логінимо його сесію
         var user = await _userManager.FindByEmailAsync(email);
         if (user != null)
         {
-            // isPersistent: true дозволяє не логінитись знову після закриття браузера
             await _signInManager.SignInAsync(user, isPersistent: true);
         }
-
-        // 4. Очищуємо тимчасові куки Microsoft (ExternalScheme)
+        
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
         return RedirectToAction("Index", "Home");
@@ -83,5 +86,21 @@ public class UserController : Controller
     {
         await _signInManager.SignOutAsync();
         return RedirectToAction("Index", "Home");
+    }
+    
+    [Authorize(Roles = nameof(Role.Leader))]
+    [HttpPut]
+    public async Task<IActionResult> AddUserToGroup(AddUserToGroupCommand request)
+    {
+        await _mediator.Send(request);
+        return View();
+    }
+    
+    [Authorize(Roles = nameof(Role.Leader))]
+    [HttpPut]
+    public async Task<IActionResult> RemoveUserFromGroup(RemoveUserFromGroupCommand request)
+    {
+        await _mediator.Send(request);
+        return View();
     }
 }

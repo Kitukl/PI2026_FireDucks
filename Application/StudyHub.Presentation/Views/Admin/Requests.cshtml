@@ -1,0 +1,288 @@
+@using StudyHub.Domain.Enums
+@using StudyHub.Domain.Entities
+@model Application.Models.AdminRequestsViewModel
+@{
+    ViewData["Title"] = "Requests";
+    var isModalOpen = Model.OpenRequestModal;
+    var allowedStatuses = Model.AllowedStatuses;
+
+    string StatusLabel(Status status) => status switch
+    {
+        Status.ToDo => "To do",
+        Status.InProgress => "In progress",
+        Status.Resolved => "Resolved",
+        _ => status.ToString()
+    };
+
+    string FeedbackTypeLabel(FeedbackType type) => type switch
+    {
+        FeedbackType.Issue => "Issue",
+        FeedbackType.Request => "Request",
+        FeedbackType.Question => "Question",
+        _ => type.ToString()
+    };
+
+    string CategoryLabel(Category category) => category switch
+    {
+        Category.UserManagement => "User management",
+        Category.TaskBoard => "Task board",
+        Category.UserProfile => "User profile",
+        _ => category.ToString()
+    };
+
+    (string Subject, string Body) ParseRequestSummary(string? rawDescription)
+    {
+        var description = (rawDescription ?? string.Empty)
+            .Replace("\r\n", "\n")
+            .Trim();
+
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return ("(No subject)", string.Empty);
+        }
+
+        var lines = description.Split('\n', 2, StringSplitOptions.None);
+        var firstLine = lines[0].Trim();
+        const string subjectPrefix = "Subject:";
+
+        if (firstLine.StartsWith(subjectPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var subject = firstLine[subjectPrefix.Length..].Trim();
+            var body = lines.Length > 1 ? lines[1].Trim() : string.Empty;
+
+            return (string.IsNullOrWhiteSpace(subject) ? "(No subject)" : subject, body);
+        }
+
+        return (firstLine, description);
+    }
+
+    var activeRequest = Model.ActiveRequest;
+    var activeSummary = activeRequest == null
+        ? ("(No subject)", string.Empty)
+        : ParseRequestSummary(activeRequest.Description);
+}
+
+<style>
+.admin-requests-page { background: #fff; border: 1px solid #d2d8e0; border-radius: 12px; padding: 16px 14px 14px; margin-top: 10px; }
+.admin-requests-head { display: flex; justify-content: flex-start; align-items: center; gap: 12px; margin-bottom: 14px; }
+.admin-requests-head h1 { margin: 0; font-size: 1.8rem; }
+.admin-requests-toolbar { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 10px; }
+.admin-requests-toolbar input, .admin-requests-toolbar select, .admin-requests-toolbar button { min-height: 38px; border: 1px solid #9aa3af; border-radius: 9px; background: #fff; padding: 0 10px; }
+.admin-requests-table { width: 100%; border-collapse: collapse; }
+.admin-requests-table th, .admin-requests-table td { border-bottom: 1px solid #e0e5eb; padding: 10px 8px; text-align: left; }
+.admin-requests-table th { color: #646e7f; font-weight: 700; }
+.admin-requests-status { display: inline-flex; min-width: 92px; justify-content: center; align-items: center; min-height: 30px; border: 1px solid #7e8794; border-radius: 7px; font-weight: 700; font-size: 0.92rem; line-height: 1; }
+.admin-requests-status.todo { background: #fff; }
+.admin-requests-status.progress { background: #cfe5ff; border-color: #568dcc; }
+.admin-requests-status.resolved { background: #cfe9c9; border-color: #6ea66a; }
+.admin-requests-view-link { color: inherit; text-decoration: none; }
+.admin-requests-view-link:hover { text-decoration: underline; }
+.admin-requests-backdrop { position: fixed; inset: 0; background: rgba(20, 27, 40, 0.45); z-index: 120; }
+.admin-request-review-modal { position: fixed; z-index: 130; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(980px, 88vw); max-height: 84vh; overflow: auto; background: #fff; border: 1px solid #aeb6c2; border-radius: 0; padding: 18px 20px; box-shadow: 0 22px 42px rgba(7, 13, 22, 0.28); }
+.admin-request-review-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.admin-request-review-top h2 { margin: 0; font-size: clamp(1.55rem, 2.4vw, 2.2rem); font-weight: 800; color: #1f2633; }
+.admin-request-review-tools { display: inline-flex; align-items: center; gap: 8px; }
+.admin-request-review-tools select, .admin-request-review-tools a { min-height: 38px; border: 1px solid #8d97a4; border-radius: 8px; background: #fff; padding: 5px 10px; color: #1f2633; text-decoration: none; }
+.admin-request-review-grid { display: grid; grid-template-columns: 1.25fr 0.9fr; gap: 14px; }
+.admin-request-review-block h3 { margin: 0; font-size: 2rem; font-weight: 800; color: #1f2633; }
+.admin-request-review-block h3::after { content: ""; display: block; width: 108px; margin-top: 4px; border-bottom: 2px solid #4a5466; }
+.admin-request-review-description { margin-top: 8px; min-height: 190px; border: 1px solid #8d97a4; border-radius: 0; padding: 10px; background: #fff; }
+.admin-request-review-details { margin-top: 8px; }
+.admin-request-review-details dl { margin: 0; display: grid; grid-template-columns: 98px 1fr; row-gap: 8px; column-gap: 8px; }
+.admin-request-review-details dt { color: #4d5563; }
+.admin-request-review-meta { margin-top: 12px; font-size: 0.95rem; color: #2c3444; }
+.admin-request-review-meta-row { display: grid; grid-template-columns: 74px 1fr; gap: 8px; margin-top: 4px; }
+.admin-request-review-resolved { display: none; }
+.admin-request-review-resolved.is-visible { display: grid; }
+</style>
+
+<section class="admin-requests-page">
+    <div class="admin-requests-head">
+        <h1>All requests</h1>
+    </div>
+
+    <div class="admin-requests-toolbar">
+        <input class="js-admin-requests-search" type="search" placeholder="Search" />
+        <select class="js-admin-requests-status-filter" aria-label="Filter by status">
+            <option value="">Filter by</option>
+            @foreach (var status in allowedStatuses)
+            {
+                <option value="@status">@StatusLabel(status)</option>
+            }
+        </select>
+    </div>
+
+    <table class="admin-requests-table">
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Reporter</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in Model.Requests)
+            {
+                var statusClass = row.Status == Status.Resolved ? "resolved" : row.Status == Status.InProgress ? "progress" : "todo";
+                var summary = ParseRequestSummary(row.Description);
+
+                <tr class="js-admin-request-row" data-status="@row.Status" data-feedback-id="@row.Id">
+                    <td><a class="admin-requests-view-link" asp-controller="Admin" asp-action="RequestView" asp-route-feedbackId="@row.Id" title="@row.Description">@summary.Item1</a></td>
+                    <td>@row.CreatorFullname</td>
+                    <td>@FeedbackTypeLabel(row.FeedbackType)</td>
+                    <td>@CategoryLabel(row.Category)</td>
+                    <td><span class="admin-requests-status @statusClass">@StatusLabel(row.Status)</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+@if (isModalOpen && activeRequest != null)
+{
+    <div class="admin-requests-backdrop" aria-hidden="true"></div>
+
+    <section class="admin-request-review-modal" role="dialog" aria-modal="true" aria-label="Request review">
+        <div class="admin-request-review-top">
+            <h2>@activeSummary.Item1</h2>
+
+            <div class="admin-request-review-tools">
+                <form asp-controller="Admin" asp-action="UpdateRequestStatus" method="post" class="admin-request-review-tools js-admin-review-status-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="feedbackId" value="@activeRequest.Id" />
+                    <select class="js-admin-review-status" name="status" aria-label="Status">
+                        @foreach (var status in allowedStatuses)
+                        {
+                            <option value="@status" selected="@(status == activeRequest.Status ? "selected" : null)">@StatusLabel(status)</option>
+                        }
+                    </select>
+                </form>
+                <a asp-controller="Admin" asp-action="Requests">&lt; Back to the list</a>
+            </div>
+        </div>
+
+        <div class="admin-request-review-grid">
+            <article class="admin-request-review-block">
+                <h3>Description</h3>
+                <div class="admin-request-review-description">
+                    @(string.IsNullOrWhiteSpace(activeSummary.Item2)
+                        ? "No additional description provided."
+                        : activeSummary.Item2)
+                </div>
+            </article>
+
+            <aside class="admin-request-review-block">
+                <h3>Details</h3>
+                <div class="admin-request-review-details">
+                    <dl>
+                        <dt>Request:</dt><dd>#@activeRequest.Id.ToString()[..8]</dd>
+                        <dt>User:</dt><dd>@activeRequest.CreatorFullname</dd>
+                        <dt>Category:</dt><dd>@CategoryLabel(activeRequest.Category)</dd>
+                        <dt>Type:</dt><dd>@FeedbackTypeLabel(activeRequest.FeedbackType)</dd>
+                    </dl>
+                </div>
+
+                <div class="admin-request-review-meta">
+                    <div class="admin-request-review-meta-row">
+                        <span>Created:</span><span>@activeRequest.CreatedAt.ToString("dd.MM.yyyy")</span>
+                    </div>
+                    <div class="admin-request-review-meta-row admin-request-review-resolved js-admin-review-resolved-row @(activeRequest.Status == Status.Resolved ? "is-visible" : string.Empty)">
+                        <span>Resolved:</span><span>@(activeRequest.ResolvedAt?.ToString("dd.MM.yyyy") ?? "")</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </section>
+}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.querySelector(".js-admin-requests-search");
+    const statusFilter = document.querySelector(".js-admin-requests-status-filter");
+    const rows = Array.from(document.querySelectorAll(".js-admin-request-row"));
+    const reviewStatus = document.querySelector(".js-admin-review-status");
+    const reviewStatusForm = document.querySelector(".js-admin-review-status-form");
+    const resolvedRow = document.querySelector(".js-admin-review-resolved-row");
+
+    if (!searchInput || !statusFilter || rows.length === 0) {
+        return;
+    }
+
+    function applyAdminRequestFilters() {
+        const query = (searchInput.value || "").trim().toLowerCase();
+        const selectedStatus = statusFilter.value || "";
+
+        rows.forEach(function (row) {
+            const rowText = (row.textContent || "").toLowerCase();
+            const rowStatus = row.dataset.status || "";
+
+            const matchesQuery = query === "" || rowText.includes(query);
+            const matchesStatus = selectedStatus === "" || rowStatus === selectedStatus;
+
+            row.hidden = !(matchesQuery && matchesStatus);
+        });
+    }
+
+    searchInput.addEventListener("input", applyAdminRequestFilters);
+    statusFilter.addEventListener("change", applyAdminRequestFilters);
+
+    function statusClassByValue(value) {
+        if (value === "Resolved") return "resolved";
+        if (value === "InProgress") return "progress";
+        return "todo";
+    }
+
+    if (reviewStatus && resolvedRow) {
+        function syncResolvedMeta() {
+            resolvedRow.classList.toggle("is-visible", reviewStatus.value === "Resolved");
+        }
+
+        reviewStatus.addEventListener("change", syncResolvedMeta);
+        syncResolvedMeta();
+    }
+
+    if (reviewStatus && reviewStatusForm) {
+        reviewStatus.addEventListener("change", async function () {
+            const formData = new FormData(reviewStatusForm);
+            reviewStatus.disabled = true;
+
+            try {
+                const response = await fetch(reviewStatusForm.action, {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error("Status update failed.");
+                }
+
+                const payload = await response.json();
+                const row = document.querySelector('.js-admin-request-row[data-feedback-id="' + payload.feedbackId + '"]');
+                if (row) {
+                    row.dataset.status = payload.status;
+
+                    const badge = row.querySelector(".admin-requests-status");
+                    if (badge) {
+                        badge.textContent = payload.statusLabel;
+                        badge.classList.remove("todo", "progress", "resolved");
+                        badge.classList.add(statusClassByValue(payload.status));
+                    }
+                }
+
+                if (typeof applyAdminRequestFilters === "function") {
+                    applyAdminRequestFilters();
+                }
+            } catch {
+                window.location.reload();
+            } finally {
+                reviewStatus.disabled = false;
+            }
+        });
+    }
+});
+</script>

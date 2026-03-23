@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using StudyHub.Core.DTOs;
 using StudyHub.Core.LessonSlots.Commands;
 using StudyHub.Core.LessonSlots.Queries;
-using StudyHub.Domain.Entities;
 
 namespace StudyHub.Mvc.Controllers
 {
