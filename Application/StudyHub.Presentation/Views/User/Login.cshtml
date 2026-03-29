@@ -1,0 +1,165 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Login";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - StudyHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f4f4f4;
+            --text: #1f242d;
+            --line: #8f949b;
+            --btn-border: #6e737a;
+            --btn-hover: #f2f5f7;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text);
+            background: radial-gradient(circle at 15% 10%, #ffffff 0%, var(--bg) 45%);
+        }
+
+        .guest-login {
+            width: min(560px, 92vw);
+            text-align: center;
+            padding: 24px 20px 28px;
+        }
+
+        .brand-lockup {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin: 0 auto;
+        }
+
+        .brand-hat {
+            width: 114px;
+            height: auto;
+            display: block;
+        }
+
+        .brand-text {
+            font-family: "Oswald", "Arial Narrow", "Segoe UI", sans-serif;
+            font-weight: 700;
+            font-size: clamp(2.45rem, 5.5vw, 3.35rem);
+            line-height: 1;
+            letter-spacing: 0.04em;
+            color: #1c77ab;
+            text-transform: uppercase;
+        }
+
+        .brand-text-study {
+            color: #3194c8;
+        }
+
+        .brand-text-hub {
+            color: #1d6f9f;
+        }
+
+        .divider {
+            width: min(340px, 78vw);
+            border: 0;
+            border-top: 2px solid var(--line);
+            margin: 16px auto 20px;
+        }
+
+        .duck {
+            width: 132px;
+            height: auto;
+            display: block;
+            margin: 0 auto 6px;
+        }
+
+        .production {
+            margin: 0 0 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #2f3440;
+        }
+
+        @@media (max-width: 520px) {
+            .brand-lockup {
+                gap: 10px;
+            }
+
+            .brand-hat {
+                width: 88px;
+            }
+
+            .brand-text {
+                font-size: clamp(1.8rem, 8vw, 2.4rem);
+            }
+        }
+
+        .microsoft-btn {
+            margin: 0 auto;
+            width: min(300px, 78vw);
+            min-height: 46px;
+            border: 1px solid var(--btn-border);
+            border-radius: 8px;
+            background: #fff;
+            color: #1f242d;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            line-height: 1;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .microsoft-btn:hover {
+            background: var(--btn-hover);
+            transform: translateY(-1px);
+            color: #1f242d;
+        }
+
+        .microsoft-icon {
+            width: 18px;
+            height: 18px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 2px;
+        }
+
+        .microsoft-icon span {
+            display: block;
+            background: #525861;
+        }
+    </style>
+</head>
+<body>
+<section class="guest-login" aria-label="Guest login">
+    <div class="brand-lockup" aria-label="StudyHub brand">
+        <img class="brand-hat" src="~/images/SHLogo.png" alt="StudyHub hat logo" />
+        <span class="brand-text"><span class="brand-text-study">STUDY</span><span class="brand-text-hub">HUB</span></span>
+    </div>
+    <hr class="divider" />
+    <img class="duck" src="~/images/FireDucks.png" alt="FireDucks" />
+    <p class="production">FireDucks production</p>
+
+    <a class="microsoft-btn" href="/user/login-microsoft">
+        <span class="microsoft-icon" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+        <span>Continue with microsoft</span>
+    </a>
+</section>
+</body>
+</html>

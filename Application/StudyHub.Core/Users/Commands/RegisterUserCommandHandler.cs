@@ -35,6 +35,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, b
         {
             return true;
         }
+
         var user = new User
         {
             Id = Guid.NewGuid(),

@@ -17,7 +17,11 @@
     };
 }
 
-<section class="taskboard-page">
+<section class="taskboard-page" data-task-status-update-url="@Url.Action("TaskBoardViewTaskUpdateStatus", "Home")">
+    <form class="js-taskboard-anti-forgery" method="post" hidden>
+        @Html.AntiForgeryToken()
+    </form>
+
     <div class="taskboard-toolbar">
         <label class="taskboard-search" for="task-search">
             <span class="taskboard-search-icon" aria-hidden="true">
@@ -85,11 +89,11 @@
         </aside>
 
         <div class="taskboard-columns-scroll">
-            <section class="taskboard-column">
+            <section class="taskboard-column" data-column-status="todo">
                 <h2>To do</h2>
                 @foreach (var task in toDoTasks)
                 {
-                    <article class="task-card" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
+                    <article class="task-card" draggable="true" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
                         <header>
                             <h3>@task.Title</h3>
                             <span class="task-card-status"></span>
@@ -112,11 +116,11 @@
                 }
             </section>
 
-            <section class="taskboard-column">
+            <section class="taskboard-column" data-column-status="in-progress">
                 <h2>In progress</h2>
                 @foreach (var task in inProgressTasks)
                 {
-                    <article class="task-card" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
+                    <article class="task-card" draggable="true" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
                         <header>
                             <h3>@task.Title</h3>
                             <span class="task-card-status"></span>
@@ -139,11 +143,11 @@
                 }
             </section>
 
-            <section class="taskboard-column">
+            <section class="taskboard-column" data-column-status="for-review">
                 <h2>For review</h2>
                 @foreach (var task in forReviewTasks)
                 {
-                    <article class="task-card" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
+                    <article class="task-card" draggable="true" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
                         <header>
                             <h3>@task.Title</h3>
                             <span class="task-card-state soft" aria-hidden="true"></span>
@@ -166,11 +170,11 @@
                 }
             </section>
 
-            <section class="taskboard-column">
+            <section class="taskboard-column" data-column-status="done">
                 <h2>Done</h2>
                 @foreach (var task in doneTasks)
                 {
-                    <article class="task-card" data-status="done" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")" data-completed-at="@DateTime.UtcNow.ToString("yyyy-MM-dd")">
+                    <article class="task-card" draggable="true" data-status="done" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")" data-completed-at="@DateTime.UtcNow.ToString("yyyy-MM-dd")">
                         <header>
                             <h3>@task.Title</h3>
                             <span class="task-card-state">&#10003;</span>

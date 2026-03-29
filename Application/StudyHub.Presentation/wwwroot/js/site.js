@@ -278,7 +278,35 @@ document.addEventListener("DOMContentLoaded", function () {
 	boardCards.forEach(function (card) {
 		renderCardDeadline(card);
 
+		card.addEventListener("dragstart", function (event) {
+			const board = card.closest(".taskboard-page");
+			if (!board) {
+				event.preventDefault();
+				return;
+			}
+
+			card.classList.add("is-dragging");
+			card.dataset.sourceStatus = getCardStatus(card);
+			card.dataset.sourceColumnStatus = card.closest(".taskboard-column")?.dataset.columnStatus || card.dataset.sourceStatus;
+			if (event.dataTransfer) {
+				event.dataTransfer.effectAllowed = "move";
+				event.dataTransfer.setData("text/plain", card.dataset.taskId || "");
+			}
+		});
+
+		card.addEventListener("dragend", function () {
+			card.classList.remove("is-dragging");
+			card.dataset.justDragged = "true";
+			setTimeout(function () {
+				delete card.dataset.justDragged;
+			}, 180);
+		});
+
 		card.addEventListener("click", function (event) {
+			if (card.dataset.justDragged === "true") {
+				return;
+			}
+
 			const interactive = event.target.closest("a, button, input, select, textarea, label");
 			if (interactive) {
 				return;
@@ -303,6 +331,108 @@ document.addEventListener("DOMContentLoaded", function () {
 			}
 
 			window.location.href = "/TaskBoard/ViewTask/" + encodeURIComponent(taskCode);
+		});
+	});
+
+	const taskBoards = document.querySelectorAll(".taskboard-page");
+	taskBoards.forEach(function (board) {
+		const columns = board.querySelectorAll(".taskboard-column");
+		const antiForgeryToken = board.querySelector(".js-taskboard-anti-forgery input[name='__RequestVerificationToken']")?.value;
+		const statusUpdateUrl = board.dataset.taskStatusUpdateUrl;
+
+		if (columns.length === 0 || !antiForgeryToken || !statusUpdateUrl) {
+			return;
+		}
+
+		function syncCardStatus(card, statusValue) {
+			card.dataset.status = statusValue;
+			if (statusValue === "done") {
+				card.dataset.completedAt = new Date().toISOString();
+			} else {
+				delete card.dataset.completedAt;
+			}
+
+			renderCardDeadline(card);
+			applyBoardFilters(board);
+		}
+
+		async function persistCardStatus(taskId, statusValue) {
+			const payload = new URLSearchParams();
+			payload.append("taskId", taskId);
+			payload.append("status", statusValue);
+			payload.append("__RequestVerificationToken", antiForgeryToken);
+
+			const response = await fetch(statusUpdateUrl, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+					"X-Requested-With": "XMLHttpRequest"
+				},
+				body: payload.toString()
+			});
+
+			if (!response.ok) {
+				throw new Error("Status update failed");
+			}
+
+			return response.json();
+		}
+
+		columns.forEach(function (column) {
+			const targetStatus = column.dataset.columnStatus;
+			if (!targetStatus) {
+				return;
+			}
+
+			column.addEventListener("dragover", function (event) {
+				event.preventDefault();
+				column.classList.add("is-drop-target");
+				if (event.dataTransfer) {
+					event.dataTransfer.dropEffect = "move";
+				}
+			});
+
+			column.addEventListener("dragleave", function (event) {
+				if (!column.contains(event.relatedTarget)) {
+					column.classList.remove("is-drop-target");
+				}
+			});
+
+			column.addEventListener("drop", async function (event) {
+				event.preventDefault();
+				column.classList.remove("is-drop-target");
+
+				const draggedCard = board.querySelector(".task-card.is-dragging");
+				if (!draggedCard) {
+					return;
+				}
+
+				const taskId = draggedCard.dataset.taskId;
+				if (!taskId) {
+					return;
+				}
+
+				const sourceColumn = draggedCard.closest(".taskboard-column");
+				const previousStatus = draggedCard.dataset.sourceStatus || getCardStatus(draggedCard);
+				if (previousStatus === targetStatus) {
+					return;
+				}
+
+				column.appendChild(draggedCard);
+				syncCardStatus(draggedCard, targetStatus);
+
+				try {
+					const payload = await persistCardStatus(taskId, targetStatus);
+					if (payload && payload.normalizedStatus) {
+						syncCardStatus(draggedCard, payload.normalizedStatus);
+					}
+				} catch {
+					if (sourceColumn) {
+						sourceColumn.appendChild(draggedCard);
+						syncCardStatus(draggedCard, previousStatus);
+					}
+				}
+			});
 		});
 	});
 
@@ -572,6 +702,54 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
 
 	const userSettings = document.querySelector(".js-user-settings");
+	const profilePhotoForm = document.querySelector(".js-profile-photo-form");
+	if (profilePhotoForm) {
+		const pickButton = profilePhotoForm.querySelector(".js-profile-photo-btn");
+		const fileInput = profilePhotoForm.querySelector(".js-profile-photo-input");
+		const actions = profilePhotoForm.querySelector(".js-profile-photo-actions");
+		const cancelButton = profilePhotoForm.querySelector(".js-profile-photo-cancel");
+		const previewImage = document.querySelector(".js-profile-photo-image");
+		let previewObjectUrl = null;
+
+		if (pickButton && fileInput && actions && cancelButton && previewImage) {
+			function clearPreview() {
+				if (previewObjectUrl) {
+					URL.revokeObjectURL(previewObjectUrl);
+					previewObjectUrl = null;
+				}
+
+				fileInput.value = "";
+				actions.hidden = true;
+				previewImage.src = previewImage.dataset.originalSrc || previewImage.src;
+			}
+
+			pickButton.addEventListener("click", function () {
+				fileInput.click();
+			});
+
+			fileInput.addEventListener("change", function () {
+				if (fileInput.files && fileInput.files.length > 0) {
+					const selectedFile = fileInput.files[0];
+					if (previewObjectUrl) {
+						URL.revokeObjectURL(previewObjectUrl);
+					}
+
+					previewObjectUrl = URL.createObjectURL(selectedFile);
+					previewImage.src = previewObjectUrl;
+					actions.hidden = false;
+				}
+			});
+
+			cancelButton.addEventListener("click", function () {
+				clearPreview();
+			});
+
+			profilePhotoForm.addEventListener("submit", function () {
+				actions.hidden = true;
+			});
+		}
+	}
+
 	if (userSettings) {
 		const toggle = userSettings.querySelector(".js-user-settings-toggle");
 		const hiddenValue = userSettings.querySelector(".js-user-settings-value");
@@ -599,6 +777,43 @@ document.addEventListener("DOMContentLoaded", function () {
 				const currentState = hiddenValue.value === "true";
 				syncUserSettingsState(!currentState);
 			});
+		}
+	}
+
+	const storageRoot = document.querySelector(".js-storage-files");
+	if (storageRoot) {
+		const searchInput = storageRoot.querySelector(".js-storage-search");
+		const scopeFilter = storageRoot.querySelector(".js-storage-scope-filter");
+		const fileRows = Array.from(document.querySelectorAll(".js-storage-row[data-storage-row='true']"));
+		const emptyFilteredRow = document.querySelector(".js-storage-empty-result");
+
+		if (searchInput && scopeFilter && fileRows.length > 0) {
+			function applyStorageFilters() {
+				const query = (searchInput.value || "").trim().toLowerCase();
+				const selectedScope = (scopeFilter.value || "all").toLowerCase();
+				let visibleCount = 0;
+
+				fileRows.forEach(function (row) {
+					const name = (row.dataset.storageName || "").toLowerCase();
+					const scope = (row.dataset.storageScope || "personal").toLowerCase();
+					const matchesSearch = query === "" || name.includes(query);
+					const matchesScope = selectedScope === "all" || scope === selectedScope;
+					const isVisible = matchesSearch && matchesScope;
+
+					row.hidden = !isVisible;
+					if (isVisible) {
+						visibleCount += 1;
+					}
+				});
+
+				if (emptyFilteredRow) {
+					emptyFilteredRow.hidden = visibleCount > 0;
+				}
+			}
+
+			searchInput.addEventListener("input", applyStorageFilters);
+			scopeFilter.addEventListener("change", applyStorageFilters);
+			applyStorageFilters();
 		}
 	}
 });

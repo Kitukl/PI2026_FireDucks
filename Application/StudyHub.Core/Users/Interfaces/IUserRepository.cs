@@ -7,6 +7,7 @@ namespace StudyHub.Core.Users.Interfaces;
 public interface IUserRepository
 {
     Task<IEnumerable<User>> GetUsersAsync();
+    Task<List<string>> GetAllEmailsAsync();
     Task Delete(Guid userId);
     Task<User> Update(User userUpdateDto);
     Task AddRole(Role userRole, Guid userId);

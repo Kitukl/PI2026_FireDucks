@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using DotNetEnv;
+using Application.Security;
 using StudyHub.Infrastructure;
 using StudyHub.Infrastructure.Repositories;
 
@@ -13,10 +16,15 @@ using StudyHub.Core.LessonSlots.Interfaces;
 using StudyHub.Core.Schedules.Interfaces;
 using StudyHub.Core.Statistics.Interfaces;
 using StudyHub.Core.Statistics.Queries;
+using StudyHub.Core.Storage.Interfaces;
 using StudyHub.Core.Subjects.Interfaces;
 using StudyHub.Core.Tasks.Interfaces;
 using StudyHub.Core.Users.Interfaces;
+using StudyHub.Core.Notifications.Interfaces;
 using StudyHub.Domain.Entities;
+using StudyHub.Domain.Enums;
+using StudyHub.Infrastructure.Notifications;
+using StudyHub.Infrastructure.Storage;
 
 namespace Application;
 
@@ -24,6 +32,24 @@ public class Program
 {
     public static void Main(string[] args)
     {
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var envCandidates = new[]
+        {
+            Path.Combine(currentDirectory, ".env"),
+            Path.Combine(currentDirectory, "StudyHub.Presentation", ".env")
+        };
+
+        foreach (var envPath in envCandidates)
+        {
+            if (!File.Exists(envPath))
+            {
+                continue;
+            }
+
+            Env.Load(envPath);
+            break;
+        }
+
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Host.UseSerilog((context, configuration) =>
@@ -36,10 +62,18 @@ public class Program
         builder.Services.AddIdentity<User, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<SDbContext>()
             .AddDefaultTokenProviders();
+
+        builder.Services.ConfigureApplicationCookie(options =>
+        {
+            options.LoginPath = "/login";
+            options.AccessDeniedPath = "/user/access-denied";
+        });
         
         builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
         builder.Services.AddScoped<ITaskRepository, TaskRepository>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IBlobService, BlobService>();
+        builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
         builder.Services.AddScoped<ICommentRepository, CommentRepository>();
         builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
         builder.Services.AddScoped<IGroupRepository, GroupRepository>();
@@ -48,6 +82,7 @@ public class Program
         builder.Services.AddScoped<ILessonSlotRepository, LessonSlotRepository>();
         builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
+        builder.Services.AddScoped<IClaimsTransformation, UserRolesClaimsTransformation>();
         
         var authenticationBuilder = builder.Services.AddAuthentication();
         var microsoftClientId = builder.Configuration["Authentication:Microsoft:ClientId"];
@@ -80,9 +115,55 @@ public class Program
         app.UseRouting();
 
         app.UseAuthentication(); 
+
+        app.Use(async (context, next) =>
+        {
+            var path = context.Request.Path;
+
+            static bool IsPath(string? value, string prefix)
+            {
+                return !string.IsNullOrWhiteSpace(value) &&
+                       value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+            }
+
+            var isBypassedPath = path.HasValue &&
+                                 (IsPath(path.Value, "/login") ||
+                                  IsPath(path.Value, "/user/login-microsoft") ||
+                                  IsPath(path.Value, "/user/callback") ||
+                                  IsPath(path.Value, "/signin-microsoft") ||
+                                  IsPath(path.Value, "/user/access-denied") ||
+                                  Path.HasExtension(path.Value));
+
+            if (!isBypassedPath && context.User.Identity?.IsAuthenticated != true)
+            {
+                context.Response.Redirect("/login");
+                return;
+            }
+
+            if (context.User.Identity?.IsAuthenticated == true)
+            {
+                var isStudent = context.User.IsInRole(nameof(Role.Student));
+                var isLeader = context.User.IsInRole(nameof(Role.Leader));
+                var pathValue = path.Value ?? string.Empty;
+
+                if (isStudent && !isLeader && IsPath(pathValue, "/TaskBoard/ReviewGroup"))
+                {
+                    context.Response.Redirect("/Home/Index");
+                    return;
+                }
+            }
+
+            await next();
+        });
+
         app.UseAuthorization();
 
         app.MapStaticAssets();
+        app.MapControllerRoute(
+            name: "admin-schedule",
+            pattern: "Admin/Schedule/{action=SchedulesList}/{id?}",
+            defaults: new { controller = "Schedule" });
+
         app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}")

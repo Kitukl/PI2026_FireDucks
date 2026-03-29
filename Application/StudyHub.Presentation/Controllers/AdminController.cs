@@ -40,37 +40,73 @@ public class AdminController(IMediator mediator) : Controller
         return View(users);
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendGlobalAnnouncement(string subject, string description)
+    {
+        if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(description))
+        {
+            TempData["AdminUsersError"] = "Subject and description are required.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        try
+        {
+            var recipientsCount = await mediator.Send(new SendGlobalAnnouncementCommand
+            {
+                Subject = subject,
+                Description = description
+            });
+
+            TempData["AdminUsersMessage"] = recipientsCount > 0
+                ? $"Global announcement sent to {recipientsCount} users."
+                : "No recipients were found for global announcement.";
+        }
+        catch (Exception ex)
+        {
+            TempData["AdminUsersError"] = $"Unable to send global announcement: {ex.Message}";
+        }
+
+        return RedirectToAction(nameof(Users));
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetUser(Guid id)
     {
         var userDto = await mediator.Send(new GetUserRequest(id));
+        var users = await mediator.Send(new GetUsersRequest());
+        var existingGroups = users
+            .Select(user => user.GroupName)
+            .Where(groupName => !string.IsNullOrWhiteSpace(groupName))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(groupName => groupName)
+            .ToList();
         
         var viewModel = new UpdateUserViewModel
         {
             Id = userDto.Id,
             Name = userDto.Name,
             Surname = userDto.Surname ?? "",
+            PhotoUrl = userDto.PhotoUrl ?? string.Empty,
             GroupName = userDto.GroupName,
             Roles = userDto.Roles,
-            AvailableRoles = Enum.GetNames(typeof(Role)).ToList()
+            AvailableRoles = Enum.GetNames(typeof(Role)).ToList(),
+            ExistingGroups = existingGroups
         };
         
         return View("UpdateUser",viewModel);
     }
     
     [HttpPost]
-    public async Task<IActionResult> UpdateUser(UserUpdateDto user)
+    public async Task<IActionResult> UpdateUser(Guid id, string groupName)
     {
         await mediator.Send(new UpdateUserCommand 
         { 
-            Id = user.Id,
-            Name = user.Name,
-            Surname = user.Surname,
-            Photo = user.PhotoUrl,
-            GroupName = user.GroupName
+            Id = id,
+            GroupName = groupName
         });
     
-        return RedirectToAction("GetUser", new { id = user.Id });
+        return RedirectToAction("GetUser", new { id });
     }
     
     [HttpPost]
@@ -84,7 +120,7 @@ public class AdminController(IMediator mediator) : Controller
     [HttpPost]
     public async Task<IActionResult> AddUserRole(UserRoleUpdateDto dto)
     {
-        await mediator.Send(new AddUserRoleCommand 
+        await mediator.Send(new AssignUserRoleCommand 
         { 
             UserId = dto.Id, 
             Role = dto.Role 

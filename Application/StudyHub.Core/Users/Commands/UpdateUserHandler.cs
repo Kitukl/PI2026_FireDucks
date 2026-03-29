@@ -8,11 +8,7 @@ namespace StudyHub.Core.Users.Commands;
 public class UpdateUserCommand : IRequest<User>
 {
     public Guid Id { get; set; }
-    public string Name { get; set; }
-    public string Photo { get; set; }
-    public string Surname { get; set; }
     public string GroupName { get; set; }
-    public Reminder Reminder { get; set; }
 }
 
 public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, User>
@@ -20,7 +16,9 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, User>
     private readonly IUserRepository _userRepository;
     private readonly IGroupRepository _groupRepository;
 
-    public UpdateUserHandler(IUserRepository userRepository, IGroupRepository groupRepository)
+    public UpdateUserHandler(
+        IUserRepository userRepository,
+        IGroupRepository groupRepository)
     {
         _userRepository = userRepository;
         _groupRepository = groupRepository;
@@ -33,11 +31,7 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, User>
         
         var group = await _groupRepository.GetGroupByNameAsync(request.GroupName);
 
-        user.Name = request.Name;
-        user.Surname = request.Surname;
-        user.PhotoUrl = request.Photo;
         user.Group = group;
-        user.Reminder = request.Reminder;
         
         await _userRepository.Update(user);
 

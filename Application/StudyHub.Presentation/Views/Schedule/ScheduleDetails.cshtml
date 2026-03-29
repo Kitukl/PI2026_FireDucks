@@ -1,97 +1,89 @@
 ﻿@model StudyHub.Core.DTOs.ScheduleDto
 
 @{
-    ViewData["Title"] = "Розклад групи " + Model.Group.Name;
+    ViewData["Title"] = "Schedule details - " + Model.Group.Name;
+    Layout = "_Layout";
     var lessonsByDay = Model.Lessons
         .GroupBy(l => l.Day)
         .OrderBy(g => g.Key)
         .ToList();
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+<section class="admin-page" aria-label="Schedule details page">
+    <div class="admin-page-header admin-page-header-inline">
         <div>
-            <h2 class="mb-0">Розклад групи <span class="text-primary">@Model.Group.Name</span></h2>
-            <p class="text-muted mb-0">Останнє оновлення: @Model.UpdateAt.ToString("g")</p>
+            <h1>Schedule details</h1>
+            <p class="admin-page-subtitle">Group @Model.Group.Name · Updated at @Model.UpdateAt.ToString("g")</p>
         </div>
-        <div class="btn-group">
-            <a asp-action="ScheduleEdit" asp-route-id="@Model.Id" class="btn btn-outline-warning">Редагувати</a>
-            <a asp-action="SchedulesList" class="btn btn-outline-secondary">До списку груп</a>
+        <div class="admin-actions-inline">
+            <a asp-action="ScheduleEdit" asp-route-id="@Model.Id" class="admin-btn admin-btn-primary">Edit</a>
+            <a asp-action="SchedulesList" class="admin-btn">Back to group list</a>
         </div>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card bg-light border-0">
-                <div class="card-body d-flex gap-4">
-                    <div><strong>Статус:</strong> @(Model.IsAutoUpdate ? "⚡ Автооновлення" : "📝 Ручне керування")</div>
-                    <div><strong>Доступ старости:</strong> @(Model.HeadmanUpdate ? "✅ Дозволено" : "❌ Заборонено")</div>
-                </div>
-            </div>
+    <div class="admin-panel">
+        <div class="admin-inline-details">
+            <div><strong>Mode:</strong> @(Model.IsAutoUpdate ? "Auto update" : "Manual update")</div>
+            <div><strong>Headman access:</strong> @(Model.HeadmanUpdate ? "Enabled" : "Disabled")</div>
+            <div><strong>Lessons count:</strong> @Model.Lessons.Count</div>
         </div>
     </div>
 
     @if (!Model.Lessons.Any())
     {
-        <div class="alert alert-info text-center py-5">
-            <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
-            <h5>Розклад ще не заповнений</h5>
-            <p>Додайте уроки через меню редагування.</p>
+        <div class="admin-panel">
+            <p class="admin-page-subtitle">This schedule has no lessons yet. Add lessons in edit mode.</p>
         </div>
     }
     else
     {
-        <div class="row row-cols-1 row-cols-lg-2 g-4">
+        <div class="admin-day-grid">
             @foreach (var dayGroup in lessonsByDay)
             {
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-header bg-primary text-white fw-bold">
-                            @GetDayName((int)dayGroup.Key)
-                        </div>
-                        <div class="card-body p-0">
-                            <ul class="list-group list-group-flush">
-                                @foreach (var lesson in dayGroup.OrderBy(l => l.LessonSlot.StartTime))
-                                {
-                                    <li class="list-group-item p-3">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div class="me-3">
-                                                <span class="badge bg-dark mb-2">
-                                                    @lesson.LessonSlot.StartTime.ToString("HH:mm") - @lesson.LessonSlot.EndTime.ToString("HH:mm")
-                                                </span>
-                                                <h6 class="mb-1 fw-bold">@lesson.Subject.Name</h6>
-                                                <div class="small text-muted">
-                                                    <i class="bi bi-geo-alt"></i> @lesson.LessonType
-                                                </div>
-                                            </div>
-                                            <div class="text-end">
-                                                @foreach (var lect in lesson.Lecturers)
-                                                {
-                                                    <div class="small fw-medium text-secondary">@lect.Surname @lect.Name[0].</div>
-                                                }
-                                            </div>
-                                        </div>
-                                    </li>
-                                }
-                            </ul>
-                        </div>
+                <article class="admin-panel">
+                    <header class="admin-panel-head">
+                        <h2>@GetDayName((int)dayGroup.Key)</h2>
+                    </header>
+
+                    <div class="admin-day-list">
+                        @foreach (var lesson in dayGroup.OrderBy(l => l.LessonSlot.StartTime))
+                        {
+                            <article class="admin-day-item">
+                                <p class="admin-day-time">
+                                    @lesson.LessonSlot.StartTime.ToString("HH:mm") - @lesson.LessonSlot.EndTime.ToString("HH:mm")
+                                </p>
+                                <h3>@lesson.Subject.Name</h3>
+                                <p>Type: @lesson.LessonType</p>
+                                <p>
+                                    Lecturers:
+                                    @if (lesson.Lecturers.Any())
+                                    {
+                                        @string.Join(", ", lesson.Lecturers.Select(lect => $"{lect.Surname} {lect.Name[0]}."))
+                                    }
+                                    else
+                                    {
+                                        @:Not specified
+                                    }
+                                </p>
+                            </article>
+                        }
                     </div>
-                </div>
+                </article>
             }
         </div>
     }
-</div>
+</section>
 
 @functions {
     string GetDayName(int day) => day switch
     {
-        1 => "Понеділок",
-        2 => "Вівторок",
-        3 => "Середа",
-        4 => "Четвер",
-        5 => "П'ятниця",
-        6 => "Субота",
-        7 => "Неділя",
-        _ => "Невідомий день"
+        1 => "Monday",
+        2 => "Tuesday",
+        3 => "Wednesday",
+        4 => "Thursday",
+        5 => "Friday",
+        6 => "Saturday",
+        7 => "Sunday",
+        _ => "Unknown day"
     };
 }

@@ -1,38 +1,112 @@
 @model IEnumerable<StudyHub.Core.DTOs.UserDto>
 
 @{
-    Layout="_Layout";
+    Layout = "_Layout";
+    ViewData["Title"] = "User Management";
 }
 
-<div class="container-fluid mt-4"> <h1 class="mb-4">Users</h1>
+<section class="admin-page" aria-label="User management page">
+    <div class="admin-page-header admin-page-header-inline">
+        <div>
+            <h1>User management</h1>
+            <p class="admin-page-subtitle">Manage accounts, roles, and group assignments</p>
+        </div>
+        <button class="admin-btn admin-btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#globalAnnouncementModal">
+            Create global announcement
+        </button>
+    </div>
 
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped w-100"> <thead class="table-light">
-            <tr>
-                <th class="border">Name</th>
-                <th class="border">Role</th>
-                <th class="border">Group</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach (var user in Model)
-            {
+    @if (TempData["AdminUsersError"] is string errorMessage)
+    {
+        <div class="admin-alert admin-alert-error">@errorMessage</div>
+    }
+    @if (TempData["AdminUsersMessage"] is string successMessage)
+    {
+        <div class="admin-alert admin-alert-success">@successMessage</div>
+    }
+
+    <div class="admin-panel">
+        <div class="admin-toolbar">
+            <input id="adminUsersSearch" class="admin-input" type="search" placeholder="Search by name, role, or group" aria-label="Search users" />
+        </div>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table" id="adminUsersTable">
+                <thead>
                 <tr>
-                    <td class="border">@user.Name @user.Surname</td>
-                    <td class="border">@string.Join(", ", user.Roles)</td>
-                    <td class="border">@user.GroupName</td>
-                    <td>
-                        <a asp-action="GetUser" asp-controller="Admin" asp-route-id="@user.Id">Edit</a> 
-                       
-                        <form asp-action="DeleteUser" method="post">
-                            <input type="hidden" name="id" value="@user.Id" />
-                            <button type="submit">Delete</button>
-                        </form>
-                    </td>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Group</th>
+                    <th>Actions</th>
                 </tr>
-            }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user.Name @user.Surname</td>
+                        <td>@string.Join(", ", user.Roles)</td>
+                        <td>@(string.IsNullOrWhiteSpace(user.GroupName) ? "-" : user.GroupName)</td>
+                        <td>
+                            <div class="admin-actions-inline">
+                                <a class="admin-link-btn" asp-action="GetUser" asp-controller="Admin" asp-route-id="@user.Id">Edit</a>
+                                <form asp-action="DeleteUser" method="post" onsubmit="return confirm('Delete this user?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@user.Id" />
+                                    <button type="submit" class="admin-link-btn admin-link-btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="globalAnnouncementModal" tabindex="-1" aria-labelledby="globalAnnouncementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content admin-modal">
+            <form asp-action="SendGlobalAnnouncement" method="post">
+                @Html.AntiForgeryToken()
+                <div class="admin-modal-head">
+                    <h2 id="globalAnnouncementModalLabel">Global announcement</h2>
+                    <button type="button" class="admin-btn" data-bs-dismiss="modal">Cancel</button>
+                </div>
+                <div class="admin-modal-body">
+                    <label class="admin-label" for="announcementSubject">Summary</label>
+                    <input id="announcementSubject" name="subject" class="admin-input" required maxlength="160" placeholder="Subject of your announcement" />
+
+                    <label class="admin-label" for="announcementDescription">Description</label>
+                    <textarea id="announcementDescription" name="description" class="admin-textarea" required placeholder="Describe what needs to be done"></textarea>
+                </div>
+                <div class="admin-modal-foot">
+                    <button type="submit" class="admin-btn admin-btn-primary">Send email</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const searchInput = document.getElementById("adminUsersSearch");
+            const tableRows = document.querySelectorAll("#adminUsersTable tbody tr");
+
+            if (!searchInput || !tableRows.length) {
+                return;
+            }
+
+            searchInput.addEventListener("input", () => {
+                const query = searchInput.value.trim().toLowerCase();
+
+                tableRows.forEach(row => {
+                    const text = row.textContent?.toLowerCase() ?? "";
+                    row.style.display = text.includes(query) ? "" : "none";
+                });
+            });
+        })();
+    </script>
+}

@@ -1,0 +1,392 @@
+@{
+    ViewData["Title"] = "Schedule";
+}
+
+<style>
+    .schedule-user-page {
+        border: 1px solid rgba(18, 24, 38, 0.35);
+        border-radius: 16px;
+        background: #ffffff;
+        overflow: hidden;
+    }
+
+    .schedule-user-table-wrap {
+        overflow-x: auto;
+    }
+
+    .schedule-user-table {
+        width: 100%;
+        min-width: 1040px;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .schedule-user-table th,
+    .schedule-user-table td {
+        border: 1px solid #aeb7c2;
+        vertical-align: top;
+        background: #ffffff;
+    }
+
+    .schedule-user-table thead th {
+        height: 62px;
+        text-align: center;
+        font-family: 'Bebas Neue', 'Archivo', 'Trebuchet MS', sans-serif;
+        letter-spacing: 0.03em;
+        font-size: 1.62rem;
+        color: #1f2a38;
+        background: #ffffff;
+    }
+
+    .schedule-user-time-head {
+        width: 150px;
+        background: #ffffff;
+    }
+
+    .schedule-user-time {
+        width: 150px;
+        font-size: 1.6rem;
+        font-family: 'Bebas Neue', 'Archivo', 'Trebuchet MS', sans-serif;
+        color: #2d3644;
+        text-align: center;
+        vertical-align: middle;
+        letter-spacing: 0.02em;
+        background: #ffffff;
+    }
+
+    .schedule-user-slot {
+        height: 168px;
+        padding: 6px;
+    }
+
+    .schedule-user-slot--double {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        overflow: hidden;
+        height: 282px;
+    }
+
+    .schedule-card {
+        border: 2px solid #b7c0cb;
+        border-radius: 12px;
+        background: #ffffff;
+        height: 100%;
+        padding: 9px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow: hidden;
+    }
+
+    .schedule-card--half {
+        height: calc((100% - 6px) / 2);
+        min-height: 0;
+        padding: 7px 8px;
+        gap: 6px;
+        justify-content: space-between;
+    }
+
+    .schedule-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        flex: 0 0 auto;
+    }
+
+    .schedule-type-badge {
+        min-width: 26px;
+        height: 26px;
+        border-radius: 10px;
+        background: #091321;
+        color: #fff;
+        font-family: 'Manrope', 'Segoe UI', sans-serif;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+    }
+
+    .schedule-subject {
+        text-align: center;
+        font-family: 'Manrope', 'Segoe UI', sans-serif;
+        letter-spacing: 0.01em;
+        color: #101929;
+        font-size: 1.16rem;
+        line-height: 1.16;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1 1 auto;
+        min-height: 0;
+        margin-top: 0;
+        overflow: hidden;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .schedule-card--half .schedule-subject {
+        font-size: 0.84rem;
+        margin-top: 0;
+        line-height: 1.12;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1 1 auto;
+        white-space: normal;
+        overflow: visible;
+        text-align: center;
+        font-weight: 700;
+        word-break: break-word;
+    }
+
+    .schedule-subject--long {
+        font-size: inherit;
+        line-height: inherit;
+    }
+
+    .schedule-card--half .schedule-subject--long {
+        font-size: inherit;
+        line-height: inherit;
+    }
+
+    .schedule-card-foot {
+        margin-top: auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 1.02rem;
+        line-height: 1;
+        min-height: 20px;
+        flex: 0 0 auto;
+    }
+
+    .schedule-card--half .schedule-card-foot {
+        margin-top: 0;
+        font-size: 0.78rem;
+        gap: 4px;
+        flex: 0 0 auto;
+        line-height: 1;
+        min-height: 14px;
+    }
+
+    .schedule-room {
+        color: #1f2c3a;
+        font-weight: 500;
+    }
+
+    .schedule-teachers {
+        color: #334052;
+        font-style: italic;
+        text-align: right;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 56%;
+    }
+
+    .schedule-card--half .schedule-teachers {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 52%;
+    }
+
+    .schedule-card--half .schedule-room {
+        white-space: nowrap;
+    }
+
+    .schedule-empty {
+        background: #ffffff;
+    }
+
+    @@media (max-width: 1200px) {
+        .schedule-user-table {
+            min-width: 920px;
+        }
+
+        .schedule-user-table thead th {
+            font-size: 1.42rem;
+        }
+
+        .schedule-user-time {
+            font-size: 1.35rem;
+        }
+
+        .schedule-subject {
+            font-size: 1.02rem;
+        }
+
+        .schedule-card-foot {
+            font-size: 0.92rem;
+        }
+    }
+</style>
+
+<section class="schedule-user-page" aria-label="Weekly schedule">
+    <div class="schedule-user-table-wrap">
+        <table class="schedule-user-table">
+            <thead>
+            <tr>
+                <th class="schedule-user-time-head"></th>
+                <th>Monday</th>
+                <th>Tuesday</th>
+                <th>Wednesday</th>
+                <th>Thursday</th>
+                <th>Friday</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td class="schedule-user-time">08:30 - 09:50</td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">L</span></div>
+                        <div class="schedule-subject schedule-subject--long">Програмування та підтримка веб-застосувань</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">266</span><span class="schedule-teachers">Teacher1</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">T</span></div>
+                        <div class="schedule-subject schedule-subject--long">Бази даних та інформаційні системи</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">116</span><span class="schedule-teachers">Teacher4</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot schedule-empty"></td>
+                <td class="schedule-user-slot schedule-empty"></td>
+                <td class="schedule-user-slot schedule-empty"></td>
+            </tr>
+            <tr>
+                <td class="schedule-user-time">10:10 - 11:30</td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">T</span></div>
+                        <div class="schedule-subject schedule-subject--long">Програмування та підтримка веб-застосувань</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">116</span><span class="schedule-teachers">Teacher1</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">T</span></div>
+                        <div class="schedule-subject schedule-subject--long">Паралельні та розподілені обчислення</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">112</span><span class="schedule-teachers">Teacher5</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot schedule-empty"></td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">T</span></div>
+                        <div class="schedule-subject schedule-subject--long">Комп'ютерні інформаційні мережі</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">439a</span><span class="schedule-teachers">Teacher7</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot schedule-empty"></td>
+            </tr>
+            <tr>
+                <td class="schedule-user-time">11:50 - 13:10</td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">L</span></div>
+                        <div class="schedule-subject schedule-subject--long">Обчислювальна геометрія і комп'ютерна графіка</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">111</span><span class="schedule-teachers">Teacher2</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">L</span></div>
+                        <div class="schedule-subject schedule-subject--long">Паралельні та розподілені обчислення</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">265</span><span class="schedule-teachers">Teacher5</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">L</span></div>
+                        <div class="schedule-subject schedule-subject--long">Програмна інженерія</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">265</span><span class="schedule-teachers">Teacher6</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">T</span></div>
+                        <div class="schedule-subject schedule-subject--long">ДВВС</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">-</span><span class="schedule-teachers">Teacher3</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">L</span></div>
+                        <div class="schedule-subject schedule-subject--long">Бази даних та інформаційні системи</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">265</span><span class="schedule-teachers">Teacher4</span></div>
+                    </article>
+                </td>
+            </tr>
+            <tr>
+                <td class="schedule-user-time">13:30 - 14:50</td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">T</span></div>
+                        <div class="schedule-subject schedule-subject--long">ДВВС</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">-</span><span class="schedule-teachers">Teacher3</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">T</span></div>
+                        <div class="schedule-subject schedule-subject--long">Програмна інженерія</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">112</span><span class="schedule-teachers">Teacher6</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot schedule-user-slot--double">
+                    <article class="schedule-card schedule-card--half">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">T</span></div>
+                        <div class="schedule-subject schedule-subject--long">Програмування та підтримка веб-застосувань</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">116</span><span class="schedule-teachers">Teacher1</span></div>
+                    </article>
+                    <article class="schedule-card schedule-card--half">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">T</span></div>
+                        <div class="schedule-subject schedule-subject--long">Обчислювальна геометрія і комп'ютерна графіка</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">119a</span><span class="schedule-teachers">Teacher2</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">T</span></div>
+                        <div class="schedule-subject schedule-subject--long">ДВВС</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">-</span><span class="schedule-teachers">Teacher3</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot schedule-user-slot--double">
+                    <article class="schedule-card schedule-card--half">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">L</span></div>
+                        <div class="schedule-subject schedule-subject--long">Дисципліна вибору</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">-</span><span class="schedule-teachers">Teacher8</span></div>
+                    </article>
+                    <article class="schedule-card schedule-card--half">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">T</span></div>
+                        <div class="schedule-subject schedule-subject--long">Дисципліна вибору</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">-</span><span class="schedule-teachers">Teacher8</span></div>
+                    </article>
+                </td>
+            </tr>
+            <tr>
+                <td class="schedule-user-time">15:05 - 16:25</td>
+                <td class="schedule-user-slot schedule-empty"></td>
+                <td class="schedule-user-slot schedule-empty"></td>
+                <td class="schedule-user-slot schedule-empty"></td>
+                <td class="schedule-user-slot">
+                    <article class="schedule-card">
+                        <div class="schedule-card-head"><span class="schedule-type-badge">L</span></div>
+                        <div class="schedule-subject schedule-subject--long">Комп'ютерні інформаційні мережі</div>
+                        <div class="schedule-card-foot"><span class="schedule-room">265</span><span class="schedule-teachers">Teacher7</span></div>
+                    </article>
+                </td>
+                <td class="schedule-user-slot schedule-empty"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>

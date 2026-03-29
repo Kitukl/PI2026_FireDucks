@@ -27,7 +27,20 @@ public class UserController : Controller
         _userManager = userManager;
         _signInManager = signInManager;
     }
+
+    [AllowAnonymous]
+    [HttpGet("/login")]
+    public IActionResult Login()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        return View("Login");
+    }
     
+    [AllowAnonymous]
     [HttpGet("login-microsoft")]
     public async Task<IActionResult> LoginMicrosoft()
     {
@@ -43,6 +56,7 @@ public class UserController : Controller
         return Challenge(properties, MicrosoftAccountDefaults.AuthenticationScheme);
     }
 
+    [AllowAnonymous]
     [HttpGet("callback")]
     public async Task<IActionResult> ExternalCallback()
     {
@@ -81,6 +95,33 @@ public class UserController : Controller
         return RedirectToAction("Index", "Home");
     }
 
+    [HttpGet("access-denied")]
+    public IActionResult AccessDenied(string? returnUrl)
+    {
+        returnUrl ??= Request.Query["ReturnUrl"].FirstOrDefault();
+
+        var isAdmin = User.IsInRole(nameof(Role.Admin));
+        var isStudent = User.IsInRole(nameof(Role.Student));
+        var isLeader = User.IsInRole(nameof(Role.Leader));
+
+        if (isAdmin && !isStudent)
+        {
+            return RedirectToAction("Dashboard", "Admin");
+        }
+
+        if ((isStudent || isLeader) && IsPath(returnUrl, "/Admin"))
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        if (isStudent && IsPath(returnUrl, "/TaskBoard/ReviewGroup"))
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        return RedirectToAction("Index", "Home");
+    }
+
     [HttpGet("logout")]
     public async Task<IActionResult> Logout()
     {
@@ -102,5 +143,11 @@ public class UserController : Controller
     {
         await _mediator.Send(request);
         return View();
+    }
+
+    private static bool IsPath(string? value, string prefix)
+    {
+        return !string.IsNullOrWhiteSpace(value) &&
+               value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
     }
 }
