@@ -13,9 +13,17 @@
     <div class="user-profile-grid">
         <section class="user-profile-left">
             <div class="user-photo-card">
-                <button class="user-photo-btn" type="button">Choose Profile Photo</button>
+                <form asp-controller="Home" asp-action="UploadProfilePhoto" method="post" enctype="multipart/form-data" class="js-profile-photo-form">
+                    @Html.AntiForgeryToken()
+                    <input id="profilePhotoInput" name="photoFile" type="file" accept="image/*" hidden class="js-profile-photo-input" />
+                    <button type="button" class="user-photo-btn js-profile-photo-btn">Choose Profile Photo</button>
+                    <div class="user-photo-actions js-profile-photo-actions" hidden>
+                        <button type="submit" class="user-photo-confirm-btn js-profile-photo-confirm">Confirm</button>
+                        <button type="button" class="user-photo-cancel-btn js-profile-photo-cancel">Cancel</button>
+                    </div>
+                </form>
                 <div class="user-photo-frame">
-                    <img src="@photoUrl" alt="Profile photo" />
+                    <img src="@photoUrl" alt="Profile photo" class="js-profile-photo-image" data-original-src="@photoUrl" />
                 </div>
             </div>
 

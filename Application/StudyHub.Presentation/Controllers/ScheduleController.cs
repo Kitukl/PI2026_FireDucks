@@ -29,8 +29,10 @@ namespace StudyHub.Mvc.Controllers
 
 
 
-        public IActionResult ScheduleCreate(Guid? groupId)
+        public async Task<IActionResult> ScheduleCreate(Guid? groupId)
         {
+            await PrepareGroupsViewBag();
+
             var model = new ScheduleDto
             {
                 Group = new GroupDto { Id = groupId ?? Guid.Empty },
@@ -77,10 +79,7 @@ namespace StudyHub.Mvc.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScheduleEdit(Guid id, ScheduleDto schedule)
         {
-            // ДОДАЙ ОСЬ ЦЕЙ РЯДОК:
-            schedule.Id = id; // Примусово беремо ID з URL і кладемо в об'єкт
-
-            // Далі твій існуючий код:
+            schedule.Id = id;
             ModelState.Remove("Group.Name");
             ModelState.Remove("schedule.Group.Name");
 
@@ -148,7 +147,7 @@ namespace StudyHub.Mvc.Controllers
             var lessons = await _mediator.Send(new GetAllLessonsRequest());
             ViewBag.Lessons = new SelectList(lessons.Select(l => new {
                 Id = l.Id,
-                Display = $"{l.Subject.Name} ({l.LessonType}) - {l.Day} день"
+                Display = $"{l.Subject.Name} ({l.LessonType}) - Day {l.Day}"
             }), "Id", "Display");
         }
     }

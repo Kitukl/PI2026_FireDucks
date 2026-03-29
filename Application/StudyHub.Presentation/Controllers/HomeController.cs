@@ -1,12 +1,15 @@
 using System.Diagnostics;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Application.Models;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using StudyHub.Core.Storage.Interfaces;
 using StudyHub.Core.Comments.Commands;
 using StudyHub.Core.Comments.Queries;
 using StudyHub.Core.Feedbacks.Commands;
+using StudyHub.Core.Storage.DTOs;
 using StudyHub.Core.Subjects.Queries;
 using StudyHub.Core.Tasks.Commands;
 using StudyHub.Core.Tasks.Queries;
@@ -19,15 +22,23 @@ namespace Application.Controllers;
 
 public class HomeController : Controller
 {
+    private const string UserAvatarContainer = "user-avatars";
+
     private readonly ILogger<HomeController> _logger;
     private readonly UserManager<User> _userManager;
     private readonly IMediator _mediator;
+    private readonly IBlobService _blobService;
 
-    public HomeController(ILogger<HomeController> logger, UserManager<User> userManager, IMediator mediator)
+    public HomeController(
+        ILogger<HomeController> logger,
+        UserManager<User> userManager,
+        IMediator mediator,
+        IBlobService blobService)
     {
         _logger = logger;
         _userManager = userManager;
         _mediator = mediator;
+        _blobService = blobService;
     }
 
     public async Task<IActionResult> Index()
@@ -79,9 +90,7 @@ public class HomeController : Controller
             if (user != null)
             {
                 ViewBag.FullName = $"{user.Name} {user.Surname}".Trim();
-                ViewBag.PhotoUrl = string.IsNullOrWhiteSpace(user.PhotoUrl)
-                    ? Url.Content("~/images/no-photo.png")
-                    : user.PhotoUrl;
+                ViewBag.PhotoUrl = ResolveUserPhotoUrl(user.PhotoUrl);
             }
         }
 
@@ -89,6 +98,83 @@ public class HomeController : Controller
         ViewBag.PhotoUrl ??= Url.Content("~/images/no-photo.png");
 
         return View();
+    }
+
+    [HttpPost("/UserProfile/Photo")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadProfilePhoto(IFormFile? photoFile, CancellationToken cancellationToken)
+    {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            return Forbid();
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Forbid();
+        }
+
+        if (photoFile is not { Length: > 0 })
+        {
+            TempData["ProfileFeedbackError"] = "Please select an image first.";
+            return RedirectToAction(nameof(UserProfile));
+        }
+
+        var safeFileName = Path.GetFileName(photoFile.FileName);
+        if (string.IsNullOrWhiteSpace(safeFileName))
+        {
+            safeFileName = $"avatar-{Guid.NewGuid():N}.bin";
+        }
+
+        var blobName = $"{user.Id:D}/{Guid.NewGuid():N}-{safeFileName}";
+        await using var stream = photoFile.OpenReadStream();
+
+        await _blobService.UploadFileAsync(
+            UserAvatarContainer,
+            blobName,
+            stream,
+            photoFile.ContentType,
+            cancellationToken);
+
+        if (TryExtractAvatarBlobName(user.PhotoUrl, out var oldBlobName))
+        {
+            await _blobService.DeleteFileAsync(UserAvatarContainer, oldBlobName, cancellationToken);
+        }
+
+        user.PhotoUrl = $"{UserAvatarContainer}/{blobName}";
+        var updateResult = await _userManager.UpdateAsync(user);
+
+        if (!updateResult.Succeeded)
+        {
+            TempData["ProfileFeedbackError"] = "Failed to save profile photo.";
+            return RedirectToAction(nameof(UserProfile));
+        }
+
+        TempData["ProfileFeedbackSuccess"] = "Profile photo updated.";
+        return RedirectToAction(nameof(UserProfile));
+    }
+
+    [HttpGet("/UserProfile/PhotoFile")]
+    public async Task<IActionResult> UserProfilePhoto([FromQuery] string path, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return NotFound();
+        }
+
+        var marker = UserAvatarContainer + "/";
+        var blobName = path.StartsWith(marker, StringComparison.OrdinalIgnoreCase)
+            ? path[marker.Length..]
+            : path;
+
+        var fileStream = await _blobService.GetFileAsync(UserAvatarContainer, blobName, cancellationToken);
+        if (fileStream == null)
+        {
+            return NotFound();
+        }
+
+        return File(fileStream, GetImageContentType(blobName));
     }
 
     [HttpPost("/UserProfile/SendRequest")]
@@ -249,6 +335,19 @@ public class HomeController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardViewTaskDelete(Guid taskId)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
+        {
+            return Forbid();
+        }
+
+        var currentUser = await _mediator.Send(new GetUserRequest(currentUserId.Value));
+        var taskToDelete = await _mediator.Send(new GetTaskQuery { Id = taskId });
+        if (!IsTaskVisibleForUser(taskToDelete, currentUserId.Value, currentUser.GroupName))
+        {
+            return Forbid();
+        }
+
         await _mediator.Send(new DeleteCommand
         {
             Id = taskId
@@ -264,6 +363,19 @@ public class HomeController : Controller
         if (string.IsNullOrWhiteSpace(description))
         {
             return RedirectToAction(nameof(TaskBoardViewTask), new { taskCode = taskId });
+        }
+
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
+        {
+            return Forbid();
+        }
+
+        var task = await _mediator.Send(new GetTaskQuery { Id = taskId });
+        var currentUserDto = await _mediator.Send(new GetUserRequest(currentUserId.Value));
+        if (!IsTaskVisibleForUser(task, currentUserId.Value, currentUserDto.GroupName))
+        {
+            return Forbid();
         }
 
         var user = User.Identity?.IsAuthenticated == true
@@ -288,6 +400,19 @@ public class HomeController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardViewTaskDeleteComment(Guid taskId, Guid commentId)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
+        {
+            return Forbid();
+        }
+
+        var task = await _mediator.Send(new GetTaskQuery { Id = taskId });
+        var currentUserDto = await _mediator.Send(new GetUserRequest(currentUserId.Value));
+        if (!IsTaskVisibleForUser(task, currentUserId.Value, currentUserDto.GroupName))
+        {
+            return Forbid();
+        }
+
         var comments = await _mediator.Send(new GetCommentsQuery
         {
             TaskId = taskId
@@ -330,6 +455,23 @@ public class HomeController : Controller
     {
         var parsedStatus = ParseTaskStatus(status);
         var task = await _mediator.Send(new GetTaskQuery { Id = taskId });
+        var currentUserId = GetCurrentUserId();
+
+        if (task == null || currentUserId == null)
+        {
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return NotFound(new { message = "Task not found." });
+            }
+
+            return RedirectToAction(nameof(TaskBoard));
+        }
+
+        var currentUser = await _mediator.Send(new GetUserRequest(currentUserId.Value));
+        if (!IsTaskVisibleForUser(task, currentUserId.Value, currentUser.GroupName))
+        {
+            return Forbid();
+        }
 
         await _mediator.Send(new UpdateTaskCommand
         {
@@ -338,10 +480,34 @@ public class HomeController : Controller
             Subject = task.Subject
         });
 
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            return Ok(new
+            {
+                taskId,
+                status = status,
+                normalizedStatus = NormalizeTaskStatus(parsedStatus)
+            });
+        }
+
         return RedirectToAction(nameof(TaskBoardViewTask), new { taskCode = taskId });
     }
 
+    private static string NormalizeTaskStatus(Status status)
+    {
+        return status switch
+        {
+            Status.ToDo => "todo",
+            Status.InProgress => "in-progress",
+            Status.ForReview => "for-review",
+            Status.Done => "done",
+            Status.Resolved => "done",
+            _ => "todo"
+        };
+    }
+
     [HttpGet("/TaskBoard/ReviewGroup")]
+    [Authorize(Roles = nameof(Role.Leader))]
     public async Task<IActionResult> TaskBoardReviewGroup()
     {
         var model = await BuildTaskBoardReviewGroupModelAsync();
@@ -349,6 +515,7 @@ public class HomeController : Controller
     }
 
     [HttpPost("/TaskBoard/ReviewGroup/AddUsers")]
+    [Authorize(Roles = nameof(Role.Leader))]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardReviewGroupAddUsers(List<Guid> selectedUserIds)
     {
@@ -371,6 +538,7 @@ public class HomeController : Controller
     }
 
     [HttpPost("/TaskBoard/ReviewGroup/RemoveUser")]
+    [Authorize(Roles = nameof(Role.Leader))]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardReviewGroupRemoveUser(Guid userId)
     {
@@ -383,14 +551,233 @@ public class HomeController : Controller
     }
 
     [HttpGet("/Storage")]
-    public IActionResult Storage()
+    public async Task<IActionResult> Storage(CancellationToken cancellationToken)
+    {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            return Forbid();
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Forbid();
+        }
+
+        var model = await BuildStoragePageModelAsync(user, cancellationToken);
+        return View(model);
+    }
+
+    [HttpPost("/Storage/Upload")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadStorageFile(IFormFile? uploadFile, bool shareWithGroup, CancellationToken cancellationToken)
+    {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            return Forbid();
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Forbid();
+        }
+
+        if (uploadFile is not { Length: > 0 })
+        {
+            TempData["StorageError"] = "Please choose a file to upload.";
+            return RedirectToAction(nameof(Storage));
+        }
+
+        var userDto = await _mediator.Send(new GetUserRequest(user.Id), cancellationToken);
+        var hasGroup = !string.IsNullOrWhiteSpace(userDto.GroupName);
+
+        var targetContainer = BuildUserStorageContainerName(user.Id);
+        var isGroupUpload = false;
+        if (shareWithGroup && hasGroup)
+        {
+            targetContainer = BuildGroupStorageContainerName(userDto.GroupName!);
+            isGroupUpload = true;
+        }
+
+        var originalName = Path.GetFileName(uploadFile.FileName);
+        if (string.IsNullOrWhiteSpace(originalName))
+        {
+            originalName = $"file-{Guid.NewGuid():N}";
+        }
+
+        var blobName = BuildStoredBlobName(originalName);
+        await using var stream = uploadFile.OpenReadStream();
+        await _blobService.UploadFileAsync(targetContainer, blobName, stream, uploadFile.ContentType, cancellationToken);
+
+        TempData["StorageMessage"] = isGroupUpload
+            ? "File uploaded to your group storage."
+            : "File uploaded to your personal storage.";
+
+        return RedirectToAction(nameof(Storage));
+    }
+
+    [HttpGet("/Storage/Download")]
+    public async Task<IActionResult> DownloadStorageFile(string scope, string name, CancellationToken cancellationToken)
+    {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            return Forbid();
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Forbid();
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return NotFound();
+        }
+
+        var userDto = await _mediator.Send(new GetUserRequest(user.Id), cancellationToken);
+        string containerName;
+
+        if (string.Equals(scope, "group", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(userDto.GroupName))
+            {
+                return Forbid();
+            }
+
+            containerName = BuildGroupStorageContainerName(userDto.GroupName);
+        }
+        else
+        {
+            containerName = BuildUserStorageContainerName(user.Id);
+        }
+
+        var safeName = Path.GetFileName(name);
+        var stream = await _blobService.GetFileAsync(containerName, safeName, cancellationToken);
+        if (stream == null)
+        {
+            return NotFound();
+        }
+
+        return File(stream, GetContentTypeByFileName(safeName), StripStoredFilePrefix(safeName));
+    }
+
+    [HttpGet("/Storage/Preview")]
+    public async Task<IActionResult> PreviewStorageFile(string scope, string name, CancellationToken cancellationToken)
+    {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            return Forbid();
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Forbid();
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return NotFound();
+        }
+
+        var userDto = await _mediator.Send(new GetUserRequest(user.Id), cancellationToken);
+        string containerName;
+
+        if (string.Equals(scope, "group", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(userDto.GroupName))
+            {
+                return Forbid();
+            }
+
+            containerName = BuildGroupStorageContainerName(userDto.GroupName);
+        }
+        else
+        {
+            containerName = BuildUserStorageContainerName(user.Id);
+        }
+
+        var safeName = Path.GetFileName(name);
+        var stream = await _blobService.GetFileAsync(containerName, safeName, cancellationToken);
+        if (stream == null)
+        {
+            return NotFound();
+        }
+
+        return File(stream, GetContentTypeByFileName(safeName));
+    }
+
+    [HttpPost("/Storage/Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteStorageFile(string scope, string name, CancellationToken cancellationToken)
+    {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            return Forbid();
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Forbid();
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            TempData["StorageError"] = "File name is required.";
+            return RedirectToAction(nameof(Storage));
+        }
+
+        var userDto = await _mediator.Send(new GetUserRequest(user.Id), cancellationToken);
+        string containerName;
+
+        if (string.Equals(scope, "group", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(userDto.GroupName))
+            {
+                return Forbid();
+            }
+
+            containerName = BuildGroupStorageContainerName(userDto.GroupName);
+        }
+        else
+        {
+            containerName = BuildUserStorageContainerName(user.Id);
+        }
+
+        var safeName = Path.GetFileName(name);
+        await _blobService.DeleteFileAsync(containerName, safeName, cancellationToken);
+
+        TempData["StorageMessage"] = "File deleted.";
+        return RedirectToAction(nameof(Storage));
+    }
+
+    [HttpGet("/Schedule")]
+    public IActionResult Schedule()
     {
         return View();
     }
 
     private async Task<TaskBoardPageViewModel> BuildTaskBoardModelAsync()
     {
-        var tasks = (await _mediator.Send(new GetTasksQuery())).ToList();
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
+        {
+            return new TaskBoardPageViewModel
+            {
+                Tasks = new List<TaskBoardTaskCardViewModel>(),
+                Subjects = new List<string>()
+            };
+        }
+
+        var currentUser = await _mediator.Send(new GetUserRequest(currentUserId.Value));
+        var currentGroupName = currentUser.GroupName;
+
+        var tasks = (await _mediator.Send(new GetTasksQuery()))
+            .Where(task => IsTaskVisibleForUser(task, currentUserId.Value, currentGroupName))
+            .ToList();
 
         var sortedTasks = tasks
             .OrderBy(task => task.Subject?.Name)
@@ -435,6 +822,26 @@ public class HomeController : Controller
                 .OrderBy(subject => subject)
                 .ToList()
         };
+    }
+
+    private static bool IsTaskVisibleForUser(StudyHub.Domain.Entities.Task task, Guid currentUserId, string? currentGroupName)
+    {
+        if (task.User?.Id == currentUserId)
+        {
+            return true;
+        }
+
+        if (!task.IsGroupTask)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(currentGroupName))
+        {
+            return false;
+        }
+
+        return string.Equals(task.User?.Group?.Name, currentGroupName, StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<TaskBoardCreatePageViewModel> BuildTaskCreatePageModelAsync(TaskBoardCreatePageViewModel? source = null)
@@ -535,6 +942,211 @@ public class HomeController : Controller
             "done" => Status.Done,
             "resolved" => Status.Resolved,
             _ => Status.ToDo
+        };
+    }
+
+    private async Task<StoragePageViewModel> BuildStoragePageModelAsync(User user, CancellationToken cancellationToken)
+    {
+        var model = new StoragePageViewModel();
+        var currentUser = await _mediator.Send(new GetUserRequest(user.Id), cancellationToken);
+
+        var personalContainer = BuildUserStorageContainerName(user.Id);
+        var personalFiles = await _blobService.ListFilesAsync(personalContainer, cancellationToken);
+        model.Files.AddRange(personalFiles.Select(file => MapStorageFile(file, "personal", false)));
+
+        if (!string.IsNullOrWhiteSpace(currentUser.GroupName))
+        {
+            model.GroupName = currentUser.GroupName;
+            model.CanShareWithGroup = true;
+
+            var groupContainer = BuildGroupStorageContainerName(currentUser.GroupName);
+            var groupFiles = await _blobService.ListFilesAsync(groupContainer, cancellationToken);
+            model.Files.AddRange(groupFiles.Select(file => MapStorageFile(file, "group", true)));
+        }
+
+        model.Files = model.Files
+            .OrderByDescending(item => item.LastModified)
+            .ThenBy(item => item.Name)
+            .ToList();
+
+        return model;
+    }
+
+    private static StorageFileItemViewModel MapStorageFile(BlobFileInfoDto blobFile, string scope, bool isGroupFile)
+    {
+        var rawName = Path.GetFileName(blobFile.Name);
+        var cleanName = StripStoredFilePrefix(rawName);
+        var ext = Path.GetExtension(cleanName).TrimStart('.').ToUpperInvariant();
+
+        return new StorageFileItemViewModel
+        {
+            Name = cleanName,
+            BlobName = rawName,
+            DownloadName = cleanName,
+            Scope = scope,
+            Extension = string.IsNullOrWhiteSpace(ext) ? "-" : ext,
+            SizeDisplay = FormatFileSize(blobFile.Size),
+            LastModified = blobFile.LastModified,
+            LastModifiedDisplay = blobFile.LastModified?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "-",
+            CanPreview = CanPreviewFileByExtension(ext),
+            IsGroupFile = isGroupFile
+        };
+    }
+
+    private static string BuildUserStorageContainerName(Guid userId)
+    {
+        return $"user-storage-{userId:D}";
+    }
+
+    private static string BuildGroupStorageContainerName(string groupName)
+    {
+        return $"group-storage-{groupName}";
+    }
+
+    private static string BuildStoredBlobName(string originalName)
+    {
+        return $"{Guid.NewGuid():N}__{originalName}";
+    }
+
+    private static string StripStoredFilePrefix(string fileName)
+    {
+        var normalized = Path.GetFileName(fileName);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return fileName;
+        }
+
+        var separatorIndex = normalized.IndexOf("__", StringComparison.Ordinal);
+        if (separatorIndex > 0 && separatorIndex + 2 < normalized.Length)
+        {
+            return normalized[(separatorIndex + 2)..];
+        }
+
+        var dashIndex = normalized.IndexOf('-', StringComparison.Ordinal);
+        if (dashIndex > 20 && dashIndex + 1 < normalized.Length)
+        {
+            return normalized[(dashIndex + 1)..];
+        }
+
+        return normalized;
+    }
+
+    private static bool CanPreviewFileByExtension(string extension)
+    {
+        return extension switch
+        {
+            "PNG" => true,
+            "JPG" => true,
+            "JPEG" => true,
+            "WEBP" => true,
+            "GIF" => true,
+            "BMP" => true,
+            "PDF" => true,
+            "TXT" => true,
+            "CSV" => true,
+            _ => false
+        };
+    }
+
+    private static string GetContentTypeByFileName(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".png" => "image/png",
+            ".jpg" => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".bmp" => "image/bmp",
+            ".pdf" => "application/pdf",
+            ".txt" => "text/plain",
+            ".csv" => "text/csv",
+            _ => "application/octet-stream"
+        };
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB"];
+        double size = bytes;
+        var unitIndex = 0;
+
+        while (size >= 1024 && unitIndex < units.Length - 1)
+        {
+            size /= 1024;
+            unitIndex++;
+        }
+
+        return $"{size:0.#} {units[unitIndex]}";
+    }
+
+    private string ResolveUserPhotoUrl(string? photoUrl)
+    {
+        if (string.IsNullOrWhiteSpace(photoUrl))
+        {
+            return Url.Content("~/images/no-photo.png");
+        }
+
+        var marker = UserAvatarContainer + "/";
+        if (photoUrl.StartsWith(marker, StringComparison.OrdinalIgnoreCase))
+        {
+            return Url.Action(nameof(UserProfilePhoto), new { path = photoUrl })
+                   ?? Url.Content("~/images/no-photo.png");
+        }
+
+        return photoUrl;
+    }
+
+    private static bool TryExtractAvatarBlobName(string? photoUrl, out string blobName)
+    {
+        blobName = string.Empty;
+        if (string.IsNullOrWhiteSpace(photoUrl))
+        {
+            return false;
+        }
+
+        var marker = UserAvatarContainer + "/";
+        if (photoUrl.StartsWith(marker, StringComparison.OrdinalIgnoreCase))
+        {
+            blobName = photoUrl[marker.Length..];
+            return !string.IsNullOrWhiteSpace(blobName);
+        }
+
+        if (!Uri.TryCreate(photoUrl, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        var absolutePath = uri.AbsolutePath.Replace('\\', '/');
+        var markerIndex = absolutePath.IndexOf("/" + marker, StringComparison.OrdinalIgnoreCase);
+        if (markerIndex < 0)
+        {
+            return false;
+        }
+
+        var start = markerIndex + marker.Length + 1;
+        if (start >= absolutePath.Length)
+        {
+            return false;
+        }
+
+        blobName = absolutePath[start..];
+        return !string.IsNullOrWhiteSpace(blobName);
+    }
+
+    private static string GetImageContentType(string blobName)
+    {
+        var extension = Path.GetExtension(blobName);
+        return extension.ToLowerInvariant() switch
+        {
+            ".png" => "image/png",
+            ".jpg" => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".bmp" => "image/bmp",
+            _ => "application/octet-stream"
         };
     }
 

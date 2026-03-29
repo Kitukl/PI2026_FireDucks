@@ -24,6 +24,15 @@ public class UserRepository : IUserRepository
         return await _context.Users.Include(u=>u.Group).ToListAsync();
     }
 
+    public async Task<List<string>> GetAllEmailsAsync()
+    {
+        return await _context.Users
+            .Where(u => !string.IsNullOrWhiteSpace(u.Email))
+            .Select(u => u.Email!)
+            .Distinct()
+            .ToListAsync();
+    }
+
     public async Task Delete(Guid userId)
     {
         await _context.Users
@@ -43,7 +52,12 @@ public class UserRepository : IUserRepository
     public async Task AddRole(Role userRole, Guid userId)
     {
         var user = await _context.Users.FirstAsync(u => u.Id == userId); 
-        await _userManager.AddToRoleAsync(user, userRole.ToString());
+        var result = await _userManager.AddToRoleAsync(user, userRole.ToString());
+
+        if (!result.Succeeded && result.Errors.All(e => e.Code != "UserAlreadyInRole"))
+        {
+            throw new Exception("Failed to assign role: " + string.Join("; ", result.Errors.Select(e => e.Description)));
+        }
     }
 
     public async Task RemoveRole(Role userRole, Guid userId)
@@ -54,7 +68,10 @@ public class UserRepository : IUserRepository
 
     public async Task<User> GetUserById(Guid requestId)
     {
-        return await _userManager.FindByIdAsync(requestId.ToString()) ?? throw new Exception("User not found");
+        return await _context.Users
+                   .Include(u => u.Group)
+                   .FirstOrDefaultAsync(u => u.Id == requestId)
+               ?? throw new Exception("User not found");
     }
     public async Task<User> CreateUser(User user)
     {

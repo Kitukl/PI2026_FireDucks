@@ -6,4 +6,5 @@ public interface IStatisticRepository
 {
     Task<Statistic?> GetRecentStatisticAsync();
     Task<Dictionary<int,double>> GetYearlyActivityAsync(int year);
+    Task<int> GetStorageFileCountAsync(CancellationToken cancellationToken = default);
 }

@@ -12,7 +12,8 @@
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
-    var isAdminRoute = currentController.StartsWith("Admin", StringComparison.OrdinalIgnoreCase);
+    var requestPath = Context.Request.Path.Value ?? string.Empty;
+    var isAdminRoute = requestPath.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase);
 }
 <body class="@(isAdminRoute ? "admin-body" : "app-body")">
 @if (!isAdminRoute)
@@ -31,8 +32,8 @@
                    asp-area="" asp-controller="Home" asp-action="Index">Dashboard</a>
                                          <a class="sh-nav-link @(currentController == "Home" && (currentAction == "TaskBoard" || currentAction == "TaskBoardCreate" || currentAction == "TaskBoardViewTask" || currentAction == "TaskBoardReviewGroup") ? "active" : string.Empty)"
                    asp-area="" asp-controller="Home" asp-action="TaskBoard">Task board</a>
-                <a class="sh-nav-link @(currentController == "Schedule" ? "active" : string.Empty)"
-                   asp-area="" asp-controller="Schedule" asp-action="SchedulesList">Schedule</a>
+                                         <a class="sh-nav-link @(currentController == "Home" && currentAction == "Schedule" ? "active" : string.Empty)"
+                                             asp-area="" asp-controller="Home" asp-action="Schedule">Schedule</a>
                      <a class="sh-nav-link @(currentController == "Home" && currentAction == "Storage" ? "active" : string.Empty)"
                          asp-area="" asp-controller="Home" asp-action="Storage">Storage</a>
             </nav>
@@ -64,11 +65,11 @@ else
                 <a class="sh-nav-link @(currentController == "Admin" && currentAction == "Dashboard" ? "active" : string.Empty)"
                    asp-area="" asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
                 <a class="sh-nav-link @(currentController == "Admin" && (currentAction == "Users" || currentAction == "GetUser") ? "active" : string.Empty)"
-                   asp-area="" asp-controller="Admin" asp-action="Users">User requests</a>
+                         asp-area="" asp-controller="Admin" asp-action="Users">User management</a>
                 <a class="sh-nav-link @(currentController == "Admin" && (currentAction == "Requests" || currentAction == "RequestView") ? "active" : string.Empty)"
                    asp-area="" asp-controller="Admin" asp-action="Requests">Requests</a>
                 <a class="sh-nav-link @(currentController == "Schedule" ? "active" : string.Empty)"
-                   asp-area="" asp-controller="Schedule" asp-action="SchedulesList">Schedule</a>
+                         href="@Url.RouteUrl("admin-schedule", new { action = "SchedulesList" })">Schedule</a>
             </nav>
 
             <div class="sh-user-actions sh-user-actions-admin">
@@ -84,14 +85,6 @@ else
     </main>
 </div>
 
-@if (isAdminRoute)
-{
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - StudyHub.Presentation - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-}
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>

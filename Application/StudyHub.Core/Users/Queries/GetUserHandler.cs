@@ -25,6 +25,7 @@ public class GetUserHandler : IRequestHandler<GetUserRequest, UserDto>
             GroupName = user.Group?.Name,
             Name = user.Name,
             Surname = user.Surname,
+            PhotoUrl = user.PhotoUrl,
             Roles = await _userRepository.GetRolesByUser(user)
         };
     }
