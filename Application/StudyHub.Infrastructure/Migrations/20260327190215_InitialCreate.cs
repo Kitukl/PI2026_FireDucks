@@ -65,7 +65,7 @@ namespace StudyHub.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Reminder",
+                name: "Reminders",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -74,22 +74,7 @@ namespace StudyHub.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Reminder", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Schedules",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UpdateInterval = table.Column<long>(type: "bigint", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsAutoUpdate = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
-                    CanHeadmanUpdate = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Schedules", x => x.Id);
+                    table.PrimaryKey("PK_Reminders", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -140,18 +125,39 @@ namespace StudyHub.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Schedules",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UpdateInterval = table.Column<long>(type: "bigint", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsAutoUpdate = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    CanHeadmanUpdate = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    GroupId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Schedules", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Schedules_Groups_GroupId",
+                        column: x => x.GroupId,
+                        principalTable: "Groups",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetUsers",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     LastActivity = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    MicrosoftId = table.Column<string>(type: "text", nullable: false),
+                    MicrosoftId = table.Column<string>(type: "text", nullable: true),
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Surname = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     IsNotified = table.Column<bool>(type: "boolean", nullable: false),
-                    PhotoUrl = table.Column<string>(type: "text", nullable: false),
-                    GroupId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ScheduleId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PhotoUrl = table.Column<string>(type: "text", nullable: true),
+                    GroupId = table.Column<Guid>(type: "uuid", nullable: true),
                     ReminderId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -176,19 +182,13 @@ namespace StudyHub.Infrastructure.Migrations
                         column: x => x.GroupId,
                         principalTable: "Groups",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_AspNetUsers_Reminder_ReminderId",
-                        column: x => x.ReminderId,
-                        principalTable: "Reminder",
-                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_AspNetUsers_Schedules_ScheduleId",
-                        column: x => x.ScheduleId,
-                        principalTable: "Schedules",
+                        name: "FK_AspNetUsers_Reminders_ReminderId",
+                        column: x => x.ReminderId,
+                        principalTable: "Reminders",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -196,6 +196,8 @@ namespace StudyHub.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Day = table.Column<string>(type: "text", nullable: false),
+                    LessonType = table.Column<string>(type: "text", nullable: false),
                     SubjectId = table.Column<Guid>(type: "uuid", nullable: false),
                     LessonsSlotId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
@@ -324,7 +326,7 @@ namespace StudyHub.Infrastructure.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -357,10 +359,11 @@ namespace StudyHub.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
                     IsGroupTask = table.Column<bool>(type: "boolean", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     Deadline = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     SubjectId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
@@ -372,7 +375,7 @@ namespace StudyHub.Infrastructure.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Tasks_Subjects_SubjectId",
                         column: x => x.SubjectId,
@@ -516,11 +519,6 @@ namespace StudyHub.Infrastructure.Migrations
                 column: "ReminderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetUsers_ScheduleId",
-                table: "AspNetUsers",
-                column: "ScheduleId");
-
-            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
@@ -566,6 +564,12 @@ namespace StudyHub.Infrastructure.Migrations
                 name: "IX_LessonsSlots_StartTime_EndTime",
                 table: "LessonsSlots",
                 columns: new[] { "StartTime", "EndTime" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Schedules_GroupId",
+                table: "Schedules",
+                column: "GroupId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -641,6 +645,9 @@ namespace StudyHub.Infrastructure.Migrations
                 name: "Lessons");
 
             migrationBuilder.DropTable(
+                name: "Schedules");
+
+            migrationBuilder.DropTable(
                 name: "Tasks");
 
             migrationBuilder.DropTable(
@@ -659,10 +666,7 @@ namespace StudyHub.Infrastructure.Migrations
                 name: "Groups");
 
             migrationBuilder.DropTable(
-                name: "Reminder");
-
-            migrationBuilder.DropTable(
-                name: "Schedules");
+                name: "Reminders");
         }
     }
 }

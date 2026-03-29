@@ -12,8 +12,8 @@ using StudyHub.Infrastructure;
 namespace StudyHub.Infrastructure.Migrations
 {
     [DbContext(typeof(SDbContext))]
-    [Migration("20260322174031_ChangeStructure8")]
-    partial class ChangeStructure8
+    [Migration("20260327190215_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -80,26 +80,6 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("d6a02956-023f-4b41-a30c-d47450b1eccb"),
-                            Name = "Student",
-                            NormalizedName = "STUDENT"
-                        },
-                        new
-                        {
-                            Id = new Guid("ebc12079-0632-4553-80a3-5e61f33cceb0"),
-                            Name = "Admin",
-                            NormalizedName = "ADMIN"
-                        },
-                        new
-                        {
-                            Id = new Guid("3a49c9fe-24f3-4d9d-852f-767d3c580104"),
-                            Name = "Leader",
-                            NormalizedName = "LEADER"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -428,9 +408,6 @@ namespace StudyHub.Infrastructure.Migrations
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("GroupId1")
-                        .HasColumnType("uuid");
-
                     b.Property<bool>("IsAutoUpdate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -445,9 +422,6 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GroupId")
-                        .IsUnique();
-
-                    b.HasIndex("GroupId1")
                         .IsUnique();
 
                     b.ToTable("Schedules");
@@ -501,12 +475,14 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("Deadline")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsGroupTask")
                         .HasColumnType("boolean");
@@ -570,7 +546,6 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("MicrosoftId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
@@ -596,7 +571,6 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("PhotoUrl")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid>("ReminderId")
@@ -760,7 +734,7 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasOne("StudyHub.Domain.Entities.User", "User")
                         .WithMany("Feedbacks")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -788,14 +762,10 @@ namespace StudyHub.Infrastructure.Migrations
             modelBuilder.Entity("StudyHub.Domain.Entities.Schedule", b =>
                 {
                     b.HasOne("StudyHub.Domain.Entities.Group", "Group")
-                        .WithOne()
+                        .WithOne("Schedule")
                         .HasForeignKey("StudyHub.Domain.Entities.Schedule", "GroupId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("StudyHub.Domain.Entities.Group", null)
-                        .WithOne("Schedule")
-                        .HasForeignKey("StudyHub.Domain.Entities.Schedule", "GroupId1");
 
                     b.Navigation("Group");
                 });
@@ -811,7 +781,7 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasOne("StudyHub.Domain.Entities.User", "User")
                         .WithMany("Tasks")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Subject");
@@ -824,7 +794,7 @@ namespace StudyHub.Infrastructure.Migrations
                     b.HasOne("StudyHub.Domain.Entities.Group", "Group")
                         .WithMany("Users")
                         .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("StudyHub.Domain.Entities.Reminder", "Reminder")
                         .WithMany()

@@ -77,27 +77,6 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("f5ff6bb3-aafb-4ea6-9008-77e7a15d535a"),
-                            Name = "Student",
-                            NormalizedName = "STUDENT"
-                        },
-                        new
-                        {
-
-                            Id = new Guid("2147d302-d856-42a6-a08c-e46f012107f9"),
-                            Name = "Admin",
-                            NormalizedName = "ADMIN"
-                        },
-                        new
-                        {
-                            Id = new Guid("f64771e4-20fc-4675-9bc9-c230eeb1f2bf"),
-                            Name = "Leader",
-                            NormalizedName = "LEADER"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
