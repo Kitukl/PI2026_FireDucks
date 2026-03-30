@@ -32,7 +32,7 @@
                                          <a class="sh-nav-link @(currentController == "Home" && (currentAction == "TaskBoard" || currentAction == "TaskBoardCreate" || currentAction == "TaskBoardViewTask" || currentAction == "TaskBoardReviewGroup") ? "active" : string.Empty)"
                    asp-area="" asp-controller="Home" asp-action="TaskBoard">Task board</a>
                 <a class="sh-nav-link @(currentController == "Schedule" ? "active" : string.Empty)"
-                   asp-area="" asp-controller="Schedule" asp-action="SchedulesList">Schedule</a>
+                   asp-area="" asp-controller="Schedule" asp-action="MySchedule">Schedule</a>
                      <a class="sh-nav-link @(currentController == "Home" && currentAction == "Storage" ? "active" : string.Empty)"
                          asp-area="" asp-controller="Home" asp-action="Storage">Storage</a>
             </nav>
@@ -68,7 +68,7 @@ else
                 <a class="sh-nav-link @(currentController == "Admin" && (currentAction == "Requests" || currentAction == "RequestView") ? "active" : string.Empty)"
                    asp-area="" asp-controller="Admin" asp-action="Requests">Requests</a>
                 <a class="sh-nav-link @(currentController == "Schedule" ? "active" : string.Empty)"
-                   asp-area="" asp-controller="Schedule" asp-action="SchedulesList">Schedule</a>
+                   asp-area="" asp-controller="Admin" asp-action="Schedule">Schedule</a>
             </nav>
 
             <div class="sh-user-actions sh-user-actions-admin">

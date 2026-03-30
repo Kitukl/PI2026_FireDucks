@@ -1,0 +1,145 @@
+﻿@model Application.Models.ScheduleViewModel
+
+<div class="table-responsive mt-3">
+    <table class="schedule-table">
+        <thead>
+            <tr>
+                <th class="time-col">Час</th>
+                <th>Monday</th>
+                <th>Tuesday</th>
+                <th>Wednesday</th>
+                <th>Thursday</th>
+                <th>Friday</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var slot in Model.UniqueSlots)
+            {
+                <tr>
+                    <td class="time-col fw-bold">
+                        @slot.StartTime.ToString("HH:mm")<br />
+                        <span class="text-muted small">@slot.EndTime.ToString("HH:mm")</span>
+                    </td>
+
+                    @foreach (var day in Model.Days)
+                    {
+                        var key = $"{(int)day}-{slot.Id}";
+                        <td>
+                            @if (Model.Grid.TryGetValue(key, out var lessonsInSlot))
+                            {
+                                @foreach (var lesson in lessonsInSlot)
+                                {
+                                    var badgeLetter = lesson.LessonType?.ToLower().Contains("лек") == true ? "L" : "T";
+
+                                    <div class="lesson-card shadow-sm">
+                                        <div class="lesson-badge">@badgeLetter</div>
+
+                                        <div class="lesson-subject">
+                                            @lesson.Subject.Name
+                                        </div>
+
+                                        <div class="lesson-footer">
+                                            <div class="lesson-room">
+                                                @(string.IsNullOrEmpty(lesson.LessonType) ? "—" : "111")
+                                            </div>
+                                            <div class="lesson-lecturer">
+                                                @if (lesson.Lecturers != null && lesson.Lecturers.Any())
+                                                {
+                                                    @string.Join(", ", lesson.Lecturers.Select(l => l.Surname))
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: white;
+    }
+
+        .schedule-table th, .schedule-table td {
+            border: 1px solid #dee2e6;
+            padding: 12px 8px;
+            min-height: 100px;
+        }
+
+        .schedule-table th {
+            background-color: #f8f9fa;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            color: #666;
+        }
+
+    .time-col {
+        width: 100px;
+        text-align: center;
+        background-color: #fcfcfc !important;
+        color: #333;
+    }
+
+    .lesson-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 10px;
+        position: relative;
+        min-height: 90px;
+        background-color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s;
+    }
+
+        .lesson-card:hover {
+            transform: translateY(-2px);
+            border-color: #adb5bd;
+        }
+
+    .lesson-badge {
+        background: black;
+        color: white;
+        border-radius: 4px;
+        padding: 1px 6px;
+        font-weight: bold;
+        font-size: 11px;
+        position: absolute;
+        top: 8px;
+        left: 8px;
+    }
+
+    .lesson-subject {
+        text-align: center;
+        font-weight: 600;
+        margin-top: 18px;
+        font-size: 0.9rem;
+        line-height: 1.2;
+        color: #212529;
+    }
+
+    .lesson-footer {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        margin-top: 10px;
+        color: #777;
+        border-top: 1px solid #f0f0f0;
+        padding-top: 5px;
+    }
+
+    .lesson-room {
+        font-weight: bold;
+        color: #444;
+    }
+</style>

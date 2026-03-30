@@ -1,0 +1,63 @@
+﻿@model StudyHub.Core.DTOs.LessonDto
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning py-3">
+                    <h5 class="mb-0 text-center">Редагування параметрів заняття</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="LessonsEdit" method="post">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Предмет</label>
+                                <select asp-for="Subject.Id" asp-items="ViewBag.Subjects" class="form-select"></select>
+                                <span asp-validation-for="Subject.Id" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Часовий слот</label>
+                                <select asp-for="LessonSlot.Id" asp-items="ViewBag.Slots" class="form-select"></select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Day" class="form-label fw-bold">День тижня</label>
+                                <select asp-for="Day" class="form-select">
+                                    <option value="1">Понеділок</option>
+                                    <option value="2">Вівторок</option>
+                                    <option value="3">Середа</option>
+                                    <option value="4">Четвер</option>
+                                    <option value="5">П'ятниця</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="LessonType" class="form-label fw-bold">Тип заняття</label>
+                                <input asp-for="LessonType" class="form-control" />
+                                <span asp-validation-for="LessonType" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Викладачі</label>
+                            <select name="LecturersIds" asp-items="ViewBag.Lecturers" class="form-select" multiple style="height: 150px;">
+                                @foreach (var lect in Model.Lecturers)
+                                {
+
+                                }
+                            </select>
+                        </div>
+
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a asp-action="LessonsList" class="btn btn-outline-secondary">Скасувати</a>
+                            <button type="submit" class="btn btn-warning px-5">Зберегти зміни</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

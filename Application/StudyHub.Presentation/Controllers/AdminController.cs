@@ -1,19 +1,24 @@
 using Application.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudyHub.Core.DTOs;
 using StudyHub.Core.Feedbacks.Commands;
 using StudyHub.Core.Feedbacks.Queries;
+using StudyHub.Core.Schedules.Commands;
+using StudyHub.Core.Schedules.Queries;
 using StudyHub.Core.Statistics.Queries;
 using StudyHub.Core.Tasks.Queries;
 using StudyHub.Core.Users.Commands;
 using StudyHub.Core.Users.Queries;
 using StudyHub.Domain.Entities;
 using StudyHub.Domain.Enums;
+using StudyHub.Infrastructure;
+using DayOfWeek = StudyHub.Domain.Enums.DayOfWeek;
 
 namespace Application.Controllers;
 
-public class AdminController(IMediator mediator) : Controller
+public class AdminController(IMediator mediator, SDbContext _context) : Controller
 {
     public async Task<IActionResult> Dashboard()
     {
@@ -178,6 +183,137 @@ public class AdminController(IMediator mediator) : Controller
 
         return RedirectToAction(nameof(RequestView), new { feedbackId });
     }
+
+    [HttpGet("/Admin/Schedule/{groupId?}")]
+    public async Task<IActionResult> Schedule(Guid? groupId)
+    {
+        var groups = await _context.Groups
+            .OrderBy(g => g.Name)
+            .Select(g => new GroupDto { Id = g.Id, Name = g.Name })
+            .ToListAsync();
+
+        var allSchedules = await mediator.Send(new GetAllSchedulesRequest());
+        var firstWithSettings = allSchedules.FirstOrDefault();
+
+        var model = new AdminScheduleViewModel
+        {
+            Groups = groups,
+            SelectedGroupId = groupId,
+            IsAutoUpdateEnabled = firstWithSettings?.IsAutoUpdate ?? false,
+            AllowLeadersToUpdate = firstWithSettings?.HeadmanUpdate ?? false,
+            LastGlobalUpdate = allSchedules.Any()
+                ? allSchedules.Max(s => s.UpdateAt)
+                : DateTime.MinValue,
+            AutoUpdateIntervalDays = 3
+        };
+
+        if (groupId.HasValue)
+        {
+            var scheduleDto = await mediator.Send(new GetScheduleByGroupIdRequest(groupId.Value));
+            if (scheduleDto != null)
+            {
+                model.CurrentGroupSchedule = BuildScheduleGridViewModel(scheduleDto);
+            }
+        }
+
+        return View(model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RunGlobalUpdate()
+    {
+        var groupNames = await _context.Groups.Select(g => g.Name).ToListAsync();
+
+        foreach (var name in groupNames)
+        {
+            await mediator.Send(new ParseAndSaveScheduleCommand(name));
+        }
+
+        return RedirectToAction(nameof(Schedule));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateGroupSchedule(Guid groupId)
+    {
+        var group = await _context.Groups.FindAsync(groupId);
+        if (group != null)
+        {
+            await mediator.Send(new ParseAndSaveScheduleCommand(group.Name));
+        }
+        return RedirectToAction(nameof(Schedule), new { groupId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RemoveGroupSchedule(Guid groupId)
+    {
+        await mediator.Send(new DeleteScheduleForGroupRequest(groupId));
+        return RedirectToAction(nameof(Schedule));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RemoveGlobalSchedule()
+    {
+        await mediator.Send(new DeleteAllRequest());
+        return RedirectToAction(nameof(Schedule));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateGlobalSettings(bool isAutoUpdate, bool allowLeaders)
+    {
+        await mediator.Send(new SetScheduleAutoUpdateRequest(isAutoUpdate));
+
+        var schedules = await _context.Schedules.ToListAsync();
+        foreach (var s in schedules)
+        {
+            s.CanHeadmanUpdate = allowLeaders;
+        }
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction(nameof(Schedule));
+    }
+
+    private Application.Models.ScheduleViewModel BuildScheduleGridViewModel(ScheduleDto dto)
+    {
+        var vm = new Application.Models.ScheduleViewModel
+        {
+            GroupId = dto.Group.Id,
+            GroupName = dto.Group.Name,
+            CanHeadmanUpdate = dto.HeadmanUpdate,
+            IsHeadman = false
+        };
+
+        if (dto.Lessons != null && dto.Lessons.Any())
+        {
+            vm.UniqueSlots = dto.Lessons
+                .Select(l => l.LessonSlot)
+                .Where(s => s != null)
+                .GroupBy(s => s.Id)
+                .Select(g => g.First())
+                .OrderBy(s => s.StartTime)
+                .ToList();
+
+            vm.Days = new List<DayOfWeek>
+            {
+                DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
+                DayOfWeek.Thursday, DayOfWeek.Friday
+            };
+
+            foreach (var lesson in dto.Lessons)
+            {
+                var key = $"{(int)lesson.Day}-{lesson.LessonSlot.Id}";
+
+                if (!vm.Grid.ContainsKey(key))
+                {
+                    vm.Grid[key] = new List<LessonDto>();
+                }
+                vm.Grid[key].Add(lesson);
+            }
+        }
+
+        return vm;
+    }
+
+
 
     private static AdminRequestsViewModel BuildRequestsViewModel(
         IEnumerable<Feedback> feedbacks,

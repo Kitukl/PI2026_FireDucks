@@ -1,8 +1,5 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using StudyHub.Infrastructure;
-using StudyHub.Infrastructure.Repositories;
-
 using Serilog;
 using StudyHub.Core.Comments.Interfaces;
 using StudyHub.Core.Feedbacks.Interfaces;
@@ -11,12 +8,16 @@ using StudyHub.Core.Lecturers.Interfaces;
 using StudyHub.Core.Lessons.Interfaces;
 using StudyHub.Core.LessonSlots.Interfaces;
 using StudyHub.Core.Schedules.Interfaces;
+using StudyHub.Core.Services;
 using StudyHub.Core.Statistics.Interfaces;
 using StudyHub.Core.Statistics.Queries;
 using StudyHub.Core.Subjects.Interfaces;
 using StudyHub.Core.Tasks.Interfaces;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Domain.Entities;
+using StudyHub.Infrastructure;
+using StudyHub.Infrastructure.Repositories;
+using StudyHub.Infrastructure.Services;
 
 namespace Application;
 
@@ -65,7 +66,10 @@ public class Program
         
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));
-        
+
+        builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c => c.BaseAddress = new Uri("http://python_parser:5678"));
+        builder.Services.AddHostedService<ScheduleAutoUpdateService>();
+
         var app = builder.Build();
 
         app.UseSerilogRequestLogging();

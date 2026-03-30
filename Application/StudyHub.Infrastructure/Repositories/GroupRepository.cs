@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudyHub.Core.Group;
-using StudyHub.Domain.Entities;
 
 namespace StudyHub.Infrastructure.Repositories;
 
@@ -12,8 +11,15 @@ public class GroupRepository : IGroupRepository
     {
         _context = context;
     }
-    public async Task<Group> GetGroupByNameAsync(string groupName)
+
+    public async Task<Domain.Entities.Group> GetGroupByNameAsync(string groupName)
     {
-        return await _context.Groups.FirstOrDefaultAsync(g => g.Name == groupName);
+        return await _context.Groups
+            .FirstOrDefaultAsync(g => g.Name == groupName);
+    }
+
+    public async Task<List<Domain.Entities.Group>> GetAllGroupsAsync()
+    {
+        return await _context.Groups.ToListAsync();
     }
 }

@@ -1,0 +1,152 @@
+﻿@model StudyHub.Core.DTOs.LessonDto
+
+<div class="container mt-4">
+    <h2>Створення нового заняття</h2>
+    <hr />
+
+    <form asp-action="LessonsCreate" method="post">
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Основна інформація</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Предмет</label>
+                            <select asp-for="Subject.Id" class="form-select" asp-items="ViewBag.Subjects" required>
+                                <option value="">-- Оберіть предмет --</option>
+                            </select>
+                            <span asp-validation-for="Subject.Id" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Час (Слот)</label>
+                            <select asp-for="LessonSlot.Id" class="form-select" asp-items="ViewBag.Slots" required>
+                                <option value="">-- Оберіть час --</option>
+                            </select>
+                            <span asp-validation-for="LessonSlot.Id" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="LessonType" class="form-label fw-bold">Тип заняття (Лекція, Практика тощо)</label>
+                            <input asp-for="LessonType" class="form-control" placeholder="Наприклад: Лекція" required />
+                            <span asp-validation-for="LessonType" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Day" class="form-label fw-bold">День (1-7)</label>
+                            <input asp-for="Day" type="number" min="1" max="7" class="form-control" required />
+                            <span asp-validation-for="Day" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Викладачі</h5>
+                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#lecturerModal">
+                            + Додати викладача
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table" id="lecturersTable">
+                            <thead>
+                                <tr>
+                                    <th>ПІБ викладача</th>
+                                    <th style="width: 100px;">Дія</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                        <div id="emptyLecturersMessage" class="text-muted small text-center mt-3">
+                            Жодного викладача не додано. Натисніть "+ Додати викладача".
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary px-5">Створити заняття</button>
+            <a asp-action="LessonsList" class="btn btn-outline-secondary ms-2">Скасувати</a>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="lecturerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Виберіть викладача</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    @if (ViewBag.Lecturers != null)
+                    {
+                        foreach (var lecturer in ViewBag.Lecturers)
+                        {
+                            <button type="button" class="list-group-item list-group-item-action select-lecturer-btn"
+                                    data-id="@lecturer.Id"
+                                    data-name="@lecturer.Surname @lecturer.Name">
+                                @lecturer.Surname @lecturer.Name
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            // Додавання викладача з модального вікна
+            $(".select-lecturer-btn").click(function () {
+                const lecturerId = $(this).data("id");
+                const lecturerName = $(this).data("name");
+
+                // Перевірка, чи вже додано такого викладача
+                if ($(`input[value='${lecturerId}']`).length > 0) {
+                    alert("Цього викладача вже додано до заняття!");
+                    return;
+                }
+
+                // Зверніть увагу: name="LecturersIds" збігається з параметром у контролері (Guid[] LecturersIds)
+                const row = `<tr>
+                    <td>
+                        <input type="hidden" name="LecturersIds" value="${lecturerId}" />
+                        <span class="fw-bold">${lecturerName}</span>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-lecturer">
+                            <i class="bi bi-x-lg"></i> Видалити
+                        </button>
+                    </td>
+                </tr>`;
+
+                $("#lecturersTable tbody").append(row);
+                $("#emptyLecturersMessage").hide();
+
+                // Закриваємо модалку
+                bootstrap.Modal.getInstance(document.getElementById('lecturerModal')).hide();
+            });
+
+            // Видалення викладача з таблиці
+            $(document).on("click", ".remove-lecturer", function () {
+                $(this).closest("tr").remove();
+
+                // Якщо таблиця порожня, показуємо повідомлення
+                if ($("#lecturersTable tbody tr").length === 0) {
+                    $("#emptyLecturersMessage").show();
+                }
+            });
+        });
+    </script>
+}

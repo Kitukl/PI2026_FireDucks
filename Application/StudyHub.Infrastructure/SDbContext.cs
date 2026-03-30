@@ -25,27 +25,31 @@ public class SDbContext(DbContextOptions<SDbContext> options)
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        var adminId = new Guid("c195766b-5b2d-4f5a-94de-f3d67114099b");
+        var leaderId = new Guid("9a9aa371-da25-46cd-90d3-dded994118a8");
+        var studentId = new Guid("e94dc167-9d67-4d56-9d0c-92a193f5cc0f");
+
         builder.Entity<IdentityRole<Guid>>().HasData(
             new IdentityRole<Guid>
             {
-                Id = Guid.NewGuid(),
-                Name = nameof(Role.Student),
+                Id = studentId,
+                Name = "Student",
                 NormalizedName = "STUDENT"
             },
             new IdentityRole<Guid>
             {
-                Id = Guid.NewGuid(),
-                Name = nameof(Role.Admin),
+                Id = adminId,
+                Name = "Admin",
                 NormalizedName = "ADMIN"
             },
             new IdentityRole<Guid>
             {
-                Id = Guid.NewGuid(),
-                Name = nameof(Role.Leader),
+                Id = leaderId,
+                Name = "Leader",
                 NormalizedName = "LEADER"
             }
         );
-        
+
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(SDbContext).Assembly);
     }

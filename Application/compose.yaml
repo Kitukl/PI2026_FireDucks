@@ -10,10 +10,25 @@
     volumes:
       - azurite_data:/data
 
+  python_parser:
+    build:
+      context: StudyHub.Parser
+      dockerfile: ./Dockerfile
+    container_name: fireducks_parser
+    restart: always
+    ports:
+      - "5678:5678"
+
   presentation:
     build:
       context: .
       dockerfile: StudyHub.Presentation/Dockerfile
+    depends_on:
+      - postgres
+      - python_parser
+    ports:
+      - "5000:80" 
+      - "5001:443"
 
   postgres:
     image: postgres:15-alpine

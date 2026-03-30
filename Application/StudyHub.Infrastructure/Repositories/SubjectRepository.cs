@@ -29,7 +29,7 @@ public class SubjectRepository : ISubjectRepository
 
     public async Task AddSubject(Subject subject)
     {
-        var dbSubject = await _context.Subjects.FindAsync(subject.Id);
+        var dbSubject = await _context.Subjects.FirstOrDefaultAsync(x => ( subject.Id == x.Id || subject.Name == x.Name )); 
         if (dbSubject == null)
         {
             await _context.Subjects.AddAsync(subject);

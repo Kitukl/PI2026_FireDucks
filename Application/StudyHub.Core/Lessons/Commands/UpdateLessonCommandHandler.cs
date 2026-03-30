@@ -33,7 +33,7 @@ namespace StudyHub.Core.Lessons.Commands
                 Subject = new Subject { Id = request.lesson.Subject.Id, Name = request.lesson.Subject.Name },
                 LessonsSlot = new LessonsSlot
                 {
-                    Id = request.lesson.Id,
+                    Id = request.lesson.LessonSlot.Id,
                     StartTime = request.lesson.LessonSlot.StartTime,
                     EndTime = request.lesson.LessonSlot.EndTime
                 }

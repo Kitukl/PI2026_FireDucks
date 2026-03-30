@@ -1,0 +1,6 @@
+﻿fastapi
+uvicorn
+playwright
+camelot-py[cv]
+pandas
+opencv-python-headless
