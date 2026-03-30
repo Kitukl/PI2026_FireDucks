@@ -14,6 +14,7 @@ using StudyHub.Core.Lecturers.Interfaces;
 using StudyHub.Core.Lessons.Interfaces;
 using StudyHub.Core.LessonSlots.Interfaces;
 using StudyHub.Core.Schedules.Interfaces;
+using StudyHub.Core.Services;
 using StudyHub.Core.Statistics.Interfaces;
 using StudyHub.Core.Statistics.Queries;
 using StudyHub.Core.Storage.Interfaces;
@@ -22,6 +23,9 @@ using StudyHub.Core.Tasks.Interfaces;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Core.Notifications.Interfaces;
 using StudyHub.Domain.Entities;
+using StudyHub.Infrastructure;
+using StudyHub.Infrastructure.Repositories;
+using StudyHub.Infrastructure.Services;
 using StudyHub.Domain.Enums;
 using StudyHub.Infrastructure.Notifications;
 using StudyHub.Infrastructure.Storage;
@@ -100,7 +104,10 @@ public class Program
         
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));
-        
+
+        builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c => c.BaseAddress = new Uri("http://localhost:5678"));
+        builder.Services.AddHostedService<ScheduleAutoUpdateService>();
+
         var app = builder.Build();
 
         app.UseSerilogRequestLogging();
@@ -159,10 +166,10 @@ public class Program
         app.UseAuthorization();
 
         app.MapStaticAssets();
-        app.MapControllerRoute(
-            name: "admin-schedule",
-            pattern: "Admin/Schedule/{action=SchedulesList}/{id?}",
-            defaults: new { controller = "Schedule" });
+        //app.MapControllerRoute(
+        //    name: "admin-schedule",
+        //    pattern: "Admin/Schedule/{action=SchedulesList}/{id?}",
+        //    defaults: new { controller = "Schedule" });
 
         app.MapControllerRoute(
                 name: "default",

@@ -34,6 +34,8 @@ public class LecturerRepository : ILecturerRepository
 
     public async Task AddLecturer(Lecturer lecturer)
     {
+        var dbLecturer = await _context.Lecturers.FirstOrDefaultAsync(x => lecturer.Id == x.Id || (lecturer.Name == x.Name && lecturer.Surname == x.Surname));
+
         if (lecturer.Lessons != null && lecturer.Lessons.Any())
         {
             var processedLessons = new List<Lesson>();
@@ -63,8 +65,16 @@ public class LecturerRepository : ILecturerRepository
                     processedLessons.Add(incomingLesson);
                 }
             }
-
-            lecturer.Lessons = processedLessons;
+            if (dbLecturer != null)
+            {
+                dbLecturer.Lessons = processedLessons;
+                dbLecturer.Name = lecturer.Name;
+                dbLecturer.Surname = lecturer.Surname;
+            }
+            else
+            {
+                lecturer.Lessons = processedLessons;
+            }
         }
 
         await _context.Lecturers.AddAsync(lecturer);
@@ -84,37 +94,28 @@ public class LecturerRepository : ILecturerRepository
 
         if (lecturer.Lessons != null)
         {
-            // Очищаємо поточні зв'язки лектора з уроками
             existingLecturer.Lessons.Clear();
 
             foreach (var lesson in lecturer.Lessons)
             {
-                // 1. Шукаємо, чи існує такий УРОК у базі
                 var dbLesson = await _context.Lessons.FindAsync(lesson.Id);
 
                 if (dbLesson != null)
                 {
-                    // Якщо урок існуючий, просто додаємо його до колекції лектора
                     existingLecturer.Lessons.Add(dbLesson);
                 }
                 else
                 {
-                    // 2. Якщо це НОВИЙ урок (наприклад, доданий через JS на формі)
-                    // Нам потрібно переконатися, що EF не намагається створити новий Subject/Slot
-
                     if (lesson.Subject != null)
                     {
-                        // Кажемо EF: "Цей предмет уже в базі, не створюй його"
                         _context.Entry(lesson.Subject).State = EntityState.Unchanged;
                     }
 
                     if (lesson.LessonsSlot != null)
                     {
-                        // Кажемо EF: "Цей слот уже в базі, не створюй його"
                         _context.Entry(lesson.LessonsSlot).State = EntityState.Unchanged;
                     }
 
-                    // Тепер додаємо новий урок. EF створить ТІЛЬКИ запис у Lessons та зв'язок
                     existingLecturer.Lessons.Add(lesson);
                 }
             }

@@ -1,4 +1,5 @@
-﻿using StudyHub.Domain.Entities;
+﻿using StudyHub.Core.DTOs.Parser;
+using StudyHub.Domain.Entities;
 using Schedule = StudyHub.Domain.Entities.Schedule;
 using Task = System.Threading.Tasks.Task;
 
@@ -18,5 +19,6 @@ namespace StudyHub.Core.Schedules.Interfaces
         Task<bool> GetHeadmanUpdateRights(Guid groupId);
         Task SetScheduleAutoUpdate(bool value);
         Task SetScheduleAutoUpdateInterval(uint interval);
+        Task SyncParsedScheduleAsync(string groupName, ParsedScheduleResponse parsedData, CancellationToken cancellationToken);
     }
 }

@@ -50,8 +50,8 @@
                         {
                             <tr>
                                 <td>
-                                    <input type="hidden" name="schedule.Lessons[@i].Id" value="@Model.Lessons[i].Id" />
-                                    <span>@Model.Lessons[i].Subject.Name (@Model.Lessons[i].LessonType) - Day @Model.Lessons[i].Day</span>
+                                    <input type="hidden" name="Lessons[@i].Id" value="@Model.Lessons[i].Id" />
+                                    <span>@Model.Lessons[i].Subject.Name (@Model.Lessons[i].LessonType) - День @Model.Lessons[i].Day</span>
                                 </td>
                                 <td>
                                     <button type="button" class="admin-link-btn admin-link-btn-danger remove-lesson">Remove</button>
@@ -103,8 +103,8 @@
 
             const row = `<tr>
                 <td>
-                    <input type="hidden" name="schedule.Lessons[${lessonCount}].Id" value="${lessonId}" />
-                    <span>${lessonText}</span>
+                    <input type="hidden" name="Lessons[${lessonCount}].Id" value="${lessonId}" />
+                    <span class="fw-bold text-primary">${lessonText}</span>
                 </td>
                 <td>
                     <button type="button" class="admin-link-btn admin-link-btn-danger remove-lesson">Remove</button>

@@ -8,7 +8,7 @@
                     <h5 class="mb-0 text-center">Редагування параметрів заняття</h5>
                 </div>
                 <div class="card-body p-4">
-                    <form asp-action="LessonEdit">
+                    <form asp-action="LessonsEdit" method="post">
                         <input type="hidden" asp-for="Id" />
 
                         <div class="row mb-3">
@@ -46,10 +46,9 @@
                             <select name="LecturersIds" asp-items="ViewBag.Lecturers" class="form-select" multiple style="height: 150px;">
                                 @foreach (var lect in Model.Lecturers)
                                 {
-                                    
+
                                 }
                             </select>
-                            <div class="form-text text-muted">Використовуйте Ctrl (або Cmd на Mac), щоб вибрати або зняти вибір з декількох викладачів.</div>
                         </div>
 
                         <div class="d-flex justify-content-between pt-3 border-top">

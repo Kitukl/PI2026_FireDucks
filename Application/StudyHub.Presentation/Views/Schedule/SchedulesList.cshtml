@@ -17,27 +17,28 @@
     <div class="admin-schedule-grid">
         @foreach (var item in Model)
         {
-            <article class="admin-panel admin-schedule-card">
-                <header class="admin-schedule-card-head">
-                    <h2>@item.Group.Name</h2>
-                    <p>Updated at @item.UpdateAt.ToString("dd.MM.yyyy HH:mm")</p>
-                </header>
-
-                <dl class="admin-meta-list">
-                    <div><dt>Lessons</dt><dd>@item.Lessons.Count</dd></div>
-                    <div><dt>Headman edit access</dt><dd>@(item.HeadmanUpdate ? "Enabled" : "Disabled")</dd></div>
-                    <div><dt>Auto update</dt><dd>@(item.IsAutoUpdate ? "Enabled" : "Disabled")</dd></div>
-                </dl>
-
-                <footer class="admin-actions-inline">
-                    <a asp-action="ScheduleEdit" asp-route-id="@item.Id" class="admin-link-btn">Edit</a>
-                    <a asp-action="ScheduleDetails" asp-route-id="@item.Id" class="admin-link-btn">View</a>
-                    <form asp-action="ScheduleDelete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Delete this schedule?');">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="admin-link-btn admin-link-btn-danger">Delete</button>
-                    </form>
-                </footer>
-            </article>
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">Група: @item.Group.Name</h5>
+                        <p class="card-text text-muted">
+                            Останнє оновлення: @item.UpdateAt.ToString("dd.MM.yyyy HH:mm")
+                        </p>
+                        <ul class="list-unstyled small">
+                            <li><i class="bi bi-check2-circle text-success"></i> Уроків у базі: @item.Lessons.Count</li>
+                            <li><i class="bi bi-shield-lock"></i> Права старости: @(item.HeadmanUpdate ? "Так" : "Ні")</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0 d-flex justify-content-between">
+                        <a asp-action="ScheduleEdit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">Налаштувати</a>
+                        <a asp-action="ScheduleDetails" asp-route-id="@item.Id" class="btn btn-sm btn-info">Переглянути</a>
+                        <a asp-action="ScheduleDelete" asp-route-id="@item.Id" class="btn btn-sm btn-info">Видалити</a>
+                        <form asp-action="ScheduleDelete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Видалити розклад цієї групи?')">
+                            <button type="submit" class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         }
     </div>
 </section>

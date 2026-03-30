@@ -49,7 +49,8 @@ namespace StudyHub.Core.Schedules.Queries
                             Id = l.Id == Guid.Empty ? Guid.NewGuid() : l.Id,
                             Name = l.Name,
                             Surname = l.Surname,
-                        }).ToList() ?? new List<LecturerDtoResponse>()
+                        }).ToList() ?? new List<LecturerDtoResponse>(),
+                        Room = x.Room
                     }).ToList()
                 };
 

@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudyHub.Core.DTOs;
+using StudyHub.Core.DTOs.Parser;
 using StudyHub.Core.Schedules.Interfaces;
 using StudyHub.Domain.Entities;
 using System.Text.RegularExpressions;
+using Group = StudyHub.Domain.Entities.Group;
 using Task = System.Threading.Tasks.Task;
 
 namespace StudyHub.Infrastructure.Repositories;
@@ -72,7 +74,7 @@ public class ScheduleRepository : IScheduleRepository
     {
         if (schedule.Group != null)
         {
-            var dbGroup = await _context.Groups.FindAsync(schedule.Group.Id);
+            var dbGroup = await _context.Groups.FirstOrDefaultAsync(x => schedule.Group.Id == x.Id || schedule.Group.Name == x.Name);
             if (dbGroup != null) schedule.Group = dbGroup;
         }
 
@@ -122,25 +124,20 @@ public class ScheduleRepository : IScheduleRepository
 
     public async Task UpdateScheduleAsync(Schedule schedule)
     {
-        // 1. Завантажуємо існуючий розклад з бази
         var existingSchedule = await _context.Schedules
             .Include(s => s.Lessons)
             .FirstOrDefaultAsync(s => s.Id == schedule.Id);
 
         if (existingSchedule == null) return;
 
-        // 2. Оновлюємо базові поля
         existingSchedule.IsAutoUpdate = schedule.IsAutoUpdate;
         existingSchedule.CanHeadmanUpdate = schedule.CanHeadmanUpdate;
         existingSchedule.UpdatedAt = schedule.UpdatedAt;
 
-        // 3. ЗБЕРІГАЄМО ID УРОКІВ ОКРЕМО (це захист від пастки посилань)
         var newLessonIds = schedule.Lessons.Select(l => l.Id).ToList();
 
-        // 4. Очищаємо старі зв'язки в базі
         existingSchedule.Lessons.Clear();
 
-        // 5. Додаємо нові уроки за збереженими ID
         foreach (var lessonId in newLessonIds)
         {
             var dbLesson = await _context.Lessons.FindAsync(lessonId);
@@ -150,7 +147,6 @@ public class ScheduleRepository : IScheduleRepository
             }
         }
 
-        // 6. Зберігаємо зміни
         await _context.SaveChangesAsync();
     }
 
@@ -198,5 +194,99 @@ public class ScheduleRepository : IScheduleRepository
     {
         await _context.Schedules.ExecuteUpdateAsync(s => s.SetProperty(b => b.UpdateInterval, interval));
         await _context.SaveChangesAsync();
+    }
+
+    public async Task SyncParsedScheduleAsync(string groupName, ParsedScheduleResponse parsedData, CancellationToken cancellationToken)
+    {
+        _context.ChangeTracker.Clear();
+
+        var group = await _context.Groups.FirstOrDefaultAsync(g => g.Name == groupName, cancellationToken);
+        if (group == null)
+        {
+            group = new Group { Id = Guid.NewGuid(), Name = groupName };
+            _context.Groups.Add(group);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        var schedule = await _context.Schedules
+            .Include(s => s.Lessons)
+            .FirstOrDefaultAsync(s => s.GroupId == group.Id, cancellationToken);
+
+        if (schedule == null)
+        {
+            schedule = new Schedule
+            {
+                Id = Guid.NewGuid(),
+                GroupId = group.Id,
+                IsAutoUpdate = true,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.Schedules.Add(schedule);
+        }
+        else
+        {
+            if (schedule.Lessons.Any())
+            {
+                _context.Lessons.RemoveRange(schedule.Lessons);
+            }
+            schedule.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        var allSubjects = await _context.Subjects.ToDictionaryAsync(s => s.Name.ToLower(), cancellationToken);
+        var allLecturers = await _context.Lecturers.ToDictionaryAsync(l => $"{l.Surname} {l.Name}".Trim().ToLower(), cancellationToken);
+        var allSlots = await _context.LessonsSlots.ToListAsync(cancellationToken);
+
+        foreach (var parsedLesson in parsedData.Lessons)
+        {
+            var subjectKey = parsedLesson.SubjectName.ToLower();
+            if (!allSubjects.TryGetValue(subjectKey, out var subject))
+            {
+                subject = new Subject { Id = Guid.NewGuid(), Name = parsedLesson.SubjectName };
+                _context.Subjects.Add(subject);
+                allSubjects[subjectKey] = subject;
+            }
+
+            TimeOnly.TryParse(parsedLesson.StartTime, out var start);
+            TimeOnly.TryParse(parsedLesson.EndTime, out var end);
+            var slot = allSlots.FirstOrDefault(s => s.StartTime == start && s.EndTime == end);
+            if (slot == null)
+            {
+                slot = new LessonsSlot { Id = Guid.NewGuid(), StartTime = start, EndTime = end };
+                _context.LessonsSlots.Add(slot);
+                allSlots.Add(slot);
+            }
+
+            var lesson = new Lesson
+            {
+                Id = Guid.NewGuid(),
+                Day = (DayOfWeek)parsedLesson.Day,
+                LessonType = parsedLesson.LessonType,
+                Subject = subject,
+                LessonsSlot = slot,
+                Schedules = new List<Schedule> { schedule },
+                Lecturers = new List<Lecturer>(),
+                Room = parsedLesson.Room
+            };
+
+            foreach (var t in parsedLesson.Teachers)
+            {
+                var lecturerKey = $"{t.Surname} {t.Name}".Trim().ToLower();
+                if (!allLecturers.TryGetValue(lecturerKey, out var lecturer))
+                {
+                    lecturer = new Lecturer { Id = Guid.NewGuid(), Surname = t.Surname, Name = t.Name };
+                    _context.Lecturers.Add(lecturer);
+                    allLecturers[lecturerKey] = lecturer;
+                }
+                lesson.Lecturers.Add(lecturer);
+            }
+
+            _context.Lessons.Add(lesson);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _context.ChangeTracker.Clear();
     }
 }

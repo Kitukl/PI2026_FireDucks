@@ -54,7 +54,7 @@ namespace StudyHub.Mvc.Controllers
             if (ModelState.IsValid)
             {
                 await _mediator.Send(new UpdateSubjectRequest(subject));
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(SubjectsList));
             }
             return View(subject);
         }
@@ -64,7 +64,7 @@ namespace StudyHub.Mvc.Controllers
         public async Task<IActionResult> SubjectDelete(Guid id)
         {
             await _mediator.Send(new DeleteSubjectRequest(id));
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(SubjectsList));
         }
     }
 }

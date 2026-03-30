@@ -49,7 +49,8 @@ public class GetScheduleByIdQueryHandler : IRequestHandler<GetScheduleByIdReques
                         Id = l.LessonsSlot.Id,
                         StartTime = l.LessonsSlot.StartTime,
                         EndTime = l.LessonsSlot.EndTime
-                    }
+                    },
+                    Room = l.Room
                 }).ToList()
             };
 

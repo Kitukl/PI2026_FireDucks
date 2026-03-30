@@ -27,6 +27,7 @@ public class GetAllSchedulesQueryHandler : IRequestHandler<GetAllSchedulesReques
                     Name = x.Group.Name,
                 },
                 IsAutoUpdate = x.IsAutoUpdate,
+                UpdateInterval = x.UpdateInterval,
                 UpdateAt = x.UpdatedAt,
                 HeadmanUpdate = x.CanHeadmanUpdate,
                 Lessons = x.Lessons.Select(l => new LessonDto

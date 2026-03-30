@@ -32,7 +32,7 @@ namespace StudyHub.Mvc.Controllers
             return View(lesson);
         }
 
-        public async Task<IActionResult> LessonCreate()
+        public async Task<IActionResult> LessonsCreate()
         {
             await PrepareViewBags();
             return View(new LessonDto());
@@ -52,18 +52,47 @@ namespace StudyHub.Mvc.Controllers
         //}
 
         [HttpPost]
-        public async Task<IActionResult> LessonCreate(LessonDto lesson, Guid[] LecturersIds)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LessonsCreate(LessonDto lesson, Guid[] LecturersIds)
         {
-            if (LecturersIds != null)
+            // Очищаємо валідацію для вкладених об'єктів, які ми вибираємо через Dropdown
+            ModelState.Remove("Subject.Name");
+            ModelState.Remove("LessonSlot.StartTime");
+            ModelState.Remove("LessonSlot.EndTime");
+
+            if (ModelState.IsValid)
             {
-                lesson.Lecturers = LecturersIds.Select(id => new LecturerDtoResponse { Id = id }).ToList();
+                if (LecturersIds != null && LecturersIds.Length > 0)
+                {
+                    lesson.Lecturers = LecturersIds.Select(id => new LecturerDtoResponse { Id = id }).ToList();
+                }
+
+                await _mediator.Send(new AddLessonRequest(lesson));
+                return RedirectToAction(nameof(LessonsList)); // Виправлено з Index на LessonsList
             }
 
-            await _mediator.Send(new AddLessonRequest(lesson));
-            return RedirectToAction(nameof(Index));
+            await PrepareViewBags();
+            return View(lesson);
         }
 
-        public async Task<IActionResult> Edit(Guid id)
+        private async Task PrepareViewBags()
+        {
+            // ВИПРАВЛЕНО: Було GetAllLessonsRequest, тепер GetAllSubjectsRequest
+            var subjects = await _mediator.Send(new GetAllSubjectsRequest());
+            var slots = await _mediator.Send(new GetAllLessonSlotsRequest());
+            var lecturers = await _mediator.Send(new GetAllLecturersRequest());
+
+            ViewBag.Subjects = new SelectList(subjects, "Id", "Name");
+            ViewBag.Slots = new SelectList(slots.Select(s => new {
+                Id = s.Id,
+                Display = $"{s.StartTime:HH:mm} - {s.EndTime:HH:mm}"
+            }), "Id", "Display");
+
+            // Зберігаємо список викладачів для модального вікна
+            ViewBag.Lecturers = lecturers;
+        }
+
+        public async Task<IActionResult> LessonsEdit(Guid id)
         {
             var lesson = await _mediator.Send(new GetLessonByIdRequest(id));
             if (lesson == null) return NotFound();
@@ -89,14 +118,14 @@ namespace StudyHub.Mvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LessonEdit(Guid id, LessonDto lesson)
+        public async Task<IActionResult> LessonsEdit(Guid id, LessonDto lesson)
         {
-            if (id != lesson.Id) return BadRequest();
+            //if (id != lesson.Id) return BadRequest();
 
             if (ModelState.IsValid)
             {
                 await _mediator.Send(new UpdateLessonRequest(lesson));
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(LessonsList));
             }
             await PrepareViewBags();
             return View(lesson);
@@ -108,24 +137,6 @@ namespace StudyHub.Mvc.Controllers
         {
             await _mediator.Send(new DeleteLessonRequest(id));
             return RedirectToAction(nameof(LessonsList));
-        }
-
-        private async Task PrepareViewBags()
-        {
-            var subjects = await _mediator.Send(new GetAllLessonsRequest());
-            var slots = await _mediator.Send(new GetAllLessonSlotsRequest());
-            var lecturers = await _mediator.Send(new GetAllLecturersRequest());
-
-            ViewBag.Subjects = new SelectList(subjects, "Id", "Name");
-            ViewBag.Slots = new SelectList(slots.Select(s => new {
-                Id = s.Id,
-                Display = $"{s.StartTime:HH:mm} - {s.EndTime:HH:mm}"
-            }), "Id", "Display");
-
-            ViewBag.Lecturers = new MultiSelectList(lecturers.Select(l => new {
-                Id = l.Id,
-                FullName = $"{l.Surname} {l.Name}"
-            }), "Id", "FullName");
         }
     }
 }

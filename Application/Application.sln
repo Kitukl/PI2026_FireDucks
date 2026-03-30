@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36623.8 d17.14
+VisualStudioVersion = 17.14.36623.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudyHub.Presentation", "StudyHub.Presentation\StudyHub.Presentation.csproj", "{FF5D8863-3E04-49A8-8391-031667FACFF0}"
 EndProject
@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		compose.yaml = compose.yaml
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudyHub.Parser", "StudyHub.Parser\StudyHub.Parser.csproj", "{69086DE8-C696-4D26-B577-CEAD1D8EA16C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +46,10 @@ Global
 		{7835B469-6BD0-4AF7-857F-F797B6468F41}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7835B469-6BD0-4AF7-857F-F797B6468F41}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7835B469-6BD0-4AF7-857F-F797B6468F41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69086DE8-C696-4D26-B577-CEAD1D8EA16C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69086DE8-C696-4D26-B577-CEAD1D8EA16C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69086DE8-C696-4D26-B577-CEAD1D8EA16C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69086DE8-C696-4D26-B577-CEAD1D8EA16C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
