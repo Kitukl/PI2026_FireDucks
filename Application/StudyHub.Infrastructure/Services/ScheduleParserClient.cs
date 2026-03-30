@@ -16,7 +16,7 @@ namespace StudyHub.Infrastructure.Services
         public async Task<ParsedScheduleResponse?> ParseScheduleAsync(string groupName, CancellationToken cancellationToken = default)
         {
             return await _httpClient.GetFromJsonAsync<ParsedScheduleResponse>(
-                $"/api/v1/schedule/parse?group={groupName}",
+                $"/api/v1/schedule/parse?group="+groupName,
                 cancellationToken);
         }
     }

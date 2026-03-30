@@ -105,7 +105,7 @@ public class Program
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));
 
-        builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c => c.BaseAddress = new Uri("http://python_parser:5678"));
+        builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c => c.BaseAddress = new Uri("http://localhost:5678"));
         builder.Services.AddHostedService<ScheduleAutoUpdateService>();
 
         var app = builder.Build();
@@ -166,10 +166,10 @@ public class Program
         app.UseAuthorization();
 
         app.MapStaticAssets();
-        app.MapControllerRoute(
-            name: "admin-schedule",
-            pattern: "Admin/Schedule/{action=SchedulesList}/{id?}",
-            defaults: new { controller = "Schedule" });
+        //app.MapControllerRoute(
+        //    name: "admin-schedule",
+        //    pattern: "Admin/Schedule/{action=SchedulesList}/{id?}",
+        //    defaults: new { controller = "Schedule" });
 
         app.MapControllerRoute(
                 name: "default",

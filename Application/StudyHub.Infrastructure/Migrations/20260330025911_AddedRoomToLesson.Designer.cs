@@ -12,8 +12,8 @@ using StudyHub.Infrastructure;
 namespace StudyHub.Infrastructure.Migrations
 {
     [DbContext(typeof(SDbContext))]
-    [Migration("20260329152756_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260330025911_AddedRoomToLesson")]
+    partial class AddedRoomToLesson
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -80,6 +80,26 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("e94dc167-9d67-4d56-9d0c-92a193f5cc0f"),
+                            Name = "Student",
+                            NormalizedName = "STUDENT"
+                        },
+                        new
+                        {
+                            Id = new Guid("c195766b-5b2d-4f5a-94de-f3d67114099b"),
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = new Guid("9a9aa371-da25-46cd-90d3-dded994118a8"),
+                            Name = "Leader",
+                            NormalizedName = "LEADER"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -344,6 +364,9 @@ namespace StudyHub.Infrastructure.Migrations
 
                     b.Property<Guid>("LessonsSlotId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Room")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("SubjectId")
                         .HasColumnType("uuid");

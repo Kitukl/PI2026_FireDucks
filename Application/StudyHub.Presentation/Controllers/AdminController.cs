@@ -240,7 +240,7 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
             LastGlobalUpdate = allSchedules.Any()
                 ? allSchedules.Max(s => s.UpdateAt)
                 : DateTime.MinValue,
-            AutoUpdateIntervalDays = 3
+            AutoUpdateIntervalDays = firstWithSettings?.UpdateInterval ?? 3
         };
 
         if (groupId.HasValue)
@@ -294,16 +294,15 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     }
 
     [HttpPost]
-    public async Task<IActionResult> UpdateGlobalSettings(bool isAutoUpdate, bool allowLeaders)
+    public async Task<IActionResult> UpdateGlobalSettings(bool isAutoUpdate, bool allowLeaders, uint intervalDays)
     {
-        await mediator.Send(new SetScheduleAutoUpdateRequest(isAutoUpdate));
+        Console.WriteLine($"DEBUG: AutoUpdate={isAutoUpdate}, AllowLeaders={allowLeaders}, Interval={intervalDays}");
 
-        var schedules = await _context.Schedules.ToListAsync();
-        foreach (var s in schedules)
-        {
-            s.CanHeadmanUpdate = allowLeaders;
-        }
-        await _context.SaveChangesAsync();
+        await _context.Schedules.ExecuteUpdateAsync(s => s
+            .SetProperty(b => b.IsAutoUpdate, isAutoUpdate)
+            .SetProperty(b => b.CanHeadmanUpdate, allowLeaders)
+            .SetProperty(b => b.UpdateInterval, intervalDays)
+            .SetProperty(b => b.UpdatedAt, DateTime.UtcNow));
 
         return RedirectToAction(nameof(Schedule));
     }

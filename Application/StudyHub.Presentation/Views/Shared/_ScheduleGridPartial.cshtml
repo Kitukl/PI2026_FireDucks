@@ -40,7 +40,7 @@
 
                                         <div class="lesson-footer">
                                             <div class="lesson-room">
-                                                @(string.IsNullOrEmpty(lesson.LessonType) ? "—" : "111")
+                                                @(string.IsNullOrEmpty(lesson.Room) ? "—" : lesson.Room)
                                             </div>
                                             <div class="lesson-lecturer">
                                                 @if (lesson.Lecturers != null && lesson.Lecturers.Any())

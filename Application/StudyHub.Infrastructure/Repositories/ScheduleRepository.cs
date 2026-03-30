@@ -198,38 +198,45 @@ public class ScheduleRepository : IScheduleRepository
 
     public async Task SyncParsedScheduleAsync(string groupName, ParsedScheduleResponse parsedData, CancellationToken cancellationToken)
     {
+        _context.ChangeTracker.Clear();
+
         var group = await _context.Groups.FirstOrDefaultAsync(g => g.Name == groupName, cancellationToken);
         if (group == null)
         {
             group = new Group { Id = Guid.NewGuid(), Name = groupName };
             _context.Groups.Add(group);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         var schedule = await _context.Schedules
             .Include(s => s.Lessons)
-            .FirstOrDefaultAsync(s => s.Group.Id == group.Id, cancellationToken);
+            .FirstOrDefaultAsync(s => s.GroupId == group.Id, cancellationToken);
 
         if (schedule == null)
         {
             schedule = new Schedule
             {
                 Id = Guid.NewGuid(),
-                Group = group,
+                GroupId = group.Id,
                 IsAutoUpdate = true,
-                UpdatedAt = DateTime.UtcNow,
-                Lessons = new List<Lesson>()
+                UpdatedAt = DateTime.UtcNow
             };
             _context.Schedules.Add(schedule);
         }
         else
         {
-            schedule.Lessons.Clear();
+            if (schedule.Lessons.Any())
+            {
+                _context.Lessons.RemoveRange(schedule.Lessons);
+            }
             schedule.UpdatedAt = DateTime.UtcNow;
         }
 
+        await _context.SaveChangesAsync(cancellationToken);
+
         var allSubjects = await _context.Subjects.ToDictionaryAsync(s => s.Name.ToLower(), cancellationToken);
-        var allSlots = await _context.LessonsSlots.ToListAsync(cancellationToken);
         var allLecturers = await _context.Lecturers.ToDictionaryAsync(l => $"{l.Surname} {l.Name}".Trim().ToLower(), cancellationToken);
+        var allSlots = await _context.LessonsSlots.ToListAsync(cancellationToken);
 
         foreach (var parsedLesson in parsedData.Lessons)
         {
@@ -251,16 +258,16 @@ public class ScheduleRepository : IScheduleRepository
                 allSlots.Add(slot);
             }
 
-            DayOfWeek mappedDay = (DayOfWeek)parsedLesson.Day;
-
             var lesson = new Lesson
             {
                 Id = Guid.NewGuid(),
-                Day = mappedDay,
+                Day = (DayOfWeek)parsedLesson.Day,
                 LessonType = parsedLesson.LessonType,
                 Subject = subject,
                 LessonsSlot = slot,
-                Lecturers = new List<Lecturer>()
+                Schedules = new List<Schedule> { schedule },
+                Lecturers = new List<Lecturer>(),
+                Room = parsedLesson.Room
             };
 
             foreach (var t in parsedLesson.Teachers)
@@ -275,9 +282,11 @@ public class ScheduleRepository : IScheduleRepository
                 lesson.Lecturers.Add(lecturer);
             }
 
-            schedule.Lessons.Add(lesson);
+            _context.Lessons.Add(lesson);
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        _context.ChangeTracker.Clear();
     }
 }

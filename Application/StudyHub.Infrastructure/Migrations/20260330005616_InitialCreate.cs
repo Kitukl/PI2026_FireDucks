@@ -4,6 +4,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace StudyHub.Infrastructure.Migrations
 {
     /// <inheritdoc />
@@ -475,6 +477,16 @@ namespace StudyHub.Infrastructure.Migrations
                         principalTable: "Tasks",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetRoles",
+                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
+                values: new object[,]
+                {
+                    { new Guid("9a9aa371-da25-46cd-90d3-dded994118a8"), null, "Leader", "LEADER" },
+                    { new Guid("c195766b-5b2d-4f5a-94de-f3d67114099b"), null, "Admin", "ADMIN" },
+                    { new Guid("e94dc167-9d67-4d56-9d0c-92a193f5cc0f"), null, "Student", "STUDENT" }
                 });
 
             migrationBuilder.CreateIndex(

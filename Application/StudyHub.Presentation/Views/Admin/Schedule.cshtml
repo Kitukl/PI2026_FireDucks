@@ -35,10 +35,14 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="autoUpdate" name="isAutoUpdate"
+                                    @* name має збігатися з ім'ям аргументу в контролері *@
+                                    <input class="form-check-input" type="checkbox" id="autoUpdate" name="isAutoUpdate" value="true"
                                            @(Model.IsAutoUpdateEnabled ? "checked" : "") onchange="this.form.submit()">
+                                    @* Додаємо приховане поле, щоб ASP.NET розумів "false", якщо чекбокс порожній *@
+                                    <input type="hidden" name="isAutoUpdate" value="false" />
                                     <label class="form-check-label fw-bold" for="autoUpdate">Schedule AutoUpdate</label>
                                 </div>
+
                                 <div class="d-flex align-items-center">
                                     <span class="me-2 fw-bold">Run AutoUpdate once in</span>
                                     <select class="form-select form-select-sm w-auto" name="intervalDays" onchange="this.form.submit()">
@@ -49,10 +53,12 @@
                                     <span class="ms-2 fw-bold">days</span>
                                 </div>
                             </div>
+
                             <div class="col-md-6">
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="allowLeaders" name="allowLeaders"
+                                    <input class="form-check-input" type="checkbox" id="allowLeaders" name="allowLeaders" value="true"
                                            @(Model.AllowLeadersToUpdate ? "checked" : "") onchange="this.form.submit()">
+                                    <input type="hidden" name="allowLeaders" value="false" />
                                     <label class="form-check-label fw-bold" for="allowLeaders">Allow leaders to update the schedule</label>
                                 </div>
                             </div>

@@ -8,15 +8,19 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/StudyHub.Presentation.styles.css" asp-append-version="true"/>
+
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var requestPath = Context.Request.Path.Value ?? string.Empty;
-    var isAdminRoute = requestPath.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase);
+    var isAdminUser = User.Identity.IsAuthenticated && User.IsInRole("ADMIN");
+
+    var isInsideAdminController = currentController.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 }
-<body class="@(isAdminRoute ? "admin-body" : "app-body")">
-@if (!isAdminRoute)
+<body class="@(isAdminUser ? "admin-body" : "app-body")">
+@if (!isAdminUser)
 {
     <header class="sh-header">
         <div class="sh-header-top">
@@ -80,7 +84,7 @@ else
 }
 
 <div class="app-shell">
-    <main role="main" class="@(isAdminRoute ? "pb-3 app-main" : "app-main")">
+    <main role="main" class="@(isAdminUser ? "pb-3 app-main" : "app-main")">
         @RenderBody()
     </main>
 </div>

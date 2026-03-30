@@ -6,6 +6,7 @@
         public DateTime UpdateAt { get; set; }
         public bool HeadmanUpdate { get; set; }
         public bool IsAutoUpdate { get; set; }
+        public uint UpdateInterval { get; set; }
         public List<LessonDto> Lessons { get; set; } = new List<LessonDto>();
         public GroupDto Group { get; set; } = new GroupDto();
     }
