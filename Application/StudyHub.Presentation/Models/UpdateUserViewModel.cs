@@ -5,6 +5,8 @@ public class UpdateUserViewModel
     public Guid Id { get; set; }
 
     public string Name { get; set; }
+
+    public string PhotoUrl { get; set; }
     
     public string Surname { get; set; }
 
@@ -13,4 +15,6 @@ public class UpdateUserViewModel
     public List<string> Roles { get; set; } = new();
 
     public List<string> AvailableRoles { get; set; } = new();
+
+    public List<string> ExistingGroups { get; set; } = new();
 }

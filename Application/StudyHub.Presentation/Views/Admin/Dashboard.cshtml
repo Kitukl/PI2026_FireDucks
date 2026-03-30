@@ -1,52 +1,90 @@
 @model Application.Models.SystemStatisticViewModel
-@using System.Globalization
-
 @{
-    ViewBag.Title = "title";
     Layout = "_Layout";
+    ViewData["Title"] = "Admin Dashboard";
+
+    var groupedTasks = Model.GropedTaskCount ?? new Dictionary<string, Dictionary<string, int>>();
+    var userTaskStats = groupedTasks.TryGetValue("User Tasks", out var userTasks)
+        ? userTasks
+        : new Dictionary<string, int>();
+    var groupTaskStats = groupedTasks.TryGetValue("Group Tasks", out var groupTasks)
+        ? groupTasks
+        : new Dictionary<string, int>();
+
+    var totalTaskStats = groupedTasks
+        .SelectMany(pair => pair.Value)
+        .GroupBy(item => item.Key)
+        .ToDictionary(group => group.Key, group => group.Sum(item => item.Value));
+
+    var totalUserTasks = userTaskStats.Values.Sum();
+    var totalGroupTasks = groupTaskStats.Values.Sum();
+    var totalTasks = Model.TaskCount;
 }
 
+<section class="admin-page" aria-label="Admin dashboard">
+    <div class="admin-page-header">
+        <div>
+            <h1>Dashboard</h1>
+            <p class="admin-page-subtitle">Created at @Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</p>
+        </div>
+    </div>
 
-<h1>Статистика</h1>
-<p>created at @Model.CreatedAt</p>
-<p> users files @Model.FileCount </p>
-<p> task All @Model.TaskCount</p>
+    <div class="admin-metric-grid">
+        <article class="admin-metric-card">
+            <p class="admin-metric-label">Users files</p>
+            <p class="admin-metric-value">@Model.FileCount</p>
+        </article>
+        <article class="admin-metric-card">
+            <p class="admin-metric-label">All tasks</p>
+            <p class="admin-metric-value">@totalTasks</p>
+        </article>
+        <article class="admin-metric-card">
+            <p class="admin-metric-label">User tasks</p>
+            <p class="admin-metric-value">@totalUserTasks</p>
+        </article>
+        <article class="admin-metric-card">
+            <p class="admin-metric-label">Group tasks</p>
+            <p class="admin-metric-value">@totalGroupTasks</p>
+        </article>
+    </div>
 
-<div>
-    @foreach (var (kind, statusDict) in Model.GropedTaskCount)
-    {
-        <h2>@kind</h2>
-        foreach (var (status,count) in statusDict)
-        {
-            <p>@status : @count</p>    
-        }
-    }
-</div>
+    <div>
+        <article class="admin-panel">
+            <header class="admin-panel-head">
+                <h2>Task status summary</h2>
+            </header>
 
-<div>
-    <p>User Activity Per Month</p>
-    <ul class="list-group">
-        @foreach (var (month, value) in Model.UserActivityPerMonth)
-        {
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                    <strong>
-                        @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)
-                    </strong>
-                </span>
-                <span class="badge bg-primary rounded-pill">@value.ToString("F2")</span>
-            </li>
-        }
-    </ul>
-</div>
+            <div class="admin-status-stack">
+                <section>
+                    <h3>User tasks</h3>
+                    <ul class="admin-status-list">
+                        @foreach (var row in userTaskStats.OrderBy(row => row.Key))
+                        {
+                            <li><span>@row.Key</span><strong>@row.Value</strong></li>
+                        }
+                    </ul>
+                </section>
 
-<div>
-    <h2>Tasks</h2>
-    @foreach (var (kind, statusDict) in Model.GropedTaskCount)
-    {
-        <p>@kind : @statusDict.Sum(s=>s.Value) </p>
-    }
-    
-    <h2>Files</h2>
-    <p>All files : @Model.FileCount</p>
-</div>
+                <section>
+                    <h3>Group tasks</h3>
+                    <ul class="admin-status-list">
+                        @foreach (var row in groupTaskStats.OrderBy(row => row.Key))
+                        {
+                            <li><span>@row.Key</span><strong>@row.Value</strong></li>
+                        }
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>All tasks</h3>
+                    <ul class="admin-status-list">
+                        @foreach (var row in totalTaskStats.OrderBy(row => row.Key))
+                        {
+                            <li><span>@row.Key</span><strong>@row.Value</strong></li>
+                        }
+                    </ul>
+                </section>
+            </div>
+        </article>
+    </div>
+</section>

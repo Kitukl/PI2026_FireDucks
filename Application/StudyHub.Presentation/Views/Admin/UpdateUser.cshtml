@@ -2,88 +2,87 @@
 
 @{
     Layout = "_Layout";
+    ViewData["Title"] = "Edit user";
 }
 
-<div class="container mt-4">
-    <h2>Edit user: @Model.Name @Model.Surname</h2>
-    <hr />
-
-    <div class="row">
-        <div class="col-md-6">
-            <form asp-action="UpdateUser" method="post">
-                <input type="hidden" asp-for="Id"/>
-
-                <div class="mb-3">
-                    <label asp-for="Name" class="form-label">Name</label>
-                    <input asp-for="Name" class="form-control"/>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="Surname" class="form-label">Surname</label>
-                    <input asp-for="Surname" class="form-control"/>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="GroupName" class="form-label">Group</label>
-                    <input asp-for="GroupName" class="form-control"/>
-                </div>
-
-                <div class="mb-3">
-                    <label>Photo URL</label>
-                    <input name="PhotoUrl" value="@(Model as dynamic).PhotoUrl" class="form-control" />
-                </div>
-
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-            </form>
+<section class="admin-page" aria-label="Edit user page">
+    <div class="admin-page-header admin-page-header-inline">
+        <div>
+            <h1>Edit user</h1>
+            <p class="admin-page-subtitle">@Model.Name @Model.Surname</p>
         </div>
-        
-        <div class="col-md-6">
-            <h3>Roles</h3>
-    
-            <form asp-action="AddUserRole" method="post" class="mb-3 d-flex gap-2">
-                <input type="hidden" name="Id" value="@Model.Id"/>
-        
-                <select name="Role" class="form-select">
-                    <option selected disabled>-- Select role to add --</option>
+        <a asp-action="Users" class="admin-btn">Back to user management</a>
+    </div>
+
+    <div class="admin-dashboard-grid">
+        <article class="admin-panel" style="grid-column: 1 / -1;">
+            <h2>User access</h2>
+
+            <form asp-action="UpdateUser" method="post" class="admin-form-stack" style="margin-top: 10px;">
+                <input type="hidden" name="id" value="@Model.Id" />
+
+                <div>
+                    <label asp-for="GroupName" class="admin-label">Group</label>
+                    <input asp-for="GroupName" class="admin-input" list="existing-groups" autocomplete="off" />
+                    <datalist id="existing-groups">
+                        @foreach (var groupName in Model.ExistingGroups)
+                        {
+                            <option value="@groupName"></option>
+                        }
+                    </datalist>
+                </div>
+
+                <div class="admin-actions-inline">
+                    <button type="submit" class="admin-btn admin-btn-primary">Save group</button>
+                </div>
+            </form>
+
+            <h3 style="margin-top:16px;">Roles</h3>
+
+            <form asp-action="AddUserRole" method="post" class="admin-actions-inline" style="margin-top: 10px;">
+                <input type="hidden" name="Id" value="@Model.Id" />
+
+                <select name="Role" class="admin-input" style="max-width: 280px;">
+                    <option selected disabled>Select role to add</option>
                     @foreach (var availableRole in Model.AvailableRoles.Where(r => !Model.Roles.Contains(r)))
                     {
                         <option value="@availableRole">@availableRole</option>
                     }
                 </select>
-                <button type="submit" class="btn btn-success">Add</button>
+                <button type="submit" class="admin-btn admin-btn-primary">Add</button>
             </form>
 
-            <table class="table table-striped border">
-                <thead>
-                <tr>
-                    <th>Current Role</th>
-                    <th class="text-end">Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                @if (!Model.Roles.Any())
-                {
+            <div class="admin-table-wrap" style="margin-top: 12px;">
+                <table class="admin-table">
+                    <thead>
                     <tr>
-                        <td colspan="2" class="text-muted text-center">No roles assigned</td>
+                        <th>Current role</th>
+                        <th>Action</th>
                     </tr>
-                }
-                @foreach (var role in Model.Roles)
-                {
-                    <tr>
-                        <td class="align-middle">@role</td>
-                        <td class="text-end">
-                            <form asp-action="RemoveUserRole" method="post" style="display:inline;">
-                                <input type="hidden" name="Id" value="@Model.Id"/>
-                                <input type="hidden" name="Role" value="@role"/>
-                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                    Remove
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-        </div>   
+                    </thead>
+                    <tbody>
+                    @if (!Model.Roles.Any())
+                    {
+                        <tr>
+                            <td colspan="2" class="text-muted">No roles assigned</td>
+                        </tr>
+                    }
+                    @foreach (var role in Model.Roles)
+                    {
+                        <tr>
+                            <td>@role</td>
+                            <td>
+                                <form asp-action="RemoveUserRole" method="post">
+                                    <input type="hidden" name="Id" value="@Model.Id" />
+                                    <input type="hidden" name="Role" value="@role" />
+                                    <button type="submit" class="admin-link-btn admin-link-btn-danger">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </article>
     </div>
-</div>
+</section>

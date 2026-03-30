@@ -1,61 +1,60 @@
 ﻿@model StudyHub.Core.DTOs.ScheduleDto
 
-<div class="container mt-4">
-    <h2>Створення розкладу</h2>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create schedule";
+}
 
-    <form asp-action="ScheduleCreate" method="post">
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Оберіть групу</label>
+<section class="admin-page" aria-label="Create schedule page">
+    <div class="admin-page-header">
+        <div>
+            <h1>Create schedule</h1>
+            <p class="admin-page-subtitle">Configure schedule settings before adding lessons</p>
+        </div>
+    </div>
 
-                    @if (ViewBag.Groups != null && ((IEnumerable<SelectListItem>)ViewBag.Groups).Any())
-                    {
-                        <select asp-for="Group.Id" class="form-select" asp-items="ViewBag.Groups" id="groupSelect">
-                            <option value="">-- Оберіть групу з переліку --</option>
-                        </select>
-                        @* Додаємо приховане поле для Name, щоб валідатор не сварився *@
-                        <input type="hidden" asp-for="Group.Name" id="groupNameHidden" value="TemporaryName" />
-                    }
-                    else
-                    {
-                        <div class="alert alert-warning">
-                            Групи не знайдені. <a asp-controller="Group" asp-action="Create" class="alert-link">Створити групу?</a>
-                        </div>
-                    }
-                    <span asp-validation-for="Group.Id" class="text-danger"></span>
+    <form asp-action="ScheduleCreate" method="post" class="admin-panel admin-form-stack">
+        <div>
+            <label class="admin-label" for="groupSelect">Group</label>
+
+            @if (ViewBag.Groups != null && ((IEnumerable<SelectListItem>)ViewBag.Groups).Any())
+            {
+                <select asp-for="Group.Id" class="admin-input" asp-items="ViewBag.Groups" id="groupSelect">
+                    <option value="">Select group</option>
+                </select>
+                <input type="hidden" asp-for="Group.Name" id="groupNameHidden" value="TemporaryName" />
+            }
+            else
+            {
+                <div class="admin-alert admin-alert-error">
+                    No groups found. <a asp-controller="Group" asp-action="Create">Create group</a> first.
                 </div>
-
-                <hr />
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-check form-switch mb-2">
-                            <input asp-for="HeadmanUpdate" class="form-check-input" type="checkbox" role="switch" />
-                            <label asp-for="HeadmanUpdate" class="form-check-label">Дозволити старості редагувати</label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input asp-for="IsAutoUpdate" class="form-check-input" type="checkbox" role="switch" />
-                            <label asp-for="IsAutoUpdate" class="form-check-label">Автоматичне оновлення</label>
-                        </div>
-                    </div>
-                </div>
-
-                @* Вивід усіх помилок для дебагу *@
-                <div asp-validation-summary="All" class="text-danger mt-3 small"></div>
-            </div>
+            }
+            <span asp-validation-for="Group.Id" class="text-danger"></span>
         </div>
 
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary px-4">Зберегти розклад</button>
-            <a asp-action="SchedulesList" class="btn btn-outline-secondary">Скасувати</a>
+        <div class="admin-switch-grid">
+            <label class="admin-switch-item">
+                <input asp-for="HeadmanUpdate" type="checkbox" />
+                <span>Allow headman editing</span>
+            </label>
+            <label class="admin-switch-item">
+                <input asp-for="IsAutoUpdate" type="checkbox" />
+                <span>Auto update</span>
+            </label>
+        </div>
+
+        <div asp-validation-summary="All" class="text-danger small"></div>
+
+        <div class="admin-actions-inline">
+            <button type="submit" class="admin-btn admin-btn-primary">Save schedule</button>
+            <a asp-action="SchedulesList" class="admin-btn">Cancel</a>
         </div>
     </form>
-</div>
+</section>
 
 @section Scripts {
     <script>
-        // Коли вибираємо групу, записуємо її текст у приховане поле Name
         $("#groupSelect").change(function () {
             const selectedText = $(this).find("option:selected").text();
             $("#groupNameHidden").val(selectedText);

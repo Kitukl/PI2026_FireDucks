@@ -32,24 +32,23 @@ public class SDbContext(DbContextOptions<SDbContext> options)
         builder.Entity<IdentityRole<Guid>>().HasData(
             new IdentityRole<Guid>
             {
-                Id = studentId,
-                Name = "Student",
+                Id = Guid.Parse("e94dc167-9d67-4d56-9d0c-92a193f5cc0f"), 
+                Name = nameof(Role.Student),
                 NormalizedName = "STUDENT"
             },
             new IdentityRole<Guid>
             {
-                Id = adminId,
-                Name = "Admin",
+                Id = Guid.Parse("c195766b-5b2d-4f5a-94de-f3d67114099b"),
+                Name = nameof(Role.Admin),
                 NormalizedName = "ADMIN"
             },
             new IdentityRole<Guid>
             {
-                Id = leaderId,
-                Name = "Leader",
+                Id = Guid.Parse("9a9aa371-da25-46cd-90d3-dded994118a8"),
+                Name = nameof(Role.Leader),
                 NormalizedName = "LEADER"
             }
         );
-
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(SDbContext).Assembly);
     }

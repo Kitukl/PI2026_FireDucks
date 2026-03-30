@@ -75,6 +75,10 @@
 .admin-requests-status.todo { background: #fff; }
 .admin-requests-status.progress { background: #cfe5ff; border-color: #568dcc; }
 .admin-requests-status.resolved { background: #cfe9c9; border-color: #6ea66a; }
+.admin-requests-status-select { min-width: 132px; min-height: 32px; border: 1px solid #7e8794; border-radius: 7px; font-weight: 700; font-size: 0.92rem; background: #fff; padding: 0 8px; }
+.admin-requests-status-select.todo { background: #fff; }
+.admin-requests-status-select.progress { background: #cfe5ff; border-color: #568dcc; }
+.admin-requests-status-select.resolved { background: #cfe9c9; border-color: #6ea66a; }
 .admin-requests-view-link { color: inherit; text-decoration: none; }
 .admin-requests-view-link:hover { text-decoration: underline; }
 .admin-requests-backdrop { position: fixed; inset: 0; background: rgba(20, 27, 40, 0.45); z-index: 120; }
@@ -97,6 +101,10 @@
 </style>
 
 <section class="admin-requests-page">
+    <form class="js-admin-requests-token" method="post" hidden>
+        @Html.AntiForgeryToken()
+    </form>
+
     <div class="admin-requests-head">
         <h1>All requests</h1>
     </div>
@@ -133,7 +141,14 @@
                     <td>@row.CreatorFullname</td>
                     <td>@FeedbackTypeLabel(row.FeedbackType)</td>
                     <td>@CategoryLabel(row.Category)</td>
-                    <td><span class="admin-requests-status @statusClass">@StatusLabel(row.Status)</span></td>
+                    <td>
+                        <select class="admin-requests-status-select @statusClass js-admin-request-status" data-feedback-id="@row.Id" aria-label="Status for request @summary.Item1">
+                            @foreach (var status in allowedStatuses)
+                            {
+                                <option value="@status" selected="@(status == row.Status ? "selected" : null)">@StatusLabel(status)</option>
+                            }
+                        </select>
+                    </td>
                 </tr>
             }
         </tbody>
@@ -152,7 +167,7 @@
                 <form asp-controller="Admin" asp-action="UpdateRequestStatus" method="post" class="admin-request-review-tools js-admin-review-status-form">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="feedbackId" value="@activeRequest.Id" />
-                    <select class="js-admin-review-status" name="status" aria-label="Status">
+                    <select class="admin-requests-status-select js-admin-request-status js-admin-review-status" data-feedback-id="@activeRequest.Id" name="status" aria-label="Status">
                         @foreach (var status in allowedStatuses)
                         {
                             <option value="@status" selected="@(status == activeRequest.Status ? "selected" : null)">@StatusLabel(status)</option>
@@ -202,9 +217,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.querySelector(".js-admin-requests-search");
     const statusFilter = document.querySelector(".js-admin-requests-status-filter");
     const rows = Array.from(document.querySelectorAll(".js-admin-request-row"));
-    const reviewStatus = document.querySelector(".js-admin-review-status");
+    const statusInputs = Array.from(document.querySelectorAll(".js-admin-request-status"));
     const reviewStatusForm = document.querySelector(".js-admin-review-status-form");
+    const antiForgeryToken = document.querySelector(".js-admin-requests-token input[name='__RequestVerificationToken']")?.value;
     const resolvedRow = document.querySelector(".js-admin-review-resolved-row");
+    const reviewFeedbackId = reviewStatusForm?.querySelector("input[name='feedbackId']")?.value || "";
 
     if (!searchInput || !statusFilter || rows.length === 0) {
         return;
@@ -234,55 +251,105 @@ document.addEventListener("DOMContentLoaded", function () {
         return "todo";
     }
 
-    if (reviewStatus && resolvedRow) {
-        function syncResolvedMeta() {
-            resolvedRow.classList.toggle("is-visible", reviewStatus.value === "Resolved");
+    function applyStatusClass(select) {
+        if (!select) {
+            return;
         }
 
-        reviewStatus.addEventListener("change", syncResolvedMeta);
-        syncResolvedMeta();
+        select.classList.remove("todo", "progress", "resolved");
+        select.classList.add(statusClassByValue(select.value));
     }
 
-    if (reviewStatus && reviewStatusForm) {
-        reviewStatus.addEventListener("change", async function () {
-            const formData = new FormData(reviewStatusForm);
-            reviewStatus.disabled = true;
+    function syncResolvedMeta(statusValue, feedbackId) {
+        if (!resolvedRow) {
+            return;
+        }
 
-            try {
-                const response = await fetch(reviewStatusForm.action, {
-                    method: "POST",
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    body: formData
-                });
+        if (!feedbackId || !reviewFeedbackId || feedbackId !== reviewFeedbackId) {
+            return;
+        }
 
-                if (!response.ok) {
-                    throw new Error("Status update failed.");
+        resolvedRow.classList.toggle("is-visible", statusValue === "Resolved");
+    }
+
+    function syncAllStatusDropdowns(feedbackId, statusValue) {
+        statusInputs
+            .filter(select => select.dataset.feedbackId === feedbackId)
+            .forEach(select => {
+                if (select.value !== statusValue) {
+                    select.value = statusValue;
                 }
 
-                const payload = await response.json();
-                const row = document.querySelector('.js-admin-request-row[data-feedback-id="' + payload.feedbackId + '"]');
-                if (row) {
-                    row.dataset.status = payload.status;
+                applyStatusClass(select);
+            });
 
-                    const badge = row.querySelector(".admin-requests-status");
-                    if (badge) {
-                        badge.textContent = payload.statusLabel;
-                        badge.classList.remove("todo", "progress", "resolved");
-                        badge.classList.add(statusClassByValue(payload.status));
-                    }
-                }
+        const row = document.querySelector('.js-admin-request-row[data-feedback-id="' + feedbackId + '"]');
+        if (row) {
+            row.dataset.status = statusValue;
+        }
 
-                if (typeof applyAdminRequestFilters === "function") {
-                    applyAdminRequestFilters();
-                }
-            } catch {
-                window.location.reload();
-            } finally {
-                reviewStatus.disabled = false;
-            }
+        syncResolvedMeta(statusValue, feedbackId);
+
+        if (typeof applyAdminRequestFilters === "function") {
+            applyAdminRequestFilters();
+        }
+    }
+
+    async function updateRequestStatus(select) {
+        const feedbackId = select.dataset.feedbackId;
+        const statusValue = select.value;
+
+        if (!feedbackId || !antiForgeryToken) {
+            window.location.reload();
+            return;
+        }
+
+        const peerSelects = statusInputs.filter(item => item.dataset.feedbackId === feedbackId);
+        peerSelects.forEach(item => {
+            item.disabled = true;
         });
+
+        const formData = new URLSearchParams();
+        formData.append("feedbackId", feedbackId);
+        formData.append("status", statusValue);
+        formData.append("__RequestVerificationToken", antiForgeryToken);
+
+        try {
+            const response = await fetch("/Admin/Requests/UpdateStatus", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: formData.toString()
+            });
+
+            if (!response.ok) {
+                throw new Error("Status update failed.");
+            }
+
+            const payload = await response.json();
+            syncAllStatusDropdowns(payload.feedbackId, payload.status);
+        } catch {
+            window.location.reload();
+        } finally {
+            peerSelects.forEach(item => {
+                item.disabled = false;
+            });
+        }
+    }
+
+    statusInputs.forEach(select => {
+        applyStatusClass(select);
+
+        select.addEventListener("change", function () {
+            updateRequestStatus(select);
+        });
+    });
+
+    const reviewSelect = document.querySelector(".js-admin-review-status");
+    if (reviewSelect) {
+        syncResolvedMeta(reviewSelect.value, reviewSelect.dataset.feedbackId || "");
     }
 });
 </script>

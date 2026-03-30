@@ -20,15 +20,17 @@ public class GetUsersStatisticHandler : IRequestHandler<GetUsersStatisticRequest
         
         if (rawData is null)
         {
-            return new UsersStatisticDto(DateTime.Now, [], 0); 
+            var emptyStorageFileCount = await repository.GetStorageFileCountAsync(cancellationToken);
+            return new UsersStatisticDto(DateTime.Now, [], emptyStorageFileCount);
         }
         
         var userActivityPerMonth = await repository.GetYearlyActivityAsync(DateTime.Now.Year);
+        var storageFileCount = await repository.GetStorageFileCountAsync(cancellationToken);
 
         return new UsersStatisticDto(
             rawData.CreatedAt,
             userActivityPerMonth,
-            rawData.FilesCount
+            storageFileCount
         );
     }
 }

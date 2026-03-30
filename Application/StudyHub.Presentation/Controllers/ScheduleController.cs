@@ -113,8 +113,10 @@ namespace StudyHub.Mvc.Controllers
 
 
 
-        public IActionResult ScheduleCreate(Guid? groupId)
+        public async Task<IActionResult> ScheduleCreate(Guid? groupId)
         {
+            await PrepareGroupsViewBag();
+
             var model = new ScheduleDto
             {
                 Group = new GroupDto { Id = groupId ?? Guid.Empty },
@@ -242,7 +244,7 @@ namespace StudyHub.Mvc.Controllers
             var lessons = await _mediator.Send(new GetAllLessonsRequest());
             ViewBag.Lessons = new SelectList(lessons.Select(l => new {
                 Id = l.Id,
-                Display = $"{l.Subject.Name} ({l.LessonType}) - {l.Day} день"
+                Display = $"{l.Subject.Name} ({l.LessonType}) - Day {l.Day}"
             }), "Id", "Display");
         }
     }

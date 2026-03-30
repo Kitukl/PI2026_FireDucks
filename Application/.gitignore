@@ -29,6 +29,10 @@ appsettings.Local.json
 *.usersecrets
 secrets.json
 
+StudyHub.Presentation/.env
+StudyHub.Presentation/.env.*
+!StudyHub.Presentation/.env.example
+
 *.log
 *.sqlite
 *.db

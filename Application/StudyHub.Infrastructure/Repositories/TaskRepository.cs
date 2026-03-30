@@ -18,6 +18,8 @@ public class TaskRepository : ITaskRepository
     {
         var task = await _context.Tasks
             .Include(task => task.Subject)
+            .Include(task => task.User)
+            .ThenInclude(user => user.Group)
             .FirstOrDefaultAsync(c => c.Id == id) ?? throw new Exception("Task not found");
 
         return task;
@@ -27,6 +29,8 @@ public class TaskRepository : ITaskRepository
     {
         return await _context.Tasks
             .Include(task => task.Subject)
+            .Include(task => task.User)
+            .ThenInclude(user => user.Group)
             .ToListAsync();
     }
     public async Task<Guid> AddTaskAsync(UserTask task)
@@ -60,7 +64,7 @@ public class TaskRepository : ITaskRepository
     public async Task<Guid> DeleteTaskAsync(Guid id)
     {
         await _context.Comments
-            .Where(comment => comment.Task.Id == id)
+            .Where(comment => EF.Property<Guid>(comment, "TaskId") == id)
             .ExecuteDeleteAsync();
 
         await _context.Tasks.Where(f => f.Id == id).ExecuteDeleteAsync();

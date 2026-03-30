@@ -1,8 +1,116 @@
+@model Application.Models.StoragePageViewModel
+
 @{
     ViewData["Title"] = "Storage";
 }
 
 <section class="dashboard-page">
     <h1 class="dashboard-welcome">Storage</h1>
-    <p style="margin: 0; text-align: center; font-size: 1.2rem; color: #2f3747;">No files yet.</p>
+
+    <div class="admin-panel" style="margin-top:12px;">
+        @if (TempData["StorageMessage"] is string storageMessage)
+        {
+            <p class="user-profile-form-success">@storageMessage</p>
+        }
+
+        @if (TempData["StorageError"] is string storageError)
+        {
+            <p class="user-profile-form-error">@storageError</p>
+        }
+
+        <form asp-controller="Home" asp-action="UploadStorageFile" method="post" enctype="multipart/form-data" class="admin-form-stack">
+            @Html.AntiForgeryToken()
+            <div>
+                <label class="admin-label" for="uploadFile">Choose file</label>
+                <input id="uploadFile" name="uploadFile" type="file" class="admin-input" />
+            </div>
+
+            <label class="task-create-checkbox" title="@(Model.CanShareWithGroup ? "Visible for your current group" : "Join a group to enable group sharing")">
+                <input type="checkbox" name="shareWithGroup" value="true" disabled="@(!Model.CanShareWithGroup)" />
+                <span class="task-create-group-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                        <path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path>
+                    </svg>
+                </span>
+                <span>
+                    @(Model.CanShareWithGroup
+                        ? $"Group file ({Model.GroupName})"
+                        : "Group file (join a group to enable)")
+                </span>
+            </label>
+
+            <div class="admin-actions-inline">
+                <button type="submit" class="admin-btn admin-btn-primary">Upload</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-panel" style="margin-top:12px;">
+        <h2 style="margin-top:0;">Documents</h2>
+        <div class="storage-toolbar js-storage-files">
+            <div>
+                <label class="admin-label" for="storageSearch">Search</label>
+                <input id="storageSearch" type="search" class="admin-input js-storage-search" placeholder="File name..." />
+            </div>
+            <div>
+                <label class="admin-label" for="storageScope">Filter</label>
+                <select id="storageScope" class="admin-input js-storage-scope-filter">
+                    <option value="all">All</option>
+                    <option value="group">Group</option>
+                    <option value="personal">Personal</option>
+                </select>
+            </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table storage-table">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Size</th>
+                    <th>Last modified</th>
+                    <th>Visibility</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (!Model.Files.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-muted">No files yet.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var file in Model.Files)
+                    {
+                        <tr class="js-storage-row" data-storage-row="true" data-storage-name="@file.Name.ToLowerInvariant()" data-storage-scope="@file.Scope">
+                            <td class="storage-file-name" title="@file.Name">@file.Name</td>
+                            <td>@file.Extension</td>
+                            <td>@file.SizeDisplay</td>
+                            <td>@file.LastModifiedDisplay</td>
+                            <td>@(file.IsGroupFile ? "Group" : "Personal")</td>
+                            <td class="storage-actions-cell">
+                                @if (file.CanPreview)
+                                {
+                                    <a class="admin-link-btn" asp-controller="Home" asp-action="PreviewStorageFile" asp-route-scope="@file.Scope" asp-route-name="@file.BlobName" target="_blank" rel="noopener noreferrer">Preview</a>
+                                }
+                                <a class="admin-link-btn" asp-controller="Home" asp-action="DownloadStorageFile" asp-route-scope="@file.Scope" asp-route-name="@file.BlobName">Download</a>
+                                <form asp-controller="Home" asp-action="DeleteStorageFile" method="post" class="storage-inline-form" onsubmit="return confirm('Delete this file?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="scope" value="@file.Scope" />
+                                    <input type="hidden" name="name" value="@file.BlobName" />
+                                    <button type="submit" class="admin-link-btn admin-link-btn-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    <tr class="js-storage-empty-result" hidden>
+                        <td colspan="6" class="text-muted">No files match current filters.</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </section>
