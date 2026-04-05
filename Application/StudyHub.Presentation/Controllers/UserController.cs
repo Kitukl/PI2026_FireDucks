@@ -62,15 +62,27 @@ public class UserController : Controller
     {
         var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
         
-        if (!result.Succeeded || result.Principal == null)
+        if (!result.Succeeded)
         {
-            return RedirectToAction("Index", "Home");
+            var errorMessage = result.Failure?.Message ?? "Authentication failed";
+            TempData["ErrorMessage"] = errorMessage;
+            return RedirectToAction("Login");
+        }
+
+        if (result.Principal == null)
+        {
+            TempData["ErrorMessage"] = "Could not retrieve user information";
+            return RedirectToAction("Login");
         }
 
         var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
         var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
 
-        if (string.IsNullOrEmpty(email)) return RedirectToAction("Index", "Home");
+        if (string.IsNullOrEmpty(email))
+        {
+            TempData["ErrorMessage"] = "Email not found in external login";
+            return RedirectToAction("Login");
+        }
 
         var command = new RegisterUserCommand
         {
@@ -87,6 +99,11 @@ public class UserController : Controller
         var user = await _userManager.FindByEmailAsync(email);
         if (user != null)
         {
+            var userClaims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+            };
             await _signInManager.SignInAsync(user, isPersistent: true);
         }
         
