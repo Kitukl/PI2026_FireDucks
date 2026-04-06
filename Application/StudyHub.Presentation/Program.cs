@@ -5,6 +5,7 @@ using DotNetEnv;
 using Application.Security;
 using StudyHub.Infrastructure;
 using StudyHub.Infrastructure.Repositories;
+
 using Serilog;
 using StudyHub.Core.Comments.Interfaces;
 using StudyHub.Core.Feedbacks.Interfaces;
@@ -22,6 +23,8 @@ using StudyHub.Core.Tasks.Interfaces;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Core.Notifications.Interfaces;
 using StudyHub.Domain.Entities;
+using StudyHub.Infrastructure;
+using StudyHub.Infrastructure.Repositories;
 using StudyHub.Infrastructure.Services;
 using StudyHub.Domain.Enums;
 using StudyHub.Infrastructure.Notifications;
@@ -64,26 +67,10 @@ public class Program
             .AddEntityFrameworkStores<SDbContext>()
             .AddDefaultTokenProviders();
 
-        // Register custom claims principal factory
-        builder.Services.AddScoped<IUserClaimsPrincipalFactory<User>, CustomUserClaimsPrincipalFactory>();
-
         builder.Services.ConfigureApplicationCookie(options =>
         {
             options.LoginPath = "/login";
             options.AccessDeniedPath = "/user/access-denied";
-            options.ExpireTimeSpan = TimeSpan.FromDays(14);
-            options.SlidingExpiration = true;
-            if (builder.Environment.IsDevelopment())
-            {
-                options.Cookie.SecurePolicy = CookieSecurePolicy.None;
-            }
-        });
-
-        builder.Services.AddSession(options =>
-        {
-            options.IdleTimeout = TimeSpan.FromMinutes(20);
-            options.Cookie.HttpOnly = true;
-            options.Cookie.IsEssential = true;
         });
         
         builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
@@ -112,14 +99,6 @@ public class Program
                 options.ClientId = microsoftClientId;
                 options.ClientSecret = microsoftClientSecret;
                 options.SignInScheme = IdentityConstants.ExternalScheme;
-                options.CorrelationCookie.HttpOnly = true;
-                options.CorrelationCookie.IsEssential = true;
-                options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-                
-                if (builder.Environment.IsDevelopment())
-                {
-                    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.None;
-                }
             });
         }
         
@@ -137,16 +116,11 @@ public class Program
         {
             app.UseExceptionHandler("/Home/Error");
             app.UseHsts();
-            app.UseHttpsRedirection();
-        }
-        else
-        {
-            app.UseDeveloperExceptionPage();
         }
 
+        app.UseHttpsRedirection();
         app.UseRouting();
 
-        app.UseSession();
         app.UseAuthentication(); 
 
         app.Use(async (context, next) =>
