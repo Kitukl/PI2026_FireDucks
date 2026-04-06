@@ -15,16 +15,15 @@
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var requestPath = Context.Request.Path.Value ?? string.Empty;
-    var isAdminUser = User.Identity.IsAuthenticated && User.IsInRole("ADMIN");
-
     var isInsideAdminController = currentController.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+    var isAdminUser = isInsideAdminController;
 }
 <body class="@(isAdminUser ? "admin-body" : "app-body")">
 @if (!isAdminUser)
 {
     <header class="sh-header">
         <div class="sh-header-top">
-            <a class="sh-brand" asp-area="" asp-controller="Home" asp-action="Index">
+            <a class="sh-brand" asp-area="" asp-controller="Dashboard" asp-action="Index">
                 <span class="sh-brand-icon" aria-hidden="true">
                     <img src="~/images/SHLogo.png" alt="" />
                 </span>
@@ -32,18 +31,18 @@
             </a>
 
             <nav class="sh-nav" aria-label="Primary">
-                <a class="sh-nav-link @(currentController == "Home" && currentAction == "Index" ? "active" : string.Empty)"
-                   asp-area="" asp-controller="Home" asp-action="Index">Dashboard</a>
-                                         <a class="sh-nav-link @(currentController == "Home" && (currentAction == "TaskBoard" || currentAction == "TaskBoardCreate" || currentAction == "TaskBoardViewTask" || currentAction == "TaskBoardReviewGroup") ? "active" : string.Empty)"
-                   asp-area="" asp-controller="Home" asp-action="TaskBoard">Task board</a>
-                <a class="sh-nav-link @(currentController == "Schedule" ? "active" : string.Empty)"
-                   asp-area="" asp-controller="Schedule" asp-action="MySchedule">Schedule</a>
-                     <a class="sh-nav-link @(currentController == "Home" && currentAction == "Storage" ? "active" : string.Empty)"
-                         asp-area="" asp-controller="Home" asp-action="Storage">Storage</a>
+                <a class="sh-nav-link @(currentController == "Dashboard" && currentAction == "Index" ? "active" : string.Empty)"
+                   asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                <a class="sh-nav-link @(currentController == "TaskBoard" ? "active" : string.Empty)"
+                   asp-area="" asp-controller="TaskBoard" asp-action="TaskBoard">Task board</a>
+                <a class="sh-nav-link @(currentController == "SchedulePage" ? "active" : string.Empty)"
+                   asp-area="" asp-controller="SchedulePage" asp-action="Schedule">Schedule</a>
+                <a class="sh-nav-link @(currentController == "Storage" ? "active" : string.Empty)"
+                   asp-area="" asp-controller="Storage" asp-action="Storage">Storage</a>
             </nav>
 
             <div class="sh-user-actions">
-                <a class="sh-icon-btn" asp-area="" asp-controller="Home" asp-action="UserProfile" aria-label="Profile">
+                <a class="sh-icon-btn" asp-area="" asp-controller="UserProfile" asp-action="UserProfile" aria-label="Profile">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path d="M12 13.2c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2.4c-3.34 0-10 1.68-10 5v1.2h20V20.6c0-3.32-6.66-5-10-5z"></path>
                     </svg>
@@ -72,7 +71,7 @@ else
                          asp-area="" asp-controller="Admin" asp-action="Users">User management</a>
                 <a class="sh-nav-link @(currentController == "Admin" && (currentAction == "Requests" || currentAction == "RequestView") ? "active" : string.Empty)"
                    asp-area="" asp-controller="Admin" asp-action="Requests">Requests</a>
-                <a class="sh-nav-link @(currentController == "Schedule" ? "active" : string.Empty)"
+                     <a class="sh-nav-link @(currentController == "Admin" && currentAction == "Schedule" ? "active" : string.Empty)"
                    asp-area="" asp-controller="Admin" asp-action="Schedule">Schedule</a>
             </nav>
 

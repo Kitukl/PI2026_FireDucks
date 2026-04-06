@@ -18,7 +18,7 @@
             <p class="user-profile-form-error">@storageError</p>
         }
 
-        <form asp-controller="Home" asp-action="UploadStorageFile" method="post" enctype="multipart/form-data" class="admin-form-stack">
+        <form asp-controller="Storage" asp-action="UploadStorageFile" method="post" enctype="multipart/form-data" class="admin-form-stack">
             @Html.AntiForgeryToken()
             <div>
                 <label class="admin-label" for="uploadFile">Choose file</label>
@@ -93,10 +93,10 @@
                             <td class="storage-actions-cell">
                                 @if (file.CanPreview)
                                 {
-                                    <a class="admin-link-btn" asp-controller="Home" asp-action="PreviewStorageFile" asp-route-scope="@file.Scope" asp-route-name="@file.BlobName" target="_blank" rel="noopener noreferrer">Preview</a>
+                                    <a class="admin-link-btn" asp-controller="Storage" asp-action="PreviewStorageFile" asp-route-scope="@file.Scope" asp-route-name="@file.BlobName" target="_blank" rel="noopener noreferrer">Preview</a>
                                 }
-                                <a class="admin-link-btn" asp-controller="Home" asp-action="DownloadStorageFile" asp-route-scope="@file.Scope" asp-route-name="@file.BlobName">Download</a>
-                                <form asp-controller="Home" asp-action="DeleteStorageFile" method="post" class="storage-inline-form" onsubmit="return confirm('Delete this file?');">
+                                <a class="admin-link-btn" asp-controller="Storage" asp-action="DownloadStorageFile" asp-route-scope="@file.Scope" asp-route-name="@file.BlobName">Download</a>
+                                <form asp-controller="Storage" asp-action="DeleteStorageFile" method="post" class="storage-inline-form" onsubmit="return confirm('Delete this file?');">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="scope" value="@file.Scope" />
                                     <input type="hidden" name="name" value="@file.BlobName" />

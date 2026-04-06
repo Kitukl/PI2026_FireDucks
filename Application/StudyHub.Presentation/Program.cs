@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using Application.Security;
@@ -99,6 +100,17 @@ public class Program
                 options.ClientId = microsoftClientId;
                 options.ClientSecret = microsoftClientSecret;
                 options.SignInScheme = IdentityConstants.ExternalScheme;
+                options.CallbackPath = "/signin-microsoft";
+
+                options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+
+                options.Events.OnRemoteFailure = context =>
+                {
+                    context.HandleResponse();
+                    context.Response.Redirect("/login?error=external_auth_failed");
+                    return System.Threading.Tasks.Task.CompletedTask;
+                };
             });
         }
         

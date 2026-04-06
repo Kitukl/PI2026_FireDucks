@@ -23,7 +23,14 @@ public class AddUserToGroupCommandHandler : IRequestHandler<AddUserToGroupComman
     public async Task<string> Handle(AddUserToGroupCommand request, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetUserById(request.UserId);
-        var group = await _groupRepository.GetGroupByNameAsync(request.GroupName);
+        if (string.IsNullOrWhiteSpace(request.GroupName))
+        {
+            throw new ArgumentException("Group name is required", nameof(request.GroupName));
+        }
+
+        var normalizedGroupName = request.GroupName.Trim();
+        var group = await _groupRepository.GetGroupByNameAsync(normalizedGroupName)
+                    ?? await _groupRepository.CreateGroupAsync(normalizedGroupName);
 
         user.Group = group;
 

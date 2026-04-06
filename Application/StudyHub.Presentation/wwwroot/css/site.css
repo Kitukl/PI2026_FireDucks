@@ -280,8 +280,8 @@ body {
 
 .storage-actions-cell {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  flex-direction: column;
   gap: 8px;
 }
 

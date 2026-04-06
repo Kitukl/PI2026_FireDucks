@@ -28,8 +28,17 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, User>
     {
         var user = await _userRepository.GetUserById(request.Id);
         if (user == null) throw new Exception("User not found");
-        
-        var group = await _groupRepository.GetGroupByNameAsync(request.GroupName);
+
+        if (string.IsNullOrWhiteSpace(request.GroupName))
+        {
+            user.Group = null;
+            await _userRepository.Update(user);
+            return user;
+        }
+
+        var normalizedGroupName = request.GroupName.Trim();
+        var group = await _groupRepository.GetGroupByNameAsync(normalizedGroupName)
+                    ?? await _groupRepository.CreateGroupAsync(normalizedGroupName);
 
         user.Group = group;
         

@@ -100,26 +100,12 @@ public class UserController : Controller
     {
         returnUrl ??= Request.Query["ReturnUrl"].FirstOrDefault();
 
-        var isAdmin = User.IsInRole(nameof(Role.Admin));
-        var isStudent = User.IsInRole(nameof(Role.Student));
-        var isLeader = User.IsInRole(nameof(Role.Leader));
-
-        if (isAdmin && !isStudent)
+        if (IsPath(returnUrl, "/Admin"))
         {
             return RedirectToAction("Dashboard", "Admin");
         }
 
-        if ((isStudent || isLeader) && IsPath(returnUrl, "/Admin"))
-        {
-            return RedirectToAction("Index", "Home");
-        }
-
-        if (isStudent && IsPath(returnUrl, "/TaskBoard/ReviewGroup"))
-        {
-            return RedirectToAction("Index", "Home");
-        }
-
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction("Index", "Dashboard");
     }
 
     [HttpGet("logout")]
