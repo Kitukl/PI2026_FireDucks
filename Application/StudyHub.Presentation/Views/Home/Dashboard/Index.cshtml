@@ -25,8 +25,8 @@
                             <article class="dashboard-task-item"
                                      role="link"
                                      tabindex="0"
-                                     onclick="window.location.href='@Url.Action("TaskBoardViewTask", "Home", new { taskCode = task.Id })'"
-                                     onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='@Url.Action("TaskBoardViewTask", "Home", new { taskCode = task.Id })'; }">
+                                     onclick="window.location.href='@Url.Action("TaskBoardViewTask", "TaskBoard", new { taskCode = task.Id })'"
+                                     onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='@Url.Action("TaskBoardViewTask", "TaskBoard", new { taskCode = task.Id })'; }">
                                 <div class="dashboard-task-item-top">
                                     <h3>@task.Title</h3>
                                     <div class="dashboard-task-icons" aria-hidden="true">

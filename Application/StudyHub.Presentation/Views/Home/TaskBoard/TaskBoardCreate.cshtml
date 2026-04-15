@@ -31,7 +31,7 @@
             </div>
         </div>
 
-        <a class="taskboard-create-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardCreate">Create task</a>
+        <a class="taskboard-create-btn" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardCreate">Create task</a>
     </div>
 
     <div class="taskboard-grid">
@@ -68,7 +68,7 @@
 
             @if (User.IsInRole("Leader"))
             {
-                <a class="taskboard-manage-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardReviewGroup">Manage group</a>
+                <a class="taskboard-manage-btn" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardReviewGroup">Manage group</a>
             }
         </aside>
 
@@ -83,7 +83,7 @@
     <div class="task-modal-backdrop" aria-hidden="true"></div>
 
     <section class="task-create-modal" role="dialog" aria-modal="true" aria-label="Create task">
-        <form class="task-create-form" asp-controller="Home" asp-action="TaskBoardCreate" method="post">
+        <form class="task-create-form" asp-controller="TaskBoard" asp-action="TaskBoardCreate" method="post">
             @Html.AntiForgeryToken()
 
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -91,7 +91,7 @@
             <div class="task-create-top">
                 <label class="visually-hidden" asp-for="Title">Task name</label>
                 <input asp-for="Title" id="task-title" class="task-create-name-input" type="text" placeholder="Name your task..." />
-                <a class="task-create-cancel" asp-area="" asp-controller="Home" asp-action="TaskBoard">Cancel</a>
+                <a class="task-create-cancel" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoard">Cancel</a>
             </div>
             <span asp-validation-for="Title" class="text-danger"></span>
 

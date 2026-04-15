@@ -47,7 +47,7 @@
             </div>
         </div>
 
-        <a class="taskboard-create-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardCreate">Create task</a>
+        <a class="taskboard-create-btn" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardCreate">Create task</a>
     </div>
 
     <div class="taskboard-grid">
@@ -84,7 +84,7 @@
 
             @if (User.IsInRole("Leader"))
             {
-                <a class="taskboard-manage-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardReviewGroup">Manage group</a>
+                <a class="taskboard-manage-btn" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardReviewGroup">Manage group</a>
             }
         </aside>
 
@@ -111,7 +111,7 @@
                                 <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
                             }
                         </div>
-                        <footer><a class="task-card-link" asp-area="" asp-controller="Home" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
                     </article>
                 }
             </section>
@@ -138,7 +138,7 @@
                                 <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
                             }
                         </div>
-                        <footer><a class="task-card-link" asp-area="" asp-controller="Home" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
                     </article>
                 }
             </section>
@@ -165,7 +165,7 @@
                                 <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
                             }
                         </div>
-                        <footer><a class="task-card-link" asp-area="" asp-controller="Home" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
                     </article>
                 }
             </section>
@@ -192,7 +192,7 @@
                                 <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
                             }
                         </div>
-                        <footer><a class="task-card-link" asp-area="" asp-controller="Home" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
                     </article>
                 }
             </section>

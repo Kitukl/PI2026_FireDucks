@@ -64,7 +64,7 @@
             </div>
         </div>
 
-        <a class="taskboard-create-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardCreate">Create task</a>
+        <a class="taskboard-create-btn" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardCreate">Create task</a>
     </div>
 
     <div class="taskboard-grid">
@@ -101,7 +101,7 @@
 
             @if (User.IsInRole("Leader"))
             {
-                <a class="taskboard-manage-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardReviewGroup">Manage group</a>
+                <a class="taskboard-manage-btn" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardReviewGroup">Manage group</a>
             }
         </aside>
 
@@ -186,7 +186,7 @@
                         </svg>
                     </span>
                     <span class="task-deadline-indicator js-task-view-deadline" data-deadline="@dueDate.ToString("yyyy-MM-dd")" data-status="@statusValue" aria-hidden="true"></span>
-                    <form class="task-view-status-dropdown js-status-dropdown" asp-controller="Home" asp-action="TaskBoardViewTaskUpdateStatus" method="post">
+                    <form class="task-view-status-dropdown js-status-dropdown" asp-controller="TaskBoard" asp-action="TaskBoardViewTaskUpdateStatus" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="taskId" value="@selectedTask.Id" />
                         <button type="button" class="task-view-status-btn js-status-dropdown-toggle" aria-haspopup="listbox" aria-expanded="false">@statusLabel</button>
@@ -203,7 +203,7 @@
                             <option value="done" selected="@(statusValue == "done")">Done</option>
                         </select>
                     </form>
-                    <a class="task-view-back" asp-area="" asp-controller="Home" asp-action="TaskBoard">&lt; Back to the board</a>
+                    <a class="task-view-back" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoard">&lt; Back to the board</a>
                 </div>
             </div>
 
@@ -254,7 +254,7 @@
                                 @if (canDeleteComment)
                                 {
                                     <div class="task-comment-actions">
-                                        <form asp-controller="Home" asp-action="TaskBoardViewTaskDeleteComment" method="post">
+                                        <form asp-controller="TaskBoard" asp-action="TaskBoardViewTaskDeleteComment" method="post">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="taskId" value="@selectedTask.Id" />
                                             <input type="hidden" name="commentId" value="@comment.Id" />
@@ -267,7 +267,7 @@
                     }
                 </div>
 
-                <form class="task-view-editor js-rich-editor" asp-controller="Home" asp-action="TaskBoardViewTaskAddComment" method="post">
+                <form class="task-view-editor js-rich-editor" asp-controller="TaskBoard" asp-action="TaskBoardViewTaskAddComment" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="taskId" value="@selectedTask.Id" />
                     <div class="task-view-editor-head">
@@ -283,7 +283,7 @@
                     <textarea class="visually-hidden js-rich-editor-hidden" name="description"></textarea>
                 </form>
 
-                <form asp-controller="Home" asp-action="TaskBoardViewTaskDelete" method="post" style="margin-top: 16px; display: flex; justify-content: flex-end;">
+                <form asp-controller="TaskBoard" asp-action="TaskBoardViewTaskDelete" method="post" style="margin-top: 16px; display: flex; justify-content: flex-end;">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="taskId" value="@selectedTask.Id" />
                     <button type="submit" class="task-comment-delete-btn">Delete task</button>

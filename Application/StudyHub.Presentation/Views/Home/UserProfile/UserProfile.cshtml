@@ -13,7 +13,7 @@
     <div class="user-profile-grid">
         <section class="user-profile-left">
             <div class="user-photo-card">
-                <form asp-controller="Home" asp-action="UploadProfilePhoto" method="post" enctype="multipart/form-data" class="js-profile-photo-form">
+                <form asp-controller="UserProfile" asp-action="UploadProfilePhoto" method="post" enctype="multipart/form-data" class="js-profile-photo-form">
                     @Html.AntiForgeryToken()
                     <input id="profilePhotoInput" name="photoFile" type="file" accept="image/*" hidden class="js-profile-photo-input" />
                     <button type="button" class="user-photo-btn js-profile-photo-btn">Choose Profile Photo</button>
@@ -87,7 +87,7 @@
                     <p class="user-profile-form-error">@errorMessage</p>
                 }
 
-                <form asp-controller="Home" asp-action="UserProfileSendRequest" method="post">
+                <form asp-controller="UserProfile" asp-action="UserProfileSendRequest" method="post">
                     @Html.AntiForgeryToken()
 
                     <label class="user-contact-row">

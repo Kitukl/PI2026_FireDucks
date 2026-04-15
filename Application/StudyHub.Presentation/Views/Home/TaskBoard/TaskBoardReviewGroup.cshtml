@@ -21,7 +21,7 @@
             Filter by
         </button>
 
-        <a class="taskboard-create-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardCreate">Create task</a>
+        <a class="taskboard-create-btn" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardCreate">Create task</a>
     </div>
 
     <div class="taskboard-grid">
@@ -58,7 +58,7 @@
 
             @if (User.IsInRole("Leader"))
             {
-                <a class="taskboard-manage-btn" asp-area="" asp-controller="Home" asp-action="TaskBoardReviewGroup">Manage group</a>
+                <a class="taskboard-manage-btn" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardReviewGroup">Manage group</a>
             }
         </aside>
 
@@ -76,7 +76,7 @@
         <div class="group-manage-head">
             <h1>@Model.GroupName</h1>
             <div class="group-manage-head-actions">
-                <a class="group-manage-back" asp-area="" asp-controller="Home" asp-action="TaskBoard">&lt; Back to board</a>
+                <a class="group-manage-back" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoard">&lt; Back to board</a>
                 <button type="button" class="group-manage-add-btn js-group-add-toggle">Add user</button>
             </div>
         </div>
@@ -96,7 +96,7 @@
                     <div class="group-manage-row" data-user-id="@user.UserId">
                         <span>@user.Name</span>
                         <span>@user.Role</span>
-                        <form asp-controller="Home" asp-action="TaskBoardReviewGroupRemoveUser" method="post">
+                        <form asp-controller="TaskBoard" asp-action="TaskBoardReviewGroupRemoveUser" method="post">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="userId" value="@user.UserId" />
                             <button type="submit" class="group-manage-remove-btn">Remove</button>
@@ -112,7 +112,7 @@
                 <input id="group-add-user-search" class="js-group-user-search" type="search" placeholder="Type user name..." />
             </div>
 
-            <form asp-controller="Home" asp-action="TaskBoardReviewGroupAddUsers" method="post">
+            <form asp-controller="TaskBoard" asp-action="TaskBoardReviewGroupAddUsers" method="post">
                 @Html.AntiForgeryToken()
 
                 <div class="group-manage-available js-group-available-list" aria-live="polite">

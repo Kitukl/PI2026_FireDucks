@@ -6,9 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="Dockerfile" />
-    <Compile Include="requirements.txt" />
-  </ItemGroup>
-
 </Project>

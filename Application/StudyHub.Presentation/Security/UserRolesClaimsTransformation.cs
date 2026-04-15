@@ -21,6 +21,12 @@ public class UserRolesClaimsTransformation : IClaimsTransformation
             return principal;
         }
 
+        var userIdClaim = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userIdClaim) || !Guid.TryParse(userIdClaim, out _))
+        {
+            return principal;
+        }
+
         var identity = principal.Identities.FirstOrDefault(i => i.IsAuthenticated);
         if (identity == null)
         {

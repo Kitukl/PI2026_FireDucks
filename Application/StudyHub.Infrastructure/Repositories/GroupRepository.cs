@@ -12,10 +12,39 @@ public class GroupRepository : IGroupRepository
         _context = context;
     }
 
-    public async Task<Domain.Entities.Group> GetGroupByNameAsync(string groupName)
+    public async Task<Domain.Entities.Group?> GetGroupByNameAsync(string groupName)
     {
+        if (string.IsNullOrWhiteSpace(groupName))
+        {
+            return null;
+        }
+
+        var normalizedGroupName = groupName.Trim();
+
         return await _context.Groups
-            .FirstOrDefaultAsync(g => g.Name == groupName);
+            .FirstOrDefaultAsync(g => g.Name == normalizedGroupName);
+    }
+
+    public async Task<Domain.Entities.Group> CreateGroupAsync(string groupName)
+    {
+        var normalizedGroupName = groupName.Trim();
+
+        var existingGroup = await GetGroupByNameAsync(normalizedGroupName);
+        if (existingGroup != null)
+        {
+            return existingGroup;
+        }
+
+        var group = new Domain.Entities.Group
+        {
+            Id = Guid.NewGuid(),
+            Name = normalizedGroupName
+        };
+
+        _context.Groups.Add(group);
+        await _context.SaveChangesAsync();
+
+        return group;
     }
 
     public async Task<List<Domain.Entities.Group>> GetAllGroupsAsync()
