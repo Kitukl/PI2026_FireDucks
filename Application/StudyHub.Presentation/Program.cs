@@ -6,6 +6,7 @@ using DotNetEnv;
 using Application.Security;
 using StudyHub.Infrastructure;
 using StudyHub.Infrastructure.Repositories;
+using Microsoft.AspNetCore.HttpOverrides; // Додано
 
 using Serilog;
 using StudyHub.Core.Comments.Interfaces;
@@ -24,8 +25,6 @@ using StudyHub.Core.Tasks.Interfaces;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Core.Notifications.Interfaces;
 using StudyHub.Domain.Entities;
-using StudyHub.Infrastructure;
-using StudyHub.Infrastructure.Repositories;
 using StudyHub.Infrastructure.Services;
 using StudyHub.Domain.Enums;
 using StudyHub.Infrastructure.Notifications;
@@ -46,13 +45,11 @@ public class Program
 
         foreach (var envPath in envCandidates)
         {
-            if (!File.Exists(envPath))
+            if (File.Exists(envPath))
             {
-                continue;
+                Env.Load(envPath);
+                break;
             }
-
-            Env.Load(envPath);
-            break;
         }
 
         var builder = WebApplication.CreateBuilder(args);
@@ -72,8 +69,10 @@ public class Program
         {
             options.LoginPath = "/login";
             options.AccessDeniedPath = "/user/access-denied";
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Важливо для Azure
         });
         
+        // Репозиторії та сервіси
         builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
         builder.Services.AddScoped<ITaskRepository, TaskRepository>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -100,10 +99,12 @@ public class Program
                 options.ClientId = microsoftClientId;
                 options.ClientSecret = microsoftClientSecret;
                 options.SignInScheme = IdentityConstants.ExternalScheme;
-                options.CallbackPath = "/signin-microsoft";
+                
+                // МАЄ ЗБІГАТИСЯ з Url.Action у UserController
+                options.CallbackPath = "/user/callback"; 
 
                 options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
 
                 options.Events.OnRemoteFailure = context =>
                 {
@@ -117,10 +118,17 @@ public class Program
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));
 
-        builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c => c.BaseAddress = new Uri("http://localhost:5678"));
+        builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c => 
+            c.BaseAddress = new Uri(builder.Configuration["Parser:Url"] ?? "http://localhost:5678"));
         builder.Services.AddHostedService<ScheduleAutoUpdateService>();
 
         var app = builder.Build();
+
+        // Додано для коректної роботи HTTPS в Azure
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
 
         app.UseSerilogRequestLogging();
 
@@ -131,26 +139,27 @@ public class Program
         }
 
         app.UseHttpsRedirection();
+        app.UseStaticFiles();
         app.UseRouting();
 
         app.UseAuthentication(); 
 
+        // Оновлений Middleware
         app.Use(async (context, next) =>
         {
             var path = context.Request.Path;
 
-            static bool IsPath(string? value, string prefix)
+            static bool IsPathMatch(string? value, string prefix)
             {
                 return !string.IsNullOrWhiteSpace(value) &&
                        value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
             }
 
             var isBypassedPath = path.HasValue &&
-                                 (IsPath(path.Value, "/login") ||
-                                  IsPath(path.Value, "/user/login-microsoft") ||
-                                  IsPath(path.Value, "/user/callback") ||
-                                  IsPath(path.Value, "/signin-microsoft") ||
-                                  IsPath(path.Value, "/user/access-denied") ||
+                                 (IsPathMatch(path.Value, "/login") ||
+                                  IsPathMatch(path.Value, "/user/login-microsoft") ||
+                                  IsPathMatch(path.Value, "/user/callback") || // ВАЖЛИВО: додано
+                                  IsPathMatch(path.Value, "/user/access-denied") ||
                                   Path.HasExtension(path.Value));
 
             if (!isBypassedPath && context.User.Identity?.IsAuthenticated != true)
@@ -159,34 +168,14 @@ public class Program
                 return;
             }
 
-            if (context.User.Identity?.IsAuthenticated == true)
-            {
-                var isStudent = context.User.IsInRole(nameof(Role.Student));
-                var isLeader = context.User.IsInRole(nameof(Role.Leader));
-                var pathValue = path.Value ?? string.Empty;
-
-                if (isStudent && !isLeader && IsPath(pathValue, "/TaskBoard/ReviewGroup"))
-                {
-                    context.Response.Redirect("/Home/Index");
-                    return;
-                }
-            }
-
             await next();
         });
 
         app.UseAuthorization();
 
-        app.MapStaticAssets();
-        //app.MapControllerRoute(
-        //    name: "admin-schedule",
-        //    pattern: "Admin/Schedule/{action=SchedulesList}/{id?}",
-        //    defaults: new { controller = "Schedule" });
-
         app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
-            .WithStaticAssets();
+                pattern: "{controller=Home}/{action=Index}/{id?}");
 
         app.Run();
     }
