@@ -10,6 +10,7 @@ public class TaskBoardCreatePageViewModel
     [Required]
     public string Title { get; set; } = string.Empty;
 
+    [StringLength(200)]
     public string Description { get; set; } = string.Empty;
 
     [Required]

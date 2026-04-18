@@ -1,6 +1,9 @@
+using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudyHub.Core.Feedbacks.Commands;
 using StudyHub.Domain.Entities;
 using StudyHub.Domain.Enums;
@@ -10,6 +13,9 @@ namespace Application.Controllers;
 public class UserProfileController : Controller
 {
     private const string UserAvatarContainer = "user-avatars";
+    private const int FeedbackSubjectMaxLength = 160;
+    private const int FeedbackDescriptionMaxLength = 700;
+    private const string FeedbackSubjectPrefix = "Subject: ";
 
     private readonly UserManager<User> _userManager;
     private readonly IMediator _mediator;
@@ -29,18 +35,33 @@ public class UserProfileController : Controller
     [HttpGet("/UserProfile")]
     public async Task<IActionResult> UserProfile()
     {
+        // Жорсткі дефолти
+        ViewBag.FullName = "Гість";
+        ViewBag.PhotoUrl = Url.Content("~/images/no-photo.png");
+        ViewBag.IsNotified = true;
+        ViewBag.ReminderOffset = 2u;
+        ViewBag.ReminderTimeType = TimeType.Day;
+
         if (User.Identity?.IsAuthenticated == true)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var user = await _userManager.Users
+                .Include(u => u.Reminder) 
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == Guid.Parse(_userManager.GetUserId(User)));
+
             if (user != null)
             {
                 ViewBag.FullName = $"{user.Name} {user.Surname}".Trim();
                 ViewBag.PhotoUrl = ResolveUserPhotoUrl(user.PhotoUrl);
+                ViewBag.IsNotified = user.IsNotified;
+        
+                if (user.Reminder != null)
+                {
+                    ViewBag.ReminderOffset = user.Reminder.ReminderOffset;
+                    ViewBag.ReminderTimeType = user.Reminder.TimeType;
+                }
             }
         }
-
-        ViewBag.FullName ??= "Гість";
-        ViewBag.PhotoUrl ??= Url.Content("~/images/no-photo.png");
 
         return View("~/Views/Home/UserProfile/UserProfile.cshtml");
     }
@@ -121,6 +142,34 @@ public class UserProfileController : Controller
 
         return File(fileStream, GetImageContentType(blobName));
     }
+    
+    [HttpPost("/UserProfile/UpdateSettings")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateReminderSettings(bool isNotified, uint offset, TimeType timeType)
+    {
+        var userId = _userManager.GetUserId(User);
+        var user = await _userManager.Users
+            .Include(u => u.Reminder)
+            .FirstOrDefaultAsync(u => u.Id == Guid.Parse(userId));
+        if (user == null) return Json(new { success = false });
+
+        user.IsNotified = isNotified;
+        if (isNotified)
+        {
+            if (user.Reminder is null)
+            {
+                user.Reminder = new Reminder();
+            }
+
+            user.Reminder.ReminderOffset = offset;
+            user.Reminder.TimeType = timeType;
+        }
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded) return Json(new { success = false });
+
+        return Json(new { success = true });
+    }
 
     [HttpPost("/UserProfile/SendRequest")]
     [ValidateAntiForgeryToken]
@@ -139,15 +188,48 @@ public class UserProfileController : Controller
             return Forbid();
         }
 
-        if (string.IsNullOrWhiteSpace(description) && string.IsNullOrWhiteSpace(subject))
+        var normalizedSubject = (subject ?? string.Empty).Trim();
+        var normalizedDescription = (description ?? string.Empty)
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace("\r", "\n", StringComparison.Ordinal)
+            .Trim();
+
+        if (normalizedSubject.Length > FeedbackSubjectMaxLength)
+        {
+            normalizedSubject = normalizedSubject[..FeedbackSubjectMaxLength];
+        }
+
+        if (string.IsNullOrWhiteSpace(normalizedDescription) && string.IsNullOrWhiteSpace(normalizedSubject))
         {
             TempData["ProfileFeedbackError"] = "Please fill in request details before sending.";
             return RedirectToAction(nameof(UserProfile));
         }
 
-        var fullDescription = string.IsNullOrWhiteSpace(subject)
-            ? (description ?? string.Empty).Trim()
-            : $"Subject: {subject.Trim()}\n\n{(description ?? string.Empty).Trim()}";
+        string fullDescription;
+        if (string.IsNullOrWhiteSpace(normalizedSubject))
+        {
+            fullDescription = normalizedDescription;
+        }
+        else
+        {
+            var maxBodyLength = FeedbackDescriptionMaxLength - FeedbackSubjectPrefix.Length - normalizedSubject.Length - 2;
+            if (maxBodyLength < 0)
+            {
+                maxBodyLength = 0;
+            }
+
+            if (normalizedDescription.Length > maxBodyLength)
+            {
+                normalizedDescription = normalizedDescription[..maxBodyLength];
+            }
+
+            fullDescription = $"{FeedbackSubjectPrefix}{normalizedSubject}\n\n{normalizedDescription}";
+        }
+
+        if (fullDescription.Length > FeedbackDescriptionMaxLength)
+        {
+            fullDescription = fullDescription[..FeedbackDescriptionMaxLength];
+        }
 
         await _mediator.Send(new CreateFeedbackCommand
         {

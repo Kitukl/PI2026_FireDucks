@@ -1,5 +1,6 @@
 using Application.Models;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StudyHub.Core.DTOs;
@@ -18,6 +19,7 @@ using DayOfWeek = StudyHub.Domain.Enums.DayOfWeek;
 
 namespace Application.Controllers;
 
+[Authorize(Roles = nameof(Role.Admin))]
 public class AdminController(IMediator mediator, SDbContext _context) : Controller
 {
     public async Task<IActionResult> Dashboard()
@@ -31,6 +33,11 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
             CreatedAt = user.CreatedAt,
             UserActivityPerMonth = user.UserActivityPerMonth,
             GropedTaskCount = taskStatusCount,
+            StudentsCount = user.StudentsCount,
+            GroupsCount = user.GroupsCount,
+            LeadersCount = user.LeadersCount,
+            UserFilesCount = user.UserFilesCount,
+            GroupFilesCount = user.GroupFilesCount,
             FileCount = user.FileCount,
             TaskCount = tasksCount
         };
@@ -76,42 +83,120 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetUser(Guid id)
+    public IActionResult GetUser(Guid id)
     {
-        var userDto = await mediator.Send(new GetUserRequest(id));
-        var users = await mediator.Send(new GetUsersRequest());
-        var existingGroups = users
-            .Select(user => user.GroupName)
-            .Where(groupName => !string.IsNullOrWhiteSpace(groupName))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(groupName => groupName)
-            .ToList();
-        
-        var viewModel = new UpdateUserViewModel
-        {
-            Id = userDto.Id,
-            Name = userDto.Name,
-            Surname = userDto.Surname ?? "",
-            PhotoUrl = userDto.PhotoUrl ?? string.Empty,
-            GroupName = userDto.GroupName,
-            Roles = userDto.Roles,
-            AvailableRoles = Enum.GetNames(typeof(Role)).ToList(),
-            ExistingGroups = existingGroups
-        };
-        
-        return View("UpdateUser",viewModel);
+        return RedirectToAction(nameof(Users));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetUserModal(Guid id)
+    {
+        var viewModel = await BuildUpdateUserViewModel(id);
+        return PartialView("_UpdateUserForm", viewModel);
     }
     
     [HttpPost]
-    public async Task<IActionResult> UpdateUser(Guid id, string groupName)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateUser(UpdateUserViewModel model)
     {
-        await mediator.Send(new UpdateUserCommand 
-        { 
-            Id = id,
-            GroupName = groupName
+        var normalizedSelectedRoles = (model.SelectedRoles ?? [])
+            .Where(role => Enum.GetNames(typeof(Role)).Any(r => string.Equals(r, role, StringComparison.OrdinalIgnoreCase)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        model.SelectedRoles = normalizedSelectedRoles;
+
+        if (normalizedSelectedRoles.Count == 0)
+        {
+            ModelState.AddModelError(string.Empty, "Changes cannot be saved. Please add at least one role.");
+        }
+
+        var hasAdminRole = normalizedSelectedRoles.Any(role => string.Equals(role, nameof(Role.Admin), StringComparison.OrdinalIgnoreCase));
+        var hasStudentRole = normalizedSelectedRoles.Any(role => string.Equals(role, nameof(Role.Student), StringComparison.OrdinalIgnoreCase));
+        var hasLeaderRole = normalizedSelectedRoles.Any(role => string.Equals(role, nameof(Role.Leader), StringComparison.OrdinalIgnoreCase));
+
+        if (hasLeaderRole && !hasStudentRole)
+        {
+            ModelState.AddModelError(string.Empty, "Changes cannot be saved. Leader should has  Student role.");
+        }
+
+        if (hasAdminRole && (hasStudentRole || hasLeaderRole))
+        {
+            ModelState.AddModelError(string.Empty, "Changes cannot be saved. Admin role cannot be provided to Student.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var invalidModel = await BuildUpdateUserViewModel(model.Id, model);
+            if (IsAjaxRequest())
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                return PartialView("_UpdateUserForm", invalidModel);
+            }
+
+            return View("UpdateUser", invalidModel);
+        }
+
+        var userDto = await mediator.Send(new GetUserRequest(model.Id));
+        var existingRoles = (userDto.Roles ?? [])
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var rolesToRemove = existingRoles
+            .Where(role => !normalizedSelectedRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+        var rolesToAdd = normalizedSelectedRoles
+            .Where(role => !existingRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var role in rolesToRemove)
+        {
+            if (!Enum.TryParse<Role>(role, true, out var parsedRole))
+            {
+                continue;
+            }
+
+            await mediator.Send(new RemoveUserRoleCommand
+            {
+                UserId = model.Id,
+                Role = parsedRole
+            });
+        }
+
+        foreach (var role in rolesToAdd)
+        {
+            if (!Enum.TryParse<Role>(role, true, out var parsedRole))
+            {
+                continue;
+            }
+
+            await mediator.Send(new AssignUserRoleCommand
+            {
+                UserId = model.Id,
+                Role = parsedRole
+            });
+        }
+
+        await mediator.Send(new UpdateUserCommand
+        {
+            Id = model.Id,
+            GroupName = model.GroupName ?? string.Empty
         });
-    
-        return RedirectToAction("GetUser", new { id });
+
+        if (IsAjaxRequest())
+        {
+            return Json(new
+            {
+                success = true,
+                message = "User changes were saved.",
+                userId = model.Id,
+                roles = normalizedSelectedRoles,
+                groupName = model.GroupName ?? string.Empty
+            });
+        }
+
+        TempData["AdminUsersMessage"] = "User changes were saved.";
+        return RedirectToAction(nameof(Users));
     }
     
     [HttpPost]
@@ -122,30 +207,6 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
         return RedirectToAction("Users"); 
     }
     
-    [HttpPost]
-    public async Task<IActionResult> AddUserRole(UserRoleUpdateDto dto)
-    {
-        await mediator.Send(new AssignUserRoleCommand 
-        { 
-            UserId = dto.Id, 
-            Role = dto.Role 
-        });
-    
-        return RedirectToAction("GetUser", new { id = dto.Id });
-    }
-
-    [HttpPost] 
-    public async Task<IActionResult> RemoveUserRole(UserRoleUpdateDto dto)
-    {
-        await mediator.Send(new RemoveUserRoleCommand 
-        { 
-            UserId = dto.Id, 
-            Role = dto.Role 
-        });
-    
-        return RedirectToAction("GetUser", new { id = dto.Id });
-    }
-
     [HttpGet("/Admin/Requests")]
     public async Task<IActionResult> Requests()
     {
@@ -248,6 +309,7 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
             var scheduleDto = await mediator.Send(new GetScheduleByGroupIdRequest(groupId.Value));
             if (scheduleDto != null)
             {
+                model.SelectedGroupLastUpdate = scheduleDto.UpdateAt;
                 model.CurrentGroupSchedule = BuildScheduleGridViewModel(scheduleDto);
             }
         }
@@ -373,5 +435,48 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
             ActiveRequest = activeRequest,
             OpenRequestModal = openModal && activeRequest != null
         };
+    }
+
+    private async Task<UpdateUserViewModel> BuildUpdateUserViewModel(Guid id, UpdateUserViewModel? source = null)
+    {
+        var userDto = await mediator.Send(new GetUserRequest(id));
+        var users = await mediator.Send(new GetUsersRequest());
+        var existingGroups = users
+            .Select(user => user.GroupName)
+            .Where(groupName => !string.IsNullOrWhiteSpace(groupName))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(groupName => groupName)
+            .ToList();
+
+        var availableRoles = Enum.GetNames(typeof(Role)).ToList();
+        var selectedRoles = source?.SelectedRoles?.Any() == true
+            ? source.SelectedRoles
+            : (userDto.Roles ?? []);
+
+        return new UpdateUserViewModel
+        {
+            Id = userDto.Id,
+            Name = userDto.Name,
+            Surname = userDto.Surname ?? string.Empty,
+            PhotoUrl = userDto.PhotoUrl ?? string.Empty,
+            GroupName = source?.GroupName ?? userDto.GroupName ?? string.Empty,
+            Roles = userDto.Roles ?? [],
+            SelectedRoles = selectedRoles
+                .Where(role => availableRoles.Any(r => string.Equals(r, role, StringComparison.OrdinalIgnoreCase)))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            AvailableRoles = availableRoles,
+            ExistingGroups = existingGroups
+        };
+    }
+
+    private bool IsAjaxRequest()
+    {
+        if (!Request.Headers.TryGetValue("X-Requested-With", out var headerValue))
+        {
+            return false;
+        }
+
+        return string.Equals(headerValue.ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
     }
 }

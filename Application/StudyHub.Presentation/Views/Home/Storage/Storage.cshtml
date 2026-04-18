@@ -5,8 +5,6 @@
 }
 
 <section class="dashboard-page">
-    <h1 class="dashboard-welcome">Storage</h1>
-
     <div class="admin-panel" style="margin-top:12px;">
         @if (TempData["StorageMessage"] is string storageMessage)
         {
@@ -70,7 +68,7 @@
                     <th>Size</th>
                     <th>Last modified</th>
                     <th>Visibility</th>
-                    <th>Action</th>
+                    <th class="storage-actions-header"><span class="storage-actions-header-label">Action</span></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -95,7 +93,18 @@
                                 {
                                     <a class="admin-link-btn" asp-controller="Storage" asp-action="PreviewStorageFile" asp-route-scope="@file.Scope" asp-route-name="@file.BlobName" target="_blank" rel="noopener noreferrer">Preview</a>
                                 }
+                                else
+                                {
+                                    <span class="admin-link-btn storage-action-placeholder" aria-hidden="true">Preview</span>
+                                }
                                 <a class="admin-link-btn" asp-controller="Storage" asp-action="DownloadStorageFile" asp-route-scope="@file.Scope" asp-route-name="@file.BlobName">Download</a>
+                                <button type="button"
+                                    class="admin-link-btn js-open-storage-rename"
+                                    data-storage-scope="@file.Scope"
+                                    data-storage-name="@file.BlobName"
+                                    data-storage-display-name="@file.Name"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#storageRenameModal">Edit</button>
                                 <form asp-controller="Storage" asp-action="DeleteStorageFile" method="post" class="storage-inline-form" onsubmit="return confirm('Delete this file?');">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="scope" value="@file.Scope" />
@@ -114,3 +123,89 @@
         </div>
     </div>
 </section>
+
+<div class="modal fade" id="storageRenameModal" tabindex="-1" aria-labelledby="storageRenameModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content admin-modal">
+            <form asp-controller="Storage" asp-action="RenameStorageFile" method="post" id="storageRenameForm">
+                @Html.AntiForgeryToken()
+                <div class="admin-modal-head">
+                    <h2 id="storageRenameModalLabel">Rename file</h2>
+                    <button type="button" class="admin-btn" data-bs-dismiss="modal">Cancel</button>
+                </div>
+                <div class="admin-modal-body">
+                    <input type="hidden" name="scope" id="storageRenameScope" />
+                    <input type="hidden" name="name" id="storageRenameName" />
+                    <input type="hidden" name="newName" id="storageRenameFinalName" />
+
+                    <label class="admin-label" for="storageRenameNewName">New file name</label>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <input id="storageRenameNewName" class="admin-input" style="flex:1 1 auto;" required />
+                        <span id="storageRenameExtension" style="font-weight:700; color:#3a4658;"></span>
+                    </div>
+                </div>
+                <div class="admin-modal-foot">
+                    <button type="submit" class="admin-btn admin-btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    (() => {
+        const renameModal = document.getElementById("storageRenameModal");
+        const scopeInput = document.getElementById("storageRenameScope");
+        const nameInput = document.getElementById("storageRenameName");
+        const newNameInput = document.getElementById("storageRenameNewName");
+        const finalNameInput = document.getElementById("storageRenameFinalName");
+        const extensionNode = document.getElementById("storageRenameExtension");
+        const renameForm = document.getElementById("storageRenameForm");
+        const openButtons = document.querySelectorAll(".js-open-storage-rename");
+        let currentExtension = "";
+
+        function splitNameAndExtension(fileName) {
+            const dotIndex = fileName.lastIndexOf(".");
+            if (dotIndex <= 0 || dotIndex === fileName.length - 1) {
+                return { baseName: fileName, extension: "" };
+            }
+
+            return {
+                baseName: fileName.slice(0, dotIndex),
+                extension: fileName.slice(dotIndex)
+            };
+        }
+
+        if (!renameModal || !scopeInput || !nameInput || !newNameInput || !finalNameInput || !extensionNode || !renameForm || !openButtons.length) {
+            return;
+        }
+
+        openButtons.forEach(button => {
+            button.addEventListener("click", () => {
+                scopeInput.value = button.getAttribute("data-storage-scope") || "personal";
+                nameInput.value = button.getAttribute("data-storage-name") || "";
+                const displayName = button.getAttribute("data-storage-display-name") || "";
+                const parts = splitNameAndExtension(displayName);
+                currentExtension = parts.extension;
+                newNameInput.value = parts.baseName;
+                extensionNode.textContent = currentExtension;
+            });
+        });
+
+        renameForm.addEventListener("submit", event => {
+            const baseName = (newNameInput.value || "").trim();
+            if (!baseName) {
+                event.preventDefault();
+                newNameInput.focus();
+                return;
+            }
+
+            finalNameInput.value = baseName + currentExtension;
+        });
+
+        renameModal.addEventListener("shown.bs.modal", () => {
+            newNameInput.focus();
+            newNameInput.select();
+        });
+    })();
+</script>

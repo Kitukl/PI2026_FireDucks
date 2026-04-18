@@ -13,11 +13,18 @@ using StudyHub.Core.Users.Queries;
 using StudyHub.Domain.Entities;
 using StudyHub.Domain.Enums;
 using Application.Models;
+using Application.Helpers;
 
 namespace Application.Controllers;
 
 public class TaskBoardController : Controller
 {
+    private const int TaskTitleMaxLength = 200;
+    private const int SummaryMaxLength = 200;
+    private const int SubjectDisplayMaxLength = 34;
+    private const int CommentMaxLength = 1000;
+    private const int CommentUserNameMaxLength = 100;
+
     private readonly UserManager<User> _userManager;
     private readonly IMediator _mediator;
 
@@ -46,6 +53,9 @@ public class TaskBoardController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardCreate(TaskBoardCreatePageViewModel model)
     {
+        model.Title = (model.Title ?? string.Empty).Trim();
+        model.Description = TaskFormattingHelper.PrepareSummary(model.Description, SummaryMaxLength);
+
         if (model.SubjectId == null || model.SubjectId == Guid.Empty)
         {
             ModelState.AddModelError(nameof(model.SubjectId), "Subject is required.");
@@ -54,6 +64,22 @@ public class TaskBoardController : Controller
         if (string.IsNullOrWhiteSpace(model.Title))
         {
             ModelState.AddModelError(nameof(model.Title), "Task title is required.");
+        }
+
+        if (model.Title.Length > TaskTitleMaxLength)
+        {
+            ModelState.AddModelError(nameof(model.Title), $"Task title cannot exceed {TaskTitleMaxLength} characters.");
+        }
+
+        if (model.Description.Length > SummaryMaxLength)
+        {
+            ModelState.AddModelError(nameof(model.Description), $"Summary cannot exceed {SummaryMaxLength} characters.");
+        }
+
+        var maxDueDate = DateTime.Today.AddYears(5);
+        if (model.DueDate.Date > maxDueDate)
+        {
+            ModelState.AddModelError(nameof(model.DueDate), "Due date cannot exceed 5 years from today.");
         }
 
         var currentUserId = GetCurrentUserId();
@@ -79,8 +105,10 @@ public class TaskBoardController : Controller
 
         var createdTaskId = await _mediator.Send(new CreateTaskCommand
         {
-            Title = model.Title.Trim(),
-            Description = (model.Description ?? string.Empty).Trim(),
+            Title = model.Title.Length > TaskTitleMaxLength
+                ? model.Title[..TaskTitleMaxLength]
+                : model.Title,
+            Description = model.Description,
             Deadline = model.DueDate,
             IsGroupTask = model.IsGroupTask,
             UserId = currentUserId.Value,
@@ -177,7 +205,8 @@ public class TaskBoardController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardViewTaskAddComment(Guid taskId, string? description)
     {
-        if (string.IsNullOrWhiteSpace(description))
+        var normalizedDescription = TaskFormattingHelper.PrepareSummary(description, CommentMaxLength);
+        if (string.IsNullOrWhiteSpace(normalizedDescription))
         {
             return RedirectToAction(nameof(TaskBoardViewTask), new { taskCode = taskId });
         }
@@ -210,11 +239,20 @@ public class TaskBoardController : Controller
             ? "Guest"
             : $"{user.Name} {user.Surname}".Trim();
 
+        var normalizedUserName = string.IsNullOrWhiteSpace(userName)
+            ? "Guest"
+            : userName.Trim();
+
+        if (normalizedUserName.Length > CommentUserNameMaxLength)
+        {
+            normalizedUserName = normalizedUserName[..CommentUserNameMaxLength];
+        }
+
         await _mediator.Send(new CreateCommentCommand
         {
             TaskId = taskId,
-            UserName = string.IsNullOrWhiteSpace(userName) ? "Guest" : userName,
-            Description = description.Trim()
+            UserName = normalizedUserName,
+            Description = normalizedDescription
         });
 
         return RedirectToAction(nameof(TaskBoardViewTask), new { taskCode = taskId });
@@ -413,7 +451,7 @@ public class TaskBoardController : Controller
                 subjectCounters[subjectName] += 1;
             }
 
-            var prefix = char.ToUpperInvariant(subjectName[0]);
+            var prefix = TaskFormattingHelper.GenerateTaskCodePrefix(subjectName);
             var taskCode = $"{prefix}-{subjectCounters[subjectName]}";
 
             cards.Add(new TaskBoardTaskCardViewModel
@@ -424,6 +462,10 @@ public class TaskBoardController : Controller
                 Description = task.Description ?? string.Empty,
                 SubjectName = subjectName,
                 TaskCode = taskCode,
+                OwnerName = string.IsNullOrWhiteSpace($"{task.User?.Name} {task.User?.Surname}".Trim())
+                    ? "Unknown"
+                    : $"{task.User?.Name} {task.User?.Surname}".Trim(),
+                OwnerPhotoUrl = ResolveTaskOwnerPhotoUrl(task.User?.PhotoUrl),
                 IsGroupTask = task.IsGroupTask,
                 Status = task.Status,
                 Deadline = task.Deadline
@@ -445,6 +487,13 @@ public class TaskBoardController : Controller
     {
         var boardModel = await BuildTaskBoardModelAsync();
         var subjects = await _mediator.Send(new GetAllSubjectsRequest());
+        var maxDueDate = DateTime.Today.AddYears(5);
+
+        var dueDate = source?.DueDate ?? DateTime.Today.AddDays(1);
+        if (dueDate.Date > maxDueDate)
+        {
+            dueDate = maxDueDate;
+        }
 
         return new TaskBoardCreatePageViewModel
         {
@@ -454,13 +503,14 @@ public class TaskBoardController : Controller
                 .Select(subject => new SubjectOptionViewModel
                 {
                     Id = subject.Id,
-                    Name = subject.Name ?? string.Empty
+                    Name = subject.Name ?? string.Empty,
+                    DisplayName = TaskFormattingHelper.ShortenTextWithEllipsis(subject.Name, SubjectDisplayMaxLength)
                 })
                 .ToList(),
             Title = source?.Title ?? string.Empty,
             Description = source?.Description ?? string.Empty,
             SubjectId = source?.SubjectId,
-            DueDate = source?.DueDate ?? DateTime.Today.AddDays(1),
+            DueDate = dueDate,
             IsGroupTask = source?.IsGroupTask ?? true
         };
     }
@@ -487,6 +537,7 @@ public class TaskBoardController : Controller
 
         var unassignedUsers = users
             .Where(user => string.IsNullOrWhiteSpace(user.GroupName))
+            .Where(user => user.Roles?.Any(role => string.Equals(role, nameof(Role.Admin), StringComparison.OrdinalIgnoreCase)) != true)
             .OrderBy(user => user.Name)
             .ThenBy(user => user.Surname)
             .Select(user => new GroupUserViewModel
@@ -553,6 +604,22 @@ public class TaskBoardController : Controller
             Status.Resolved => "done",
             _ => "todo"
         };
+    }
+
+    private string ResolveTaskOwnerPhotoUrl(string? photoUrl)
+    {
+        if (string.IsNullOrWhiteSpace(photoUrl))
+        {
+            return string.Empty;
+        }
+
+        const string marker = "user-avatars/";
+        if (photoUrl.StartsWith(marker, StringComparison.OrdinalIgnoreCase))
+        {
+            return Url.Action("UserProfilePhoto", "UserProfile", new { path = photoUrl }) ?? string.Empty;
+        }
+
+        return photoUrl;
     }
 
 }

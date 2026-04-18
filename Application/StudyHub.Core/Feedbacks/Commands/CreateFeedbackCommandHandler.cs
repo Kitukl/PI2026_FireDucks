@@ -17,6 +17,9 @@ public class CreateFeedbackCommand : IRequest<Guid>
 
 public class CreateFeedbackCommandHandler : IRequestHandler<CreateFeedbackCommand, Guid>
 {
+    private const int FeedbackDescriptionMaxLength = 1000;
+    private const int CreatorFullNameMaxLength = 200;
+
     private readonly IFeedbackRepository _repository;
     private readonly IUserRepository _userRepository;
 
@@ -29,6 +32,19 @@ public class CreateFeedbackCommandHandler : IRequestHandler<CreateFeedbackComman
     {
         var user = await _userRepository.GetUserById(request.UserId);
         var creatorFullname = $"{user.Name} {user.Surname}".Trim();
+        if (creatorFullname.Length > CreatorFullNameMaxLength)
+        {
+            creatorFullname = creatorFullname[..CreatorFullNameMaxLength];
+        }
+
+        var normalizedDescription = string.IsNullOrWhiteSpace(request.Description)
+            ? string.Empty
+            : request.Description.Trim();
+
+        if (normalizedDescription.Length > FeedbackDescriptionMaxLength)
+        {
+            normalizedDescription = normalizedDescription[..FeedbackDescriptionMaxLength];
+        }
 
         var feedback = new Feedback
         {
@@ -36,7 +52,7 @@ public class CreateFeedbackCommandHandler : IRequestHandler<CreateFeedbackComman
             Category = request.Category,
             CreatorFullname = string.IsNullOrWhiteSpace(creatorFullname) ? user.UserName ?? "User" : creatorFullname,
             Status = request.Status,
-            Description = string.IsNullOrWhiteSpace(request.Description) ? string.Empty : request.Description.Trim(),
+            Description = normalizedDescription,
             FeedbackType = request.FeedbackType,
             CreatedAt = DateTime.UtcNow,
             User = user

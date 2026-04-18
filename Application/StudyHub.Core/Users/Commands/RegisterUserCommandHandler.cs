@@ -33,6 +33,12 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, b
 
         if (existingUser != null)
         {
+            var existingRoles = await _userRepository.GetRolesByUser(existingUser);
+            if (!existingRoles.Any(role => string.Equals(role, nameof(Role.Student), StringComparison.OrdinalIgnoreCase)))
+            {
+                await _userRepository.AddRole(Role.Student, existingUser.Id);
+            }
+
             return true;
         }
 

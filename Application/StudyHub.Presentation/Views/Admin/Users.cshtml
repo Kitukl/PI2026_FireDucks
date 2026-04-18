@@ -5,11 +5,31 @@
     ViewData["Title"] = "User Management";
 }
 
+<style>
+    .admin-users-title {
+        margin: 0;
+        font-size: 2rem;
+        font-family: 'Archivo', 'Trebuchet MS', sans-serif;
+        font-weight: 500;
+        letter-spacing: 0;
+        color: #1f2633;
+    }
+
+    #adminUsersTable {
+        table-layout: fixed;
+    }
+
+    #adminUsersTable th,
+    #adminUsersTable td {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+</style>
+
 <section class="admin-page" aria-label="User management page">
     <div class="admin-page-header admin-page-header-inline">
         <div>
-            <h1>User management</h1>
-            <p class="admin-page-subtitle">Manage accounts, roles, and group assignments</p>
+            <h1 class="admin-users-title">User management</h1>
         </div>
         <button class="admin-btn admin-btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#globalAnnouncementModal">
             Create global announcement
@@ -32,6 +52,12 @@
 
         <div class="admin-table-wrap">
             <table class="admin-table" id="adminUsersTable">
+                <colgroup>
+                    <col style="width: 34%;" />
+                    <col style="width: 24%;" />
+                    <col style="width: 24%;" />
+                    <col style="width: 18%;" />
+                </colgroup>
                 <thead>
                 <tr>
                     <th>Name</th>
@@ -43,13 +69,21 @@
                 <tbody>
                 @foreach (var user in Model)
                 {
-                    <tr>
+                    <tr data-user-id="@user.Id">
                         <td>@user.Name @user.Surname</td>
-                        <td>@string.Join(", ", user.Roles)</td>
-                        <td>@(string.IsNullOrWhiteSpace(user.GroupName) ? "-" : user.GroupName)</td>
+                        <td class="js-user-role-cell">@string.Join(", ", user.Roles)</td>
+                        <td class="js-user-group-cell">@(string.IsNullOrWhiteSpace(user.GroupName) ? "-" : user.GroupName)</td>
                         <td>
                             <div class="admin-actions-inline">
-                                <a class="admin-link-btn" asp-action="GetUser" asp-controller="Admin" asp-route-id="@user.Id">Edit</a>
+                                <button
+                                    type="button"
+                                    class="admin-link-btn js-open-user-edit-modal"
+                                    data-user-id="@user.Id"
+                                    data-user-name="@($"{user.Name} {user.Surname}".Trim())"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editUserModal">
+                                    Edit
+                                </button>
                                 <form asp-action="DeleteUser" method="post" onsubmit="return confirm('Delete this user?');">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@user.Id" />
@@ -89,22 +123,274 @@
     </div>
 </div>
 
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content admin-modal">
+            <div class="admin-modal-head">
+                <h2 id="editUserModalLabel">Edit user</h2>
+                <button type="button" class="admin-btn" data-bs-dismiss="modal">Cancel</button>
+            </div>
+            <div class="admin-modal-body" id="editUserModalBody">
+                <p class="admin-page-subtitle" style="margin: 0;">Select a user to edit.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         (() => {
             const searchInput = document.getElementById("adminUsersSearch");
             const tableRows = document.querySelectorAll("#adminUsersTable tbody tr");
+            const editButtons = document.querySelectorAll(".js-open-user-edit-modal");
+            const editUserModal = document.getElementById("editUserModal");
+            const editUserModalTitle = document.getElementById("editUserModalLabel");
+            const editUserModalBody = document.getElementById("editUserModalBody");
+            const globalAnnouncementModal = document.getElementById("globalAnnouncementModal");
+            const globalAnnouncementForm = globalAnnouncementModal?.querySelector("form");
+            const successAlert = document.querySelector(".admin-alert-success");
 
-            if (!searchInput || !tableRows.length) {
+            if (successAlert) {
+                setTimeout(() => {
+                    successAlert.classList.add("is-hidden");
+                    setTimeout(() => {
+                        successAlert.remove();
+                    }, 300);
+                }, 5000);
+            }
+
+            if (globalAnnouncementModal && globalAnnouncementForm) {
+                globalAnnouncementModal.addEventListener("hidden.bs.modal", () => {
+                    globalAnnouncementForm.reset();
+                });
+            }
+
+            function getSelectedRoleState(roleCheckboxes) {
+                const selectedRoles = roleCheckboxes
+                    .filter(checkbox => checkbox.checked)
+                    .map(checkbox => (checkbox.dataset.role || "").toLowerCase());
+
+                return {
+                    selectedRoles,
+                    hasStudent: selectedRoles.includes("student"),
+                    hasLeader: selectedRoles.includes("leader"),
+                    hasAdmin: selectedRoles.includes("admin")
+                };
+            }
+
+            function getRoleValidationMessage(roleCheckboxes) {
+                const state = getSelectedRoleState(roleCheckboxes);
+
+                if (state.selectedRoles.length === 0) {
+                    return "Changes cannot be saved. Please add at least one role.";
+                }
+
+                if (state.hasLeader && !state.hasStudent) {
+                    return "Changes cannot be saved. Leader should has  Student role.";
+                }
+
+                if (state.hasAdmin && (state.hasStudent || state.hasLeader)) {
+                    return "Changes cannot be saved. Admin role cannot be provided to Student.";
+                }
+
+                return "";
+            }
+
+            function setClientError(clientError, message) {
+                if (!clientError) {
+                    return;
+                }
+
+                if (!message) {
+                    clientError.hidden = true;
+                    clientError.textContent = "";
+                    return;
+                }
+
+                clientError.hidden = false;
+                clientError.textContent = message;
+            }
+
+            function initializeEditUserForm(container) {
+                const form = container.querySelector(".js-update-user-form") || container.querySelector("form[action*='UpdateUser']");
+                const roleCheckboxes = Array.from(container.querySelectorAll(".js-role-checkbox"));
+                const roleRows = Array.from(container.querySelectorAll(".js-role-row"));
+                const groupInput = container.querySelector(".js-admin-group-input");
+                const clientError = container.querySelector(".js-role-client-error");
+
+                if (!form || !roleCheckboxes.length || !groupInput) {
+                    return;
+                }
+
+                const roleMap = roleCheckboxes.reduce((acc, checkbox) => {
+                    const role = (checkbox.dataset.role || "").toLowerCase();
+                    if (role) {
+                        acc[role] = checkbox;
+                    }
+                    return acc;
+                }, {});
+
+                const rowMap = roleRows.reduce((acc, row) => {
+                    const role = (row.dataset.role || "").toLowerCase();
+                    if (role) {
+                        acc[role] = row;
+                    }
+                    return acc;
+                }, {});
+
+                function syncGroupState() {
+                    const isAdminSelected = getSelectedRoleState(roleCheckboxes).hasAdmin;
+
+                    groupInput.disabled = isAdminSelected;
+                    groupInput.classList.toggle("admin-input-locked", isAdminSelected);
+                }
+
+                function markRoleDisabled(role, isDisabled) {
+                    const checkbox = roleMap[role];
+                    const row = rowMap[role];
+                    if (!checkbox) {
+                        return;
+                    }
+
+                    checkbox.disabled = isDisabled;
+                    if (row) {
+                        row.classList.toggle("admin-role-disabled", isDisabled);
+                    }
+                }
+
+                function syncRoleAvailability() {
+                    const studentCheckbox = roleMap.student;
+                    const leaderCheckbox = roleMap.leader;
+                    const adminCheckbox = roleMap.admin;
+
+                    if (!studentCheckbox || !leaderCheckbox || !adminCheckbox) {
+                        return;
+                    }
+
+                    if (adminCheckbox.checked) {
+                        if (studentCheckbox.checked) {
+                            studentCheckbox.checked = false;
+                        }
+                        if (leaderCheckbox.checked) {
+                            leaderCheckbox.checked = false;
+                        }
+                    }
+
+                    if (!studentCheckbox.checked && leaderCheckbox.checked) {
+                        leaderCheckbox.checked = false;
+                    }
+
+                    markRoleDisabled("student", adminCheckbox.checked);
+                    markRoleDisabled("leader", adminCheckbox.checked || !studentCheckbox.checked);
+                    markRoleDisabled("admin", studentCheckbox.checked);
+                }
+
+                roleCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener("change", () => {
+                        syncRoleAvailability();
+                        syncGroupState();
+                        setClientError(clientError, "");
+                    });
+                });
+
+                form.addEventListener("submit", async event => {
+                    event.preventDefault();
+
+                    const validationMessage = getRoleValidationMessage(roleCheckboxes);
+                    if (validationMessage) {
+                        setClientError(clientError, validationMessage);
+                        return;
+                    }
+
+                    setClientError(clientError, "");
+
+                    const response = await fetch(form.action, {
+                        method: "POST",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        body: new FormData(form)
+                    });
+
+                    const contentType = response.headers.get("content-type") || "";
+
+                    if (response.ok && contentType.includes("application/json")) {
+                        const result = await response.json();
+                        if (result && result.success) {
+                            const row = document.querySelector(`#adminUsersTable tr[data-user-id='${result.userId}']`);
+                            if (row) {
+                                const roleCell = row.querySelector(".js-user-role-cell");
+                                const groupCell = row.querySelector(".js-user-group-cell");
+
+                                if (roleCell && Array.isArray(result.roles)) {
+                                    roleCell.textContent = result.roles.join(", ");
+                                }
+
+                                if (groupCell) {
+                                    const normalizedGroup = (result.groupName || "").trim();
+                                    groupCell.textContent = normalizedGroup ? normalizedGroup : "-";
+                                }
+                            }
+
+                            if (window.bootstrap && editUserModal) {
+                                const modalInstance = window.bootstrap.Modal.getOrCreateInstance(editUserModal);
+                                modalInstance.hide();
+                            }
+
+                            return;
+                        }
+                    }
+
+                    const partialMarkup = await response.text();
+                    editUserModalBody.innerHTML = partialMarkup;
+                    initializeEditUserForm(editUserModalBody);
+                });
+
+                syncRoleAvailability();
+                syncGroupState();
+            }
+
+            if (searchInput && tableRows.length) {
+                searchInput.addEventListener("input", () => {
+                    const query = searchInput.value.trim().toLowerCase();
+
+                    tableRows.forEach(row => {
+                        const text = row.textContent?.toLowerCase() ?? "";
+                        row.style.display = text.includes(query) ? "" : "none";
+                    });
+                });
+            }
+
+            if (!editButtons.length || !editUserModalBody || !editUserModalTitle) {
                 return;
             }
 
-            searchInput.addEventListener("input", () => {
-                const query = searchInput.value.trim().toLowerCase();
+            editButtons.forEach(button => {
+                button.addEventListener("click", async () => {
+                    const userId = button.getAttribute("data-user-id");
+                    const userName = button.getAttribute("data-user-name") || "User";
 
-                tableRows.forEach(row => {
-                    const text = row.textContent?.toLowerCase() ?? "";
-                    row.style.display = text.includes(query) ? "" : "none";
+                    if (!userId) {
+                        return;
+                    }
+
+                    editUserModalTitle.textContent = `Edit user: ${userName}`;
+                    editUserModalBody.innerHTML = "<p class='admin-page-subtitle' style='margin: 0;'>Loading user settings...</p>";
+
+                    const response = await fetch(`/Admin/GetUserModal?id=${encodeURIComponent(userId)}`, {
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    });
+
+                    if (!response.ok) {
+                        editUserModalBody.innerHTML = "<div class='admin-alert admin-alert-error'>Unable to load user settings.</div>";
+                        return;
+                    }
+
+                    const partialMarkup = await response.text();
+                    editUserModalBody.innerHTML = partialMarkup;
+                    initializeEditUserForm(editUserModalBody);
                 });
             });
         })();

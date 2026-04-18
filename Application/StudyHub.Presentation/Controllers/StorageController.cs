@@ -232,6 +232,78 @@ public class StorageController : Controller
         return RedirectToAction(nameof(Storage));
     }
 
+    [HttpPost("/Storage/Rename")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RenameStorageFile(string scope, string name, string newName, CancellationToken cancellationToken)
+    {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            return Forbid();
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Forbid();
+        }
+
+        var safeOldName = Path.GetFileName(name);
+        var safeNewName = Path.GetFileName(newName)?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(safeOldName) || string.IsNullOrWhiteSpace(safeNewName))
+        {
+            TempData["StorageError"] = "File name is required.";
+            return RedirectToAction(nameof(Storage));
+        }
+
+        var oldExtension = Path.GetExtension(safeOldName) ?? string.Empty;
+        var newExtension = Path.GetExtension(safeNewName) ?? string.Empty;
+        if (!string.Equals(oldExtension, newExtension, StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["StorageError"] = "Changing file extension is not allowed.";
+            return RedirectToAction(nameof(Storage));
+        }
+
+        var userDto = await _mediator.Send(new GetUserRequest(user.Id), cancellationToken);
+        string containerName;
+
+        if (string.Equals(scope, "group", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(userDto.GroupName))
+            {
+                return Forbid();
+            }
+
+            containerName = BuildGroupStorageContainerName(userDto.GroupName);
+        }
+        else
+        {
+            containerName = BuildUserStorageContainerName(user.Id);
+        }
+
+        var sourceStream = await _blobService.GetFileAsync(containerName, safeOldName, cancellationToken);
+        if (sourceStream == null)
+        {
+            TempData["StorageError"] = "File not found.";
+            return RedirectToAction(nameof(Storage));
+        }
+
+        await using (sourceStream)
+        {
+            var targetBlobName = BuildStoredBlobName(safeNewName);
+            await _blobService.UploadFileAsync(
+                containerName,
+                targetBlobName,
+                sourceStream,
+                GetContentTypeByFileName(safeNewName),
+                cancellationToken);
+        }
+
+        await _blobService.DeleteFileAsync(containerName, safeOldName, cancellationToken);
+        TempData["StorageMessage"] = "File renamed.";
+        return RedirectToAction(nameof(Storage));
+    }
+
     private async Task<StoragePageViewModel> BuildStoragePageModelAsync(User user, CancellationToken cancellationToken)
     {
         var model = new StoragePageViewModel();
