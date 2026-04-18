@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudyHub.Core.Feedbacks.Commands;
 using StudyHub.Domain.Entities;
 using StudyHub.Domain.Enums;
@@ -34,18 +35,33 @@ public class UserProfileController : Controller
     [HttpGet("/UserProfile")]
     public async Task<IActionResult> UserProfile()
     {
+        // Жорсткі дефолти
+        ViewBag.FullName = "Гість";
+        ViewBag.PhotoUrl = Url.Content("~/images/no-photo.png");
+        ViewBag.IsNotified = true;
+        ViewBag.ReminderOffset = 2u;
+        ViewBag.ReminderTimeType = TimeType.Day;
+
         if (User.Identity?.IsAuthenticated == true)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var user = await _userManager.Users
+                .Include(u => u.Reminder) 
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == Guid.Parse(_userManager.GetUserId(User)));
+
             if (user != null)
             {
                 ViewBag.FullName = $"{user.Name} {user.Surname}".Trim();
                 ViewBag.PhotoUrl = ResolveUserPhotoUrl(user.PhotoUrl);
+                ViewBag.IsNotified = user.IsNotified;
+        
+                if (user.Reminder != null)
+                {
+                    ViewBag.ReminderOffset = user.Reminder.ReminderOffset;
+                    ViewBag.ReminderTimeType = user.Reminder.TimeType;
+                }
             }
         }
-
-        ViewBag.FullName ??= "Гість";
-        ViewBag.PhotoUrl ??= Url.Content("~/images/no-photo.png");
 
         return View("~/Views/Home/UserProfile/UserProfile.cshtml");
     }
@@ -125,6 +141,34 @@ public class UserProfileController : Controller
         }
 
         return File(fileStream, GetImageContentType(blobName));
+    }
+    
+    [HttpPost("/UserProfile/UpdateSettings")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateReminderSettings(bool isNotified, uint offset, TimeType timeType)
+    {
+        var userId = _userManager.GetUserId(User);
+        var user = await _userManager.Users
+            .Include(u => u.Reminder)
+            .FirstOrDefaultAsync(u => u.Id == Guid.Parse(userId));
+        if (user == null) return Json(new { success = false });
+
+        user.IsNotified = isNotified;
+        if (isNotified)
+        {
+            if (user.Reminder is null)
+            {
+                user.Reminder = new Reminder();
+            }
+
+            user.Reminder.ReminderOffset = offset;
+            user.Reminder.TimeType = timeType;
+        }
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded) return Json(new { success = false });
+
+        return Json(new { success = true });
     }
 
     [HttpPost("/UserProfile/SendRequest")]

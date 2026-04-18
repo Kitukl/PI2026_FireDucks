@@ -88,6 +88,8 @@ public class Program
         builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
         builder.Services.AddScoped<IClaimsTransformation, UserRolesClaimsTransformation>();
+        builder.Services.AddHostedService<DeadlineSender>();
+        builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
         
         var authenticationBuilder = builder.Services.AddAuthentication();
         var microsoftClientId = builder.Configuration["Authentication:Microsoft:ClientId"];

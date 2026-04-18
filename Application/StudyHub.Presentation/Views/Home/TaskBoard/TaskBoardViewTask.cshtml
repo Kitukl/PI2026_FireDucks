@@ -61,14 +61,7 @@
 
 <section class="taskboard-page taskboard-view-page">
     <div class="taskboard-toolbar">
-        <label class="taskboard-search" for="task-search-view">
-            <span class="taskboard-search-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-                    <path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.06l4.24 4.24-1.42 1.42-4.24-4.24A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"></path>
-                </svg>
-            </span>
-            <input id="task-search-view" type="search" placeholder="Search" aria-label="Search tasks" />
-        </label>
+        <input id="task-search-view" type="search" placeholder="Search" aria-label="Search tasks" />
 
         <div class="taskboard-filter-control js-task-filter-control">
             <button class="taskboard-filter-btn js-task-filter-toggle" type="button" aria-expanded="false">
@@ -307,10 +300,7 @@
             <div class="task-view-main">
                 <div class="task-view-description">
                     <h2>Description</h2>
-                    <div class="task-view-textbox" title="@selectedTask.Description">
-                        @(string.IsNullOrWhiteSpace(normalizedDescription)
-                            ? "No description provided for this task."
-                            : normalizedDescription)
+                    <div class="task-view-textbox" title="@selectedTask.Description">@(string.IsNullOrWhiteSpace(normalizedDescription) ? "No description provided for this task." : normalizedDescription)
                     </div>
                 </div>
 

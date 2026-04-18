@@ -861,6 +861,53 @@ document.addEventListener("DOMContentLoaded", function () {
 			syncAddPanelState();
 		}
 	}
+	
+	document.addEventListener("DOMContentLoaded", function () {
+        const settingsBlock = document.querySelector('.js-user-settings');
+        if (!settingsBlock) return;
+    
+        const offsetSelect = settingsBlock.querySelector('.js-user-reminder-offset');
+        const typeSelect = settingsBlock.querySelector('.js-user-reminder-type');
+        const toggleBtn = settingsBlock.querySelector('.js-user-settings-toggle');
+        const hiddenInput = settingsBlock.querySelector('.js-user-settings-value'); // там де true/false
+        const token = settingsBlock.querySelector('input[name="__RequestVerificationToken"]').value;
+    
+        async function saveAllSettings() {
+            const url = settingsBlock.dataset.updateUrl;
+            
+            // Збираємо все докупи
+            const data = new URLSearchParams();
+            data.append("isNotified", hiddenInput.value); // стан тогла
+            data.append("offset", offsetSelect.value);
+            data.append("timeType", typeSelect.value);
+            data.append("__RequestVerificationToken", token);
+    
+            settingsBlock.style.opacity = "0.6";
+    
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: data
+                });
+                
+                if (response.ok) console.log("Settings synced");
+            } catch (e) {
+                console.error("Sync failed", e);
+            } finally {
+                settingsBlock.style.opacity = "1";
+            }
+        }
+    
+        [offsetSelect, typeSelect].forEach(s => s.addEventListener('change', saveAllSettings));
+    
+        toggleBtn.addEventListener('click', () => {
+            setTimeout(saveAllSettings, 50);
+        });
+    });
 
 	const userSettings = document.querySelector(".js-user-settings");
 	const profilePhotoForm = document.querySelector(".js-profile-photo-form");

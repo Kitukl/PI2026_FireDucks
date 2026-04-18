@@ -3,17 +3,25 @@
     ViewData["Title"] = "User profile";
     const int feedbackSubjectMaxLength = 160;
     const int feedbackDescriptionMaxLength = 700;
+    
     var fullName = (string?)ViewBag.FullName ?? "Гість";
     var photoUrl = (string?)ViewBag.PhotoUrl ?? Url.Content("~/images/no-photo.png");
+    
     var feedbackTypes = Enum.GetValues<FeedbackType>();
     var categories = Enum.GetValues<Category>();
     var timeTypes = Enum.GetValues<TimeType>();
     var reminderOffsets = Enumerable.Range(1, 10);
+
+    // ВАЖЛИВО: Отримуємо збережені значення з ViewBag
+    bool isNotified = ViewBag.IsNotified ?? true;
+    var currentOffset = ViewBag.ReminderOffset ?? 2;
+    var currentTimeType = ViewBag.ReminderTimeType ?? TimeType.Day;
 }
 
 <section class="user-profile-page">
     <div class="user-profile-grid">
         <section class="user-profile-left">
+            @* Блок фото *@
             <div class="user-photo-card">
                 <form asp-controller="UserProfile" asp-action="UploadProfilePhoto" method="post" enctype="multipart/form-data" class="js-profile-photo-form">
                     @Html.AntiForgeryToken()
@@ -31,20 +39,24 @@
 
             <h1 class="user-profile-name">@fullName</h1>
 
-            <fieldset class="user-settings-card js-user-settings" data-enabled="true">
+            @* БЛОК НАЛАШТУВАНЬ З ВИПРАВЛЕНИМ SELECTED *@
+            <fieldset class="user-settings-card js-user-settings" 
+                      data-update-url="@Url.Action("UpdateReminderSettings", "UserProfile")">
+                @Html.AntiForgeryToken()
                 <legend>Settings</legend>
 
-                <div class="user-settings-controls" aria-hidden="true">
+                <div class="user-settings-controls">
                     <button type="button" class="user-settings-icon is-muted js-user-settings-muted" title="Mute notifications">
                         <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
                             <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zM18 16v-5.5c0-2.9-1.6-5.35-4.5-6.04V3.5a1.5 1.5 0 1 0-3 0v.96C7.6 5.15 6 7.6 6 10.5V16l-2 2v1h16v-1l-2-2zM4 4.9 5.4 3.5 20.5 18.6 19.1 20z"></path>
                         </svg>
                     </button>
 
-                    <button type="button" class="user-settings-toggle js-user-settings-toggle" title="Notifications toggle" aria-pressed="true">
+                    @* Тогл стає активним, якщо в базі true *@
+                    <button type="button" class="user-settings-toggle js-user-settings-toggle @(isNotified ? "active" : "")" title="Notifications toggle">
                         <span class="user-settings-knob"></span>
                     </button>
-                    <input class="js-user-settings-value" type="hidden" value="true" />
+                    <input class="js-user-settings-value" type="hidden" name="isNotified" value="@(isNotified ? "true" : "false")" />
 
                     <button type="button" class="user-settings-icon js-user-settings-bell" title="Enable reminders">
                         <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
@@ -55,16 +67,19 @@
 
                 <label class="user-reminder-row">
                     <span>Send a reminder</span>
-                    <select class="js-user-reminder-offset" aria-label="Reminder offset">
+                    @* ПЕРЕВІРКА: Порівнюємо кожну опцію з currentOffset *@
+                    <select class="js-user-reminder-offset js-reminder-auto-update">
                         @foreach (var offset in reminderOffsets)
                         {
-                            <option selected="@(offset == 2 ? "selected" : null)">@offset</option>
+                            <option value="@offset" selected="@(offset == (int)currentOffset ? "selected" : null)">@offset</option>
                         }
                     </select>
-                    <select class="js-user-reminder-type" aria-label="Reminder unit">
+                    
+                    @* ПЕРЕВІРКА: Порівнюємо кожну опцію з currentTimeType *@
+                    <select class="js-user-reminder-type js-reminder-auto-update">
                         @foreach (var timeType in timeTypes)
                         {
-                            <option selected="@(timeType == TimeType.Day ? "selected" : null)">@timeType</option>
+                            <option value="@timeType" selected="@(timeType == currentTimeType ? "selected" : null)">@timeType</option>
                         }
                     </select>
                     <span>before due date</span>
@@ -73,20 +88,16 @@
         </section>
 
         <section class="user-profile-right">
+            @* Форма контактів *@
             <article class="user-contact-card">
                 <header class="user-contact-head">
                     <h2>Contact form</h2>
-                    <button type="button" class="user-contact-help" aria-label="Help">?</button>
+                    <button type="button" class="user-contact-help">?</button>
                 </header>
 
                 @if (TempData["ProfileFeedbackSuccess"] is string successMessage)
                 {
                     <p class="user-profile-form-success">@successMessage</p>
-                }
-
-                @if (TempData["ProfileFeedbackError"] is string errorMessage)
-                {
-                    <p class="user-profile-form-error">@errorMessage</p>
                 }
 
                 <form asp-controller="UserProfile" asp-action="UserProfileSendRequest" method="post">
@@ -113,24 +124,67 @@
                     </label>
 
                     <input class="user-contact-subject js-feedback-subject" name="subject" type="text" placeholder="Subject" maxlength="@feedbackSubjectMaxLength" />
-                    <div class="field-char-counter" data-counter-for="subject">0/@feedbackSubjectMaxLength</div>
-
+                    
                     <div class="task-view-editor js-rich-editor user-contact-editor">
                         <div class="task-view-editor-head">
-                            <div class="task-view-editor-tools" aria-label="Feedback formatting">
-                                <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="bold" aria-label="Bold">B</button>
-                                <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="italic" aria-label="Italic"><em>I</em></button>
-                                <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="underline" aria-label="Underline"><u>U</u></button>
-                                <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="strikeThrough" aria-label="Strike through"><s>S</s></button>
+                            <div class="task-view-editor-tools">
+                                <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="bold">B</button>
+                                <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="italic">I</button>
                             </div>
                             <button class="task-view-comment-btn" type="submit">Send request</button>
                         </div>
-                        <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Please describe your question/problem here..." data-max-chars="@feedbackDescriptionMaxLength"></div>
+                        <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" data-placeholder="Please describe your problem..." data-max-chars="@feedbackDescriptionMaxLength"></div>
                         <textarea class="visually-hidden js-rich-editor-hidden" name="description"></textarea>
-                        <div class="task-summary-counter js-rich-char-counter" aria-live="polite">0/@feedbackDescriptionMaxLength</div>
                     </div>
                 </form>
             </article>
         </section>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const settingsBlock = document.querySelector('.js-user-settings');
+            if (!settingsBlock) return;
+
+            const toggleBtn = settingsBlock.querySelector('.js-user-settings-toggle');
+            const hiddenInput = settingsBlock.querySelector('.js-user-settings-value');
+            const selects = settingsBlock.querySelectorAll('.js-reminder-auto-update');
+            const token = settingsBlock.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            async function saveSettings() {
+                const url = settingsBlock.dataset.updateUrl;
+                const data = new URLSearchParams();
+                
+                data.append("isNotified", hiddenInput.value);
+                data.append("offset", settingsBlock.querySelector('.js-user-reminder-offset').value);
+                data.append("timeType", settingsBlock.querySelector('.js-user-reminder-type').value);
+                data.append("__RequestVerificationToken", token);
+
+                settingsBlock.style.opacity = "0.5";
+
+                try {
+                    const response = await fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded", "X-Requested-With": "XMLHttpRequest" },
+                        body: data
+                    });
+                    if (response.ok) console.log("Налаштування збережено");
+                } catch (e) {
+                    console.error("Помилка збереження", e);
+                } finally {
+                    settingsBlock.style.opacity = "1";
+                }
+            }
+
+            toggleBtn.addEventListener('click', function() {
+                const isActive = this.classList.toggle('active');
+                hiddenInput.value = isActive ? "true" : "false";
+                saveSettings();
+            });
+
+            selects.forEach(s => s.addEventListener('change', saveSettings));
+        });
+    </script>
+}

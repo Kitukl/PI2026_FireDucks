@@ -7,4 +7,11 @@ public interface IGlobalAnnouncementService
         string subject,
         string description,
         CancellationToken cancellationToken = default);
+    
+    Task SendReminderEmailAsync(
+        string recipientEmail,
+        string subject,
+        string taskTitle,
+        DateTime deadline,
+        CancellationToken cancellationToken = default);
 }
