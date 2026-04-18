@@ -26,7 +26,7 @@ public class StatisticRepository(
             .AsNoTracking()
             .ToDictionaryAsync(
                 g => g.Key,
-                g => g.Sum(s => s.UserActivityPerMonth));
+                g => g.Average(s => s.UserActivityPerMonth));
     }
 
     public async Task<int> GetStorageFileCountAsync(CancellationToken cancellationToken = default)
