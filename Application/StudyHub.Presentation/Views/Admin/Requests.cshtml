@@ -36,6 +36,22 @@
             .Replace("\r\n", "\n")
             .Trim();
 
+        string NormalizeBody(string text)
+        {
+            var cleanText = text
+                .Replace("\u00A0", " ")
+                .Replace("\u200B", string.Empty)
+                .Replace("\uFEFF", string.Empty);
+
+            var lines = cleanText
+                .Split('\n', StringSplitOptions.None)
+                .Select(line => line.Trim())
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .ToArray();
+
+            return string.Join(" ", lines).Trim();
+        }
+
         if (string.IsNullOrWhiteSpace(description))
         {
             return ("(No subject)", string.Empty);
@@ -48,12 +64,12 @@
         if (firstLine.StartsWith(subjectPrefix, StringComparison.OrdinalIgnoreCase))
         {
             var subject = firstLine[subjectPrefix.Length..].Trim();
-            var body = lines.Length > 1 ? lines[1].Trim() : string.Empty;
+            var body = lines.Length > 1 ? NormalizeBody(lines[1]) : string.Empty;
 
             return (string.IsNullOrWhiteSpace(subject) ? "(No subject)" : subject, body);
         }
 
-        return (firstLine, description);
+        return (firstLine, NormalizeBody(description));
     }
 
     var activeRequest = Model.ActiveRequest;
@@ -65,12 +81,14 @@
 <style>
 .admin-requests-page { background: #fff; border: 1px solid #d2d8e0; border-radius: 12px; padding: 16px 14px 14px; margin-top: 10px; }
 .admin-requests-head { display: flex; justify-content: flex-start; align-items: center; gap: 12px; margin-bottom: 14px; }
-.admin-requests-head h1 { margin: 0; font-size: 1.8rem; }
+.admin-requests-head h1 { margin: 0; font-size: 2rem; font-weight: 500; font-family: 'Archivo', 'Trebuchet MS', sans-serif; letter-spacing: 0; color: #1f2633; }
 .admin-requests-toolbar { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 10px; }
 .admin-requests-toolbar input, .admin-requests-toolbar select, .admin-requests-toolbar button { min-height: 38px; border: 1px solid #9aa3af; border-radius: 9px; background: #fff; padding: 0 10px; }
-.admin-requests-table { width: 100%; border-collapse: collapse; }
+.admin-requests-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .admin-requests-table th, .admin-requests-table td { border-bottom: 1px solid #e0e5eb; padding: 10px 8px; text-align: left; }
 .admin-requests-table th { color: #646e7f; font-weight: 700; }
+.admin-requests-table th:first-child,
+.admin-requests-table td:first-child { width: 30%; overflow: hidden; }
 .admin-requests-status { display: inline-flex; min-width: 92px; justify-content: center; align-items: center; min-height: 30px; border: 1px solid #7e8794; border-radius: 7px; font-weight: 700; font-size: 0.92rem; line-height: 1; }
 .admin-requests-status.todo { background: #fff; }
 .admin-requests-status.progress { background: #cfe5ff; border-color: #568dcc; }
@@ -81,16 +99,34 @@
 .admin-requests-status-select.resolved { background: #cfe9c9; border-color: #6ea66a; }
 .admin-requests-view-link { color: inherit; text-decoration: none; }
 .admin-requests-view-link:hover { text-decoration: underline; }
+.admin-requests-subject-link {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
 .admin-requests-backdrop { position: fixed; inset: 0; background: rgba(20, 27, 40, 0.45); z-index: 120; }
-.admin-request-review-modal { position: fixed; z-index: 130; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(980px, 88vw); max-height: 84vh; overflow: auto; background: #fff; border: 1px solid #aeb6c2; border-radius: 0; padding: 18px 20px; box-shadow: 0 22px 42px rgba(7, 13, 22, 0.28); }
+.admin-request-review-modal { position: fixed; z-index: 130; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(1020px, 90vw); max-height: 86vh; overflow: auto; background: #fff; border: 1px solid #aeb6c2; border-radius: 14px; padding: 20px 22px; box-shadow: 0 22px 42px rgba(7, 13, 22, 0.28); }
 .admin-request-review-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .admin-request-review-top h2 { margin: 0; font-size: clamp(1.55rem, 2.4vw, 2.2rem); font-weight: 800; color: #1f2633; }
+.admin-request-review-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 620px;
+}
 .admin-request-review-tools { display: inline-flex; align-items: center; gap: 8px; }
 .admin-request-review-tools select, .admin-request-review-tools a { min-height: 38px; border: 1px solid #8d97a4; border-radius: 8px; background: #fff; padding: 5px 10px; color: #1f2633; text-decoration: none; }
 .admin-request-review-grid { display: grid; grid-template-columns: 1.25fr 0.9fr; gap: 14px; }
-.admin-request-review-block h3 { margin: 0; font-size: 2rem; font-weight: 800; color: #1f2633; }
+.admin-request-review-block h3 { margin: 0 0 10px; font-size: 2rem; font-weight: 800; color: #1f2633; }
 .admin-request-review-block h3::after { content: ""; display: block; width: 108px; margin-top: 4px; border-bottom: 2px solid #4a5466; }
-.admin-request-review-description { margin-top: 8px; min-height: 190px; border: 1px solid #8d97a4; border-radius: 0; padding: 10px; background: #fff; }
+.admin-request-review-description { margin-top: 20px; min-height: 260px; max-height: 340px; border: 1px solid #8d97a4; border-radius: 12px; padding: 14px; background: #fff; overflow-y: auto; }
+.admin-request-review-description {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
 .admin-request-review-details { margin-top: 8px; }
 .admin-request-review-details dl { margin: 0; display: grid; grid-template-columns: 98px 1fr; row-gap: 8px; column-gap: 8px; }
 .admin-request-review-details dt { color: #4d5563; }
@@ -137,7 +173,7 @@
                 var summary = ParseRequestSummary(row.Description);
 
                 <tr class="js-admin-request-row" data-status="@row.Status" data-feedback-id="@row.Id">
-                    <td><a class="admin-requests-view-link" asp-controller="Admin" asp-action="RequestView" asp-route-feedbackId="@row.Id" title="@row.Description">@summary.Item1</a></td>
+                    <td><a class="admin-requests-view-link admin-requests-subject-link" asp-controller="Admin" asp-action="RequestView" asp-route-feedbackId="@row.Id" title="@summary.Item1">@summary.Item1</a></td>
                     <td>@row.CreatorFullname</td>
                     <td>@FeedbackTypeLabel(row.FeedbackType)</td>
                     <td>@CategoryLabel(row.Category)</td>
@@ -161,7 +197,7 @@
 
     <section class="admin-request-review-modal" role="dialog" aria-modal="true" aria-label="Request review">
         <div class="admin-request-review-top">
-            <h2>@activeSummary.Item1</h2>
+            <h2 class="admin-request-review-title" title="@activeSummary.Item1">@activeSummary.Item1</h2>
 
             <div class="admin-request-review-tools">
                 <form asp-controller="Admin" asp-action="UpdateRequestStatus" method="post" class="admin-request-review-tools js-admin-review-status-form">

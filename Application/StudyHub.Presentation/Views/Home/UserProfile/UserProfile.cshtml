@@ -1,6 +1,8 @@
 @using StudyHub.Domain.Entities
 @{
     ViewData["Title"] = "User profile";
+    const int feedbackSubjectMaxLength = 160;
+    const int feedbackDescriptionMaxLength = 700;
     var fullName = (string?)ViewBag.FullName ?? "Гість";
     var photoUrl = (string?)ViewBag.PhotoUrl ?? Url.Content("~/images/no-photo.png");
     var feedbackTypes = Enum.GetValues<FeedbackType>();
@@ -110,7 +112,8 @@
                         </select>
                     </label>
 
-                    <input class="user-contact-subject" name="subject" type="text" placeholder="Subject" />
+                    <input class="user-contact-subject js-feedback-subject" name="subject" type="text" placeholder="Subject" maxlength="@feedbackSubjectMaxLength" />
+                    <div class="field-char-counter" data-counter-for="subject">0/@feedbackSubjectMaxLength</div>
 
                     <div class="task-view-editor js-rich-editor user-contact-editor">
                         <div class="task-view-editor-head">
@@ -122,8 +125,9 @@
                             </div>
                             <button class="task-view-comment-btn" type="submit">Send request</button>
                         </div>
-                        <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Please describe your question/problem here..."></div>
+                        <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Please describe your question/problem here..." data-max-chars="@feedbackDescriptionMaxLength"></div>
                         <textarea class="visually-hidden js-rich-editor-hidden" name="description"></textarea>
+                        <div class="task-summary-counter js-rich-char-counter" aria-live="polite">0/@feedbackDescriptionMaxLength</div>
                     </div>
                 </form>
             </article>

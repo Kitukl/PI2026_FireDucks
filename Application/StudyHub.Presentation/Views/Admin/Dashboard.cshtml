@@ -1,90 +1,1013 @@
 @model Application.Models.SystemStatisticViewModel
+@using System.Text.Json
+@using System.Globalization
+@using StudyHub.Domain.Enums
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Admin Dashboard";
 
     var groupedTasks = Model.GropedTaskCount ?? new Dictionary<string, Dictionary<string, int>>();
-    var userTaskStats = groupedTasks.TryGetValue("User Tasks", out var userTasks)
+    var userTaskStatsRaw = groupedTasks.TryGetValue("User Tasks", out var userTasks)
         ? userTasks
         : new Dictionary<string, int>();
-    var groupTaskStats = groupedTasks.TryGetValue("Group Tasks", out var groupTasks)
+    var groupTaskStatsRaw = groupedTasks.TryGetValue("Group Tasks", out var groupTasks)
         ? groupTasks
         : new Dictionary<string, int>();
 
-    var totalTaskStats = groupedTasks
-        .SelectMany(pair => pair.Value)
-        .GroupBy(item => item.Key)
-        .ToDictionary(group => group.Key, group => group.Sum(item => item.Value));
+    var statusOrder = new[]
+    {
+        (Key: nameof(Status.ToDo), Label: "To do", Color: "#d9ebff"),
+        (Key: nameof(Status.InProgress), Label: "In progress", Color: "#8fc2ff"),
+        (Key: nameof(Status.ForReview), Label: "For review", Color: "#4e8fda"),
+        (Key: nameof(Status.Done), Label: "Done", Color: "#1c4f9f")
+    };
+
+    int ResolveStatusCount(Dictionary<string, int> source, string statusKey)
+    {
+        if (source.TryGetValue(statusKey, out var directValue))
+        {
+            return directValue;
+        }
+
+        var compactKey = statusKey.Replace(" ", string.Empty, StringComparison.Ordinal).Replace("_", string.Empty, StringComparison.Ordinal);
+        foreach (var item in source)
+        {
+            var itemKey = (item.Key ?? string.Empty)
+                .Replace(" ", string.Empty, StringComparison.Ordinal)
+                .Replace("_", string.Empty, StringComparison.Ordinal);
+
+            if (string.Equals(itemKey, compactKey, StringComparison.OrdinalIgnoreCase))
+            {
+                return item.Value;
+            }
+        }
+
+        return 0;
+    }
+
+    Dictionary<string, int> BuildNormalizedStatusStats(Dictionary<string, int> source)
+    {
+        return statusOrder.ToDictionary(
+            s => s.Label,
+            s => ResolveStatusCount(source, s.Key)
+        );
+    }
+
+    var userTaskStats = BuildNormalizedStatusStats(userTaskStatsRaw);
+    var groupTaskStats = BuildNormalizedStatusStats(groupTaskStatsRaw);
+    var totalTaskStats = statusOrder.ToDictionary(
+        s => s.Label,
+        s => userTaskStats[s.Label] + groupTaskStats[s.Label]
+    );
 
     var totalUserTasks = userTaskStats.Values.Sum();
     var totalGroupTasks = groupTaskStats.Values.Sum();
-    var totalTasks = Model.TaskCount;
+    var totalTasks = totalTaskStats.Values.Sum();
+
+    string BuildPieStyle(Dictionary<string, int> stats)
+    {
+        var total = stats.Values.Sum();
+        if (total <= 0)
+        {
+            return "background: conic-gradient(#edf1f7 0deg 360deg);";
+        }
+
+        var cursor = 0.0;
+        var segments = new List<string>(statusOrder.Length);
+
+        foreach (var status in statusOrder)
+        {
+            var count = stats[status.Label];
+            var sweep = count * 360.0 / total;
+            var from = cursor;
+            var to = cursor + sweep;
+            var fromText = from.ToString("F2", CultureInfo.InvariantCulture);
+            var toText = to.ToString("F2", CultureInfo.InvariantCulture);
+            segments.Add($"{status.Color} {fromText}deg {toText}deg");
+            cursor = to;
+        }
+
+        return $"background: conic-gradient({string.Join(", ", segments)});";
+    }
+
+    var chartData = new
+    {
+        user = userTaskStats,
+        group = groupTaskStats,
+        all = totalTaskStats
+    };
+
+    var chartDataJson = JsonSerializer.Serialize(chartData);
 }
 
+<style>
+.admin-dashboard-title {
+    margin: 0;
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 500;
+    font-family: 'Archivo', 'Trebuchet MS', sans-serif;
+    letter-spacing: 0;
+    color: #102642;
+}
+
+.admin-dashboard-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 310px);
+    gap: 10px;
+    align-items: stretch;
+}
+
+.admin-dashboard-main-grid > .admin-panel {
+    margin: 0;
+}
+
+.admin-count-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 0;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.admin-count-summary-card {
+    border: 1px solid rgba(18, 24, 38, 0.22);
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px;
+}
+
+.admin-count-summary-card h3 {
+    margin: 0;
+    color: #102238;
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.admin-count-summary-list {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.admin-count-summary-list li {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    gap: 3px;
+    border: 0;
+    border-radius: 0;
+    padding: 5px 0;
+    color: #27374e;
+    font-weight: 600;
+}
+
+.admin-count-summary-list strong {
+    color: #09203d;
+    font-weight: 800;
+}
+
+.admin-task-summary-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    max-width: none;
+    margin: 0;
+}
+
+.admin-task-scope-list {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-task-scope-card {
+    border: 1px solid rgba(18, 24, 38, 0.15);
+    border-radius: 12px;
+    background: #fff;
+    padding: 10px;
+}
+
+.admin-task-scope-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-task-scope-top h3 {
+    margin: 0;
+    color: #101f34;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.admin-task-scope-radio {
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 3px solid #3e4653;
+    background: #fff;
+    cursor: pointer;
+}
+
+.admin-task-scope-radio:checked {
+    background: #1f2f4b;
+}
+
+.admin-task-scope-list-rows {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.admin-task-scope-list-rows li {
+    display: flex;
+    justify-content: space-between;
+    color: #1d2d44;
+    font-size: 1rem;
+}
+
+.admin-task-scope-list-rows strong {
+    font-weight: 800;
+}
+
+.admin-task-chart-wrap {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 30px 10px 10px;
+    display: grid;
+    grid-template-columns: minmax(220px, 320px) minmax(180px, 260px);
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    align-self: center;
+    transform: translateY(-10%);
+}
+
+.admin-task-chart {
+    width: min(300px, 58vw);
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    border: 1px solid rgba(16, 32, 54, 0.08);
+    margin: 0 auto;
+    position: relative;
+    background: #edf1f7;
+}
+
+.admin-task-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.admin-task-legend li {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    color: #1d2f49;
+    font-size: 1.02rem;
+    font-weight: 700;
+}
+
+.admin-task-legend-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+}
+
+.admin-task-legend-percent {
+    color: #2c3d56;
+    font-weight: 800;
+}
+
+.admin-dashboard-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 14px;
+}
+
+.admin-report-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(16, 25, 39, 0.5);
+    z-index: 120;
+}
+
+.admin-report-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    overflow: auto;
+    padding: 14px 12px;
+}
+
+.admin-report-shell {
+    width: min(980px, 94vw);
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+    margin: 0 auto;
+    background: #f5f7fb;
+    border: 1px solid rgba(12, 26, 44, 0.28);
+    border-radius: 14px;
+    box-shadow: 0 24px 42px rgba(9, 20, 35, 0.32);
+}
+
+.admin-report-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f5f7fb;
+    border-bottom: 1px solid rgba(12, 26, 44, 0.18);
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-report-paper {
+    width: 794px;
+    min-height: 0;
+    margin: 0 auto;
+    background: #fff;
+    padding: 34px 34px 28px;
+    color: #0f2139;
+}
+
+.admin-report-title {
+    margin: 0;
+    text-align: center;
+    font-size: 2.05rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+}
+
+.admin-report-title .study {
+    color: #2e99cd;
+}
+
+.admin-report-title .hub {
+    color: #0e5f87;
+}
+
+.admin-report-created {
+    margin-top: 14px;
+    text-align: center;
+    color: #3f4f65;
+    font-weight: 600;
+}
+
+.admin-report-section {
+    margin-top: 20px;
+}
+
+.admin-report-section h3 {
+    margin: 0 0 10px;
+    font-size: 1.28rem;
+    font-weight: 800;
+}
+
+.admin-report-count-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.admin-report-count-card {
+    border: 1px solid rgba(14, 30, 51, 0.2);
+    border-radius: 10px;
+    padding: 9px;
+}
+
+.admin-report-count-card h4 {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 800;
+}
+
+.admin-report-count-card ul {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 5px;
+}
+
+.admin-report-count-card li {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    gap: 3px;
+    font-size: 0.95rem;
+}
+
+.admin-report-task-rows {
+    display: grid;
+    gap: 12px;
+    max-width: 620px;
+    margin: 0 auto;
+}
+
+.admin-report-mini-chart {
+    width: 136px;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    border: 1px solid rgba(31, 49, 80, 0.12);
+    margin: 0 auto;
+}
+
+.admin-report-task-row {
+    border: 1px solid rgba(14, 30, 51, 0.18);
+    border-radius: 10px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 138px;
+    gap: 12px;
+    align-items: center;
+    width: min(660px, 100%);
+    margin: 0 auto;
+}
+
+.admin-report-task-info {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-report-task-info h4 {
+    margin: 0;
+    font-size: 1.04rem;
+    font-weight: 800;
+}
+
+.admin-report-task-lines {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 5px;
+}
+
+.admin-report-task-lines li {
+    display: grid;
+    grid-template-columns: 140px 34px 10px 50px;
+    justify-content: start;
+    gap: 4px;
+    align-items: center;
+    font-size: 0.92rem;
+}
+
+.admin-report-task-label {
+    display: inline-grid;
+    grid-template-columns: 14px auto;
+    align-items: center;
+    gap: 4px;
+}
+
+.admin-report-task-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-report-task-count,
+.admin-report-task-percent {
+    font-weight: 800;
+    text-align: right;
+    justify-self: end;
+}
+
+.admin-report-task-dash {
+    text-align: center;
+    font-weight: 800;
+    color: #33435b;
+}
+
+.admin-report-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.admin-report-legend li {
+    display: grid;
+    grid-template-columns: 14px 1fr;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.admin-report-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+}
+
+@@media (max-width: 1100px) {
+    .admin-dashboard-main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-task-summary-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-task-chart-wrap {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-count-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-report-paper {
+        width: 100%;
+        min-height: 0;
+        padding: 18px;
+    }
+
+    .admin-report-count-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-report-task-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
 <section class="admin-page" aria-label="Admin dashboard">
-    <div class="admin-page-header">
+    <div class="admin-page-header" style="padding-bottom: 4px; margin-bottom: 6px;">
         <div>
-            <h1>Dashboard</h1>
-            <p class="admin-page-subtitle">Created at @Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</p>
+            <h1 class="admin-dashboard-title">Dashboard</h1>
         </div>
     </div>
 
-    <div class="admin-metric-grid">
-        <article class="admin-metric-card">
-            <p class="admin-metric-label">Users files</p>
-            <p class="admin-metric-value">@Model.FileCount</p>
-        </article>
-        <article class="admin-metric-card">
-            <p class="admin-metric-label">All tasks</p>
-            <p class="admin-metric-value">@totalTasks</p>
-        </article>
-        <article class="admin-metric-card">
-            <p class="admin-metric-label">User tasks</p>
-            <p class="admin-metric-value">@totalUserTasks</p>
-        </article>
-        <article class="admin-metric-card">
-            <p class="admin-metric-label">Group tasks</p>
-            <p class="admin-metric-value">@totalGroupTasks</p>
-        </article>
-    </div>
-
-    <div>
+    <div class="admin-dashboard-main-grid">
         <article class="admin-panel">
             <header class="admin-panel-head">
                 <h2>Task status summary</h2>
             </header>
 
-            <div class="admin-status-stack">
-                <section>
-                    <h3>User tasks</h3>
-                    <ul class="admin-status-list">
-                        @foreach (var row in userTaskStats.OrderBy(row => row.Key))
-                        {
-                            <li><span>@row.Key</span><strong>@row.Value</strong></li>
-                        }
-                    </ul>
+            <div class="admin-task-summary-layout" id="taskStatusSummary" data-chart='@Html.Raw(chartDataJson)'>
+                <section class="admin-task-scope-list">
+                    <article class="admin-task-scope-card" data-scope="user">
+                        <div class="admin-task-scope-top">
+                            <h3>User tasks</h3>
+                            <input class="admin-task-scope-radio js-task-scope-radio" type="radio" name="taskScope" value="user" aria-label="Show user task chart" />
+                        </div>
+                        <ul class="admin-task-scope-list-rows">
+                            @foreach (var status in statusOrder)
+                            {
+                                <li><span>@status.Label</span><strong>@userTaskStats[status.Label]</strong></li>
+                            }
+                        </ul>
+                    </article>
+
+                    <article class="admin-task-scope-card" data-scope="group">
+                        <div class="admin-task-scope-top">
+                            <h3>Group tasks</h3>
+                            <input class="admin-task-scope-radio js-task-scope-radio" type="radio" name="taskScope" value="group" aria-label="Show group task chart" />
+                        </div>
+                        <ul class="admin-task-scope-list-rows">
+                            @foreach (var status in statusOrder)
+                            {
+                                <li><span>@status.Label</span><strong>@groupTaskStats[status.Label]</strong></li>
+                            }
+                        </ul>
+                    </article>
+
+                    <article class="admin-task-scope-card" data-scope="all">
+                        <div class="admin-task-scope-top">
+                            <h3>All tasks</h3>
+                            <input class="admin-task-scope-radio js-task-scope-radio" type="radio" name="taskScope" value="all" checked aria-label="Show all task chart" />
+                        </div>
+                        <ul class="admin-task-scope-list-rows">
+                            @foreach (var status in statusOrder)
+                            {
+                                <li><span>@status.Label</span><strong>@totalTaskStats[status.Label]</strong></li>
+                            }
+                        </ul>
+                    </article>
                 </section>
 
-                <section>
-                    <h3>Group tasks</h3>
-                    <ul class="admin-status-list">
-                        @foreach (var row in groupTaskStats.OrderBy(row => row.Key))
-                        {
-                            <li><span>@row.Key</span><strong>@row.Value</strong></li>
-                        }
-                    </ul>
-                </section>
+                <section class="admin-task-chart-wrap">
+                    <div class="admin-task-chart js-admin-task-chart" style="@BuildPieStyle(totalTaskStats)">
+                    </div>
 
-                <section>
-                    <h3>All tasks</h3>
-                    <ul class="admin-status-list">
-                        @foreach (var row in totalTaskStats.OrderBy(row => row.Key))
+                    <ul class="admin-task-legend">
+                        @for (var index = 0; index < statusOrder.Length; index++)
                         {
-                            <li><span>@row.Key</span><strong>@row.Value</strong></li>
+                            var status = statusOrder[index];
+                            <li>
+                                <span class="admin-task-legend-dot" style="background: @status.Color;"></span>
+                                <span>@status.Label</span>
+                                <span class="admin-task-legend-percent js-admin-task-legend-percent" data-status-index="@index">0%</span>
+                            </li>
                         }
                     </ul>
                 </section>
             </div>
         </article>
+
+        <article class="admin-panel">
+            <header class="admin-panel-head">
+                <h2>Count summary</h2>
+            </header>
+
+            <div class="admin-count-summary-grid">
+                <section class="admin-count-summary-card">
+                    <h3>Users</h3>
+                    <ul class="admin-count-summary-list">
+                        <li><span>Students</span><strong>@Model.StudentsCount</strong></li>
+                        <li><span>Groups</span><strong>@Model.GroupsCount</strong></li>
+                        <li><span>Leaders</span><strong>@Model.LeadersCount</strong></li>
+                    </ul>
+                </section>
+
+                <section class="admin-count-summary-card">
+                    <h3>Tasks</h3>
+                    <ul class="admin-count-summary-list">
+                        <li><span>User tasks</span><strong>@totalUserTasks</strong></li>
+                        <li><span>Group tasks</span><strong>@totalGroupTasks</strong></li>
+                        <li><span>All tasks</span><strong>@totalTasks</strong></li>
+                    </ul>
+                </section>
+
+                <section class="admin-count-summary-card">
+                    <h3>Files</h3>
+                    <ul class="admin-count-summary-list">
+                        <li><span>User files</span><strong>@Model.UserFilesCount</strong></li>
+                        <li><span>Group files</span><strong>@Model.GroupFilesCount</strong></li>
+                        <li><span>All files</span><strong>@Model.FileCount</strong></li>
+                    </ul>
+                </section>
+            </div>
+        </article>
+    </div>
+
+    <div class="admin-dashboard-actions">
+        <button type="button" class="admin-btn admin-btn-primary js-open-report-preview">Preview PDF</button>
     </div>
 </section>
+
+<div class="admin-report-backdrop js-report-backdrop" hidden></div>
+<div class="admin-report-modal js-report-modal" hidden>
+    <div class="admin-report-shell">
+        <div class="admin-report-head">
+            <strong>PDF preview</strong>
+            <div class="admin-actions-inline">
+                <button type="button" class="admin-btn admin-btn-primary js-download-report-pdf">Download PDF</button>
+                <button type="button" class="admin-btn js-close-report-preview">Close</button>
+            </div>
+        </div>
+
+        <article class="admin-report-paper js-report-paper">
+            <h2 class="admin-report-title"><span class="study">Study</span><span class="hub">Hub</span> Usage Report</h2>
+            <p class="admin-report-created">Created at @Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</p>
+
+            <section class="admin-report-section">
+                    <h3>Count summary</h3>
+                <div class="admin-report-count-grid">
+                    <article class="admin-report-count-card">
+                        <h4>Users</h4>
+                        <ul>
+                            <li><span>Students</span><strong>@Model.StudentsCount</strong></li>
+                            <li><span>Groups</span><strong>@Model.GroupsCount</strong></li>
+                            <li><span>Leaders</span><strong>@Model.LeadersCount</strong></li>
+                        </ul>
+                    </article>
+
+                    <article class="admin-report-count-card">
+                        <h4>Tasks</h4>
+                        <ul>
+                            <li><span>User tasks</span><strong>@totalUserTasks</strong></li>
+                            <li><span>Group tasks</span><strong>@totalGroupTasks</strong></li>
+                            <li><span>All tasks</span><strong>@totalTasks</strong></li>
+                        </ul>
+                    </article>
+
+                    <article class="admin-report-count-card">
+                        <h4>Files</h4>
+                        <ul>
+                            <li><span>User files</span><strong>@Model.UserFilesCount</strong></li>
+                            <li><span>Group files</span><strong>@Model.GroupFilesCount</strong></li>
+                            <li><span>All files</span><strong>@Model.FileCount</strong></li>
+                        </ul>
+                    </article>
+                </div>
+            </section>
+
+            <section class="admin-report-section">
+                    <h3>Task status summary</h3>
+                <div class="admin-report-task-rows">
+                    <article class="admin-report-task-row">
+                        <div class="admin-report-task-info">
+                            <h4>User tasks</h4>
+                            <ul class="admin-report-task-lines">
+                                @foreach (var status in statusOrder)
+                                {
+                                    var value = userTaskStats[status.Label];
+                                    var percent = totalUserTasks > 0 ? Math.Round(value * 100.0 / totalUserTasks, 1) : 0;
+                                    <li>
+                                        <span class="admin-report-task-label"><span class="admin-report-dot" style="background: @status.Color;"></span><span class="admin-report-task-name">@status.Label</span></span>
+                                        <span class="admin-report-task-count">@value</span>
+                                        <span class="admin-report-task-dash">—</span>
+                                        <span class="admin-report-task-percent">@percent%</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                        <div class="admin-report-mini-chart js-admin-report-mini-chart" data-scope="user" style="@BuildPieStyle(userTaskStats)"></div>
+                    </article>
+
+                    <article class="admin-report-task-row">
+                        <div class="admin-report-task-info">
+                            <h4>Group tasks</h4>
+                            <ul class="admin-report-task-lines">
+                                @foreach (var status in statusOrder)
+                                {
+                                    var value = groupTaskStats[status.Label];
+                                    var percent = totalGroupTasks > 0 ? Math.Round(value * 100.0 / totalGroupTasks, 1) : 0;
+                                    <li>
+                                        <span class="admin-report-task-label"><span class="admin-report-dot" style="background: @status.Color;"></span><span class="admin-report-task-name">@status.Label</span></span>
+                                        <span class="admin-report-task-count">@value</span>
+                                        <span class="admin-report-task-dash">—</span>
+                                        <span class="admin-report-task-percent">@percent%</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                        <div class="admin-report-mini-chart js-admin-report-mini-chart" data-scope="group" style="@BuildPieStyle(groupTaskStats)"></div>
+                    </article>
+
+                    <article class="admin-report-task-row">
+                        <div class="admin-report-task-info">
+                            <h4>All tasks</h4>
+                            <ul class="admin-report-task-lines">
+                                @foreach (var status in statusOrder)
+                                {
+                                    var value = totalTaskStats[status.Label];
+                                    var percent = totalTasks > 0 ? Math.Round(value * 100.0 / totalTasks, 1) : 0;
+                                    <li>
+                                        <span class="admin-report-task-label"><span class="admin-report-dot" style="background: @status.Color;"></span><span class="admin-report-task-name">@status.Label</span></span>
+                                        <span class="admin-report-task-count">@value</span>
+                                        <span class="admin-report-task-dash">—</span>
+                                        <span class="admin-report-task-percent">@percent%</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                        <div class="admin-report-mini-chart js-admin-report-mini-chart" data-scope="all" style="@BuildPieStyle(totalTaskStats)"></div>
+                    </article>
+                </div>
+            </section>
+        </article>
+    </div>
+</div>
+
+<script>
+(() => {
+    const statusOrder = ["To do", "In progress", "For review", "Done"];
+    const colors = ["#d9ebff", "#8fc2ff", "#4e8fda", "#1c4f9f"];
+    const summaryRoot = document.getElementById("taskStatusSummary");
+    const chartNode = document.querySelector(".js-admin-task-chart");
+    const scopeRadios = Array.from(document.querySelectorAll(".js-task-scope-radio"));
+    const legendPercentNodes = Array.from(document.querySelectorAll(".js-admin-task-legend-percent"));
+    const reportMiniCharts = Array.from(document.querySelectorAll(".js-admin-report-mini-chart"));
+    const chartData = summaryRoot ? JSON.parse(summaryRoot.dataset.chart || "{}") : {};
+
+    function normalizeScopeData(scopeKey) {
+        const source = chartData[scopeKey] || {};
+        return statusOrder.map(status => Number(source[status] || 0));
+    }
+
+    function applyReportMiniCharts() {
+        if (!reportMiniCharts.length) {
+            return;
+        }
+
+        reportMiniCharts.forEach(node => {
+            const scopeKey = node.getAttribute("data-scope") || "all";
+            const values = normalizeScopeData(scopeKey);
+            const total = values.reduce((acc, value) => acc + value, 0);
+
+            if (total <= 0) {
+                node.style.background = "conic-gradient(#edf1f7 0deg 360deg)";
+                return;
+            }
+
+            let cursor = 0;
+            const segments = values.map((value, index) => {
+                const sweep = value * 360 / total;
+                const from = cursor;
+                const to = cursor + sweep;
+                cursor = to;
+                return `${colors[index]} ${from.toFixed(2)}deg ${to.toFixed(2)}deg`;
+            });
+
+            node.style.background = "conic-gradient(" + segments.join(", ") + ")";
+            node.style.backgroundColor = "#edf1f7";
+        });
+    }
+
+    if (summaryRoot && chartNode && scopeRadios.length && legendPercentNodes.length) {
+        function applyChart(scopeKey) {
+            const values = normalizeScopeData(scopeKey);
+            const total = values.reduce((acc, value) => acc + value, 0);
+
+            if (total <= 0) {
+                chartNode.style.background = "conic-gradient(#edf1f7 0deg 360deg)";
+                legendPercentNodes.forEach(node => {
+                    node.textContent = "0%";
+                });
+                return;
+            }
+
+            let cursor = 0;
+            const percentages = values.map(value => (value * 100) / total);
+            const segments = values.map((value, index) => {
+                const sweep = value * 360 / total;
+                const from = cursor;
+                const to = cursor + sweep;
+                cursor = to;
+
+                if (legendPercentNodes[index]) {
+                    legendPercentNodes[index].textContent = `${Math.round(percentages[index] * 10) / 10}%`;
+                }
+
+                return `${colors[index]} ${from.toFixed(2)}deg ${to.toFixed(2)}deg`;
+            });
+
+            chartNode.style.background = "conic-gradient(" + segments.join(", ") + ")";
+            chartNode.style.backgroundColor = "#edf1f7";
+        }
+
+        scopeRadios.forEach(radio => {
+            radio.addEventListener("change", () => {
+                if (radio.checked) {
+                    applyChart(radio.value);
+                }
+            });
+        });
+
+        const checkedScope = scopeRadios.find(radio => radio.checked)?.value || "all";
+        applyChart(checkedScope);
+    }
+
+    applyReportMiniCharts();
+
+    const openPreviewButton = document.querySelector(".js-open-report-preview");
+    const closePreviewButton = document.querySelector(".js-close-report-preview");
+    const reportBackdrop = document.querySelector(".js-report-backdrop");
+    const reportModal = document.querySelector(".js-report-modal");
+    const reportPaper = document.querySelector(".js-report-paper");
+    const downloadPdfButton = document.querySelector(".js-download-report-pdf");
+
+    function setPreviewVisible(isVisible) {
+        if (!reportBackdrop || !reportModal) {
+            return;
+        }
+
+        reportBackdrop.hidden = !isVisible;
+        reportModal.hidden = !isVisible;
+        document.body.style.overflow = isVisible ? "hidden" : "";
+    }
+
+    openPreviewButton?.addEventListener("click", () => setPreviewVisible(true));
+    openPreviewButton?.addEventListener("click", applyReportMiniCharts);
+    closePreviewButton?.addEventListener("click", () => setPreviewVisible(false));
+    reportBackdrop?.addEventListener("click", () => setPreviewVisible(false));
+
+    function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const existing = document.querySelector(`script[src='${src}']`);
+            if (existing) {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement("script");
+            script.src = src;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("Cannot load script"));
+            document.head.appendChild(script);
+        });
+    }
+
+    function createPieChartImage(values, size) {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+            return "";
+        }
+
+        const total = values.reduce((acc, value) => acc + value, 0);
+        const center = size / 2;
+        const radius = center - 1;
+
+        if (total <= 0) {
+            context.fillStyle = "#edf1f7";
+            context.beginPath();
+            context.arc(center, center, radius, 0, Math.PI * 2);
+            context.fill();
+            return canvas.toDataURL("image/png");
+        }
+
+        let cursor = -Math.PI / 2;
+
+        values.forEach((value, index) => {
+            if (value <= 0) {
+                return;
+            }
+
+            const sweep = (value / total) * Math.PI * 2;
+            context.beginPath();
+            context.moveTo(center, center);
+            context.arc(center, center, radius, cursor, cursor + sweep);
+            context.closePath();
+            context.fillStyle = colors[index] || "#edf1f7";
+            context.fill();
+            cursor += sweep;
+        });
+
+        return canvas.toDataURL("image/png");
+    }
+
+    function renderChartsForPdfExport(exportNode) {
+        const exportCharts = Array.from(exportNode.querySelectorAll(".js-admin-report-mini-chart"));
+        if (!exportCharts.length) {
+            return;
+        }
+
+        exportCharts.forEach(node => {
+            const scopeKey = node.getAttribute("data-scope") || "all";
+            const values = normalizeScopeData(scopeKey);
+            const imageDataUrl = createPieChartImage(values, 360);
+            if (!imageDataUrl) {
+                return;
+            }
+
+            const img = document.createElement("img");
+            img.src = imageDataUrl;
+            img.alt = "Task chart";
+            img.style.display = "block";
+            img.style.width = "100%";
+            img.style.height = "100%";
+            img.style.borderRadius = "50%";
+
+            node.style.background = "none";
+            node.style.backgroundColor = "transparent";
+            node.replaceChildren(img);
+        });
+    }
+
+    downloadPdfButton?.addEventListener("click", async () => {
+        if (!reportPaper) {
+            return;
+        }
+
+        try {
+            await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js");
+        } catch {
+            alert("Unable to load PDF exporter. Please try again.");
+            return;
+        }
+
+        const exportNode = reportPaper.cloneNode(true);
+        exportNode.style.width = "794px";
+        exportNode.style.minHeight = "0";
+        renderChartsForPdfExport(exportNode);
+
+        const options = {
+            margin: [8, 8, 8, 8],
+            filename: `studyhub-report-${new Date().toISOString().slice(0, 10)}.pdf`,
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+            pagebreak: { mode: ["css", "legacy"] }
+        };
+
+        window.html2pdf().set(options).from(exportNode).save();
+    });
+})();
+</script>

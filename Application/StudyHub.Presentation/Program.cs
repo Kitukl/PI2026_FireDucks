@@ -138,6 +138,7 @@ public class Program
         app.Use(async (context, next) =>
         {
             var path = context.Request.Path;
+            var pathValue = path.Value ?? string.Empty;
 
             static bool IsPath(string? value, string prefix)
             {
@@ -145,13 +146,13 @@ public class Program
                        value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
             }
 
-            var isBypassedPath = path.HasValue &&
-                                 (IsPath(path.Value, "/login") ||
-                                  IsPath(path.Value, "/user/login-microsoft") ||
-                                  IsPath(path.Value, "/user/callback") ||
-                                  IsPath(path.Value, "/signin-microsoft") ||
-                                  IsPath(path.Value, "/user/access-denied") ||
-                                  Path.HasExtension(path.Value));
+            var isStaticAsset = Path.HasExtension(pathValue);
+            var isLoginPath = IsPath(pathValue, "/login");
+            var isAuthTechnicalPath = IsPath(pathValue, "/user/login-microsoft") ||
+                                      IsPath(pathValue, "/user/callback") ||
+                                      IsPath(pathValue, "/signin-microsoft") ||
+                                      IsPath(pathValue, "/user/access-denied");
+            var isBypassedPath = isLoginPath || isAuthTechnicalPath || isStaticAsset;
 
             if (!isBypassedPath && context.User.Identity?.IsAuthenticated != true)
             {
@@ -161,9 +162,23 @@ public class Program
 
             if (context.User.Identity?.IsAuthenticated == true)
             {
+                var isAdmin = context.User.IsInRole(nameof(Role.Admin));
                 var isStudent = context.User.IsInRole(nameof(Role.Student));
                 var isLeader = context.User.IsInRole(nameof(Role.Leader));
-                var pathValue = path.Value ?? string.Empty;
+                var isAdminPath = IsPath(pathValue, "/Admin");
+                var isLogoutPath = IsPath(pathValue, "/user/logout");
+
+                if (!isAdmin && isAdminPath)
+                {
+                    context.Response.Redirect("/Home/Index");
+                    return;
+                }
+
+                if (isAdmin && !isAdminPath && !isLogoutPath && !isAuthTechnicalPath && !isStaticAsset)
+                {
+                    context.Response.Redirect("/Admin/Dashboard");
+                    return;
+                }
 
                 if (isStudent && !isLeader && IsPath(pathValue, "/TaskBoard/ReviewGroup"))
                 {

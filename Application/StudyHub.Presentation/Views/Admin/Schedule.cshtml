@@ -1,18 +1,18 @@
 ﻿@model Application.Models.AdminScheduleViewModel
 
-<div class="container-fluid mt-4 px-4">
+<section class="admin-page admin-schedule-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Schedule Management</h2>
+        <h2 class="mb-0 admin-schedule-title">Schedule Management</h2>
     </div>
 
-    <div class="card shadow-sm border-0 mb-4 bg-light">
+    <div class="admin-panel mb-4">
         <div class="card-body">
             <div class="row align-items-center">
                 <div class="col-md-4 border-end">
                     <div class="d-flex align-items-center mb-3">
                         <div class="me-3">
                             <form asp-action="RunGlobalUpdate" method="post">
-                                <button type="submit" class="btn btn-outline-dark px-4">Update</button>
+                                <button type="submit" class="schedule-action-btn schedule-action-btn-update">Update</button>
                             </form>
                         </div>
                         <div>
@@ -22,8 +22,8 @@
                     </div>
                     <div class="d-flex align-items-center">
                         <div class="me-3">
-                            <form asp-action="RemoveGlobalSchedule" method="post" onsubmit="return confirm('Ви впевнені, що хочете видалити розклад для ВСІХ груп?')">
-                                <button type="submit" class="btn btn-outline-danger px-4">Remove</button>
+                            <form asp-action="RemoveGlobalSchedule" method="post" data-confirm-message="Ви впевнені, що хочете видалити розклад для ВСІХ груп?">
+                                <button type="submit" class="schedule-action-btn schedule-action-btn-remove">Remove</button>
                             </form>
                         </div>
                         <p class="mb-0 fw-bold">Run global schedule removal:</p>
@@ -69,7 +69,7 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="admin-panel d-flex justify-content-between align-items-center mb-3">
         <div class="d-flex align-items-center">
             <select class="form-select me-3" style="min-width: 200px;" onchange="window.location.href='/Admin/Schedule/' + this.value">
                 <option value="">Select Group...</option>
@@ -78,9 +78,9 @@
                     <option value="@group.Id" selected="@(Model.SelectedGroupId == group.Id)">@group.Name</option>
                 }
             </select>
-            @if (Model.SelectedGroupId.HasValue && Model.CurrentGroupSchedule != null)
+            @if (Model.SelectedGroupId.HasValue && Model.SelectedGroupLastUpdate.HasValue)
             {
-                <span class="text-muted small">Last update: @Model.CurrentGroupSchedule.GroupName</span>
+                <span class="text-muted small">Last update: @Model.SelectedGroupLastUpdate.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
             }
         </div>
 
@@ -89,11 +89,11 @@
             <div class="d-flex gap-2">
                 <form asp-action="UpdateGroupSchedule" method="post">
                     <input type="hidden" name="groupId" value="@Model.SelectedGroupId" />
-                    <button type="submit" class="btn btn-outline-dark">Update schedule for current group</button>
+                    <button type="submit" class="schedule-action-btn schedule-action-btn-update">Update schedule for current group</button>
                 </form>
-                <form asp-action="RemoveGroupSchedule" method="post" onsubmit="return confirm('Видалити розклад для цієї групи?')">
+                <form asp-action="RemoveGroupSchedule" method="post" data-confirm-message="Видалити розклад для цієї групи?">
                     <input type="hidden" name="groupId" value="@Model.SelectedGroupId" />
-                    <button type="submit" class="btn btn-outline-danger">Remove schedule for current group</button>
+                    <button type="submit" class="schedule-action-btn schedule-action-btn-remove">Remove schedule for current group</button>
                 </form>
             </div>
         }
@@ -105,10 +105,33 @@
     }
     else
     {
-        <div class="text-center py-5 border-2 border-dashed rounded bg-white">
-            <p class="text-muted mb-0">Please select a group to view its schedule.</p>
+        <div class="admin-panel text-center py-5 border-2 border-dashed rounded bg-white">
+            @if (Model.SelectedGroupId.HasValue)
+            {
+                <p class="text-muted mb-0">No schedule uploaded. Please update to see the group's schedule.</p>
+            }
+            else
+            {
+                <p class="text-muted mb-0">Please select a group to view its schedule.</p>
+            }
         </div>
     }
+</section>
+
+<div class="admin-report-backdrop js-schedule-confirm-backdrop" hidden></div>
+<div class="admin-report-modal js-schedule-confirm-modal" hidden>
+    <div class="admin-report-shell" style="width:min(520px,92vw);">
+        <div class="admin-report-head">
+            <strong>Confirm action</strong>
+        </div>
+        <div style="padding:16px; display:grid; gap:14px;">
+            <p class="js-schedule-confirm-text" style="margin:0; color:#1f2b3d; font-weight:600;"></p>
+            <div class="admin-actions-inline" style="justify-content:flex-end;">
+                <button type="button" class="admin-btn js-schedule-confirm-cancel">Cancel</button>
+                <button type="button" class="admin-btn admin-btn-primary js-schedule-confirm-ok">OK</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -166,5 +189,136 @@
             margin-top: 5px;
             color: #555;
         }
+
+        .admin-schedule-page {
+            margin-top: 10px;
+        }
+
+        .admin-schedule-title {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 500;
+            font-family: 'Archivo', 'Trebuchet MS', sans-serif;
+            letter-spacing: 0;
+            color: #1f2633;
+        }
+
+        .js-schedule-confirm-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(16, 25, 39, 0.45);
+            z-index: 1200;
+        }
+
+        .js-schedule-confirm-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1210;
+            width: min(520px, 92vw);
+        }
+
+        .js-schedule-confirm-modal .admin-report-shell {
+            width: 100% !important;
+            border: 1px solid rgba(18, 24, 38, 0.28);
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 22px 42px rgba(7, 13, 22, 0.26);
+            overflow: hidden;
+        }
+
+        .js-schedule-confirm-modal .admin-report-head {
+            border-bottom: 1px solid rgba(18, 24, 38, 0.15);
+            padding: 12px 16px;
+            background: #f7fafc;
+        }
+
+        .js-schedule-confirm-backdrop[hidden],
+        .js-schedule-confirm-modal[hidden] {
+            display: none !important;
+        }
+
+        .schedule-action-btn {
+            border: 1px solid rgba(18, 24, 38, 0.35);
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            min-height: 42px;
+            padding: 9px 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            background: #f9fbfd;
+            color: #243145;
+        }
+
+        .schedule-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(14, 79, 123, 0.14);
+        }
+
+        .schedule-action-btn-update {
+            border-color: #4a8ec3;
+            background: #edf7ff;
+            color: #22537c;
+        }
+
+        .schedule-action-btn-remove {
+            border-color: #b45353;
+            background: #fff3f3;
+            color: #8a2e2e;
+        }
     </style>
+}
+
+@section Scripts {
+    <script>
+        (() => {
+            const forms = Array.from(document.querySelectorAll("form[data-confirm-message]"));
+            const backdrop = document.querySelector(".js-schedule-confirm-backdrop");
+            const modal = document.querySelector(".js-schedule-confirm-modal");
+            const text = document.querySelector(".js-schedule-confirm-text");
+            const okButton = document.querySelector(".js-schedule-confirm-ok");
+            const cancelButton = document.querySelector(".js-schedule-confirm-cancel");
+            let pendingForm = null;
+
+            function closeModal() {
+                if (!backdrop || !modal) {
+                    return;
+                }
+
+                backdrop.hidden = true;
+                modal.hidden = true;
+                pendingForm = null;
+            }
+
+            function openModal(message, form) {
+                if (!backdrop || !modal || !text) {
+                    return;
+                }
+
+                pendingForm = form;
+                text.textContent = message;
+                backdrop.hidden = false;
+                modal.hidden = false;
+            }
+
+            forms.forEach(form => {
+                form.addEventListener("submit", event => {
+                    event.preventDefault();
+                    openModal(form.getAttribute("data-confirm-message") || "Confirm action?", form);
+                });
+            });
+
+            backdrop?.addEventListener("click", closeModal);
+            cancelButton?.addEventListener("click", closeModal);
+            okButton?.addEventListener("click", () => {
+                const form = pendingForm;
+                closeModal();
+                form?.submit();
+            });
+        })();
+    </script>
 }

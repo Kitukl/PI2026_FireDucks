@@ -3,9 +3,11 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<h1 class="dashboard-welcome">Welcome, @Model.FullName</h1>
-
 <section class="dashboard-page">
+    <div class="dashboard-welcome-card">
+        <h1 class="dashboard-welcome">Welcome, @Model.FullName</h1>
+    </div>
+
     <div class="dashboard-grid">
         <div class="dashboard-left">
             <p class="dashboard-lead">Stay focused, stay organized, and make studying simpler with <span class="dashboard-lead-study">Study</span><span class="dashboard-lead-hub">Hub</span>.</p>
@@ -20,7 +22,8 @@
                         @foreach (var task in Model.QuickTasks)
                         {
                             var dayDiff = (task.Deadline.Date - DateTime.Today).Days;
-                            var deadlineLabel = dayDiff <= 0 ? "Today" : $"{dayDiff}D";
+                            var isOverdue = dayDiff < 0;
+                            var deadlineLabel = dayDiff < 0 ? "✕" : dayDiff == 0 ? "Today" : $"{dayDiff}D";
 
                             <article class="dashboard-task-item"
                                      role="link"
@@ -34,7 +37,7 @@
                                         {
                                             <span class="dashboard-task-group-icon"></span>
                                         }
-                                        <span class="dashboard-task-deadline-badge">@deadlineLabel</span>
+                                        <span class="dashboard-task-deadline-badge @(isOverdue ? "is-overdue" : string.Empty)">@deadlineLabel</span>
                                     </div>
                                 </div>
                                 <div class="dashboard-task-item-bottom">

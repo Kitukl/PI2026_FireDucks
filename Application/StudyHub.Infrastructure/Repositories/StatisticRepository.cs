@@ -3,6 +3,7 @@ using StudyHub.Core.Statistics.Interfaces;
 using StudyHub.Core.Storage.Interfaces;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Domain.Entities;
+using StudyHub.Domain.Enums;
 
 namespace StudyHub.Infrastructure.Repositories;
 
@@ -29,16 +30,16 @@ public class StatisticRepository(
                 g => g.Sum(s => s.UserActivityPerMonth));
     }
 
-    public async Task<int> GetStorageFileCountAsync(CancellationToken cancellationToken = default)
+    public async Task<(int UserFilesCount, int GroupFilesCount)> GetStorageFileCountsAsync(CancellationToken cancellationToken = default)
     {
         var users = (await userRepository.GetUsersAsync()).ToList();
-        var count = 0;
+        var userFilesCount = 0;
 
         foreach (var user in users)
         {
             var personalContainer = BuildUserStorageContainerName(user.Id);
             var personalFiles = await blobService.ListFilesAsync(personalContainer, cancellationToken);
-            count += personalFiles.Count;
+            userFilesCount += personalFiles.Count;
         }
 
         var groupNames = users
@@ -48,14 +49,38 @@ public class StatisticRepository(
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        var groupFilesCount = 0;
+
         foreach (var groupName in groupNames)
         {
             var groupContainer = BuildGroupStorageContainerName(groupName);
             var groupFiles = await blobService.ListFilesAsync(groupContainer, cancellationToken);
-            count += groupFiles.Count;
+            groupFilesCount += groupFiles.Count;
         }
 
-        return count;
+        return (userFilesCount, groupFilesCount);
+    }
+
+    public async Task<(int StudentsCount, int GroupsCount, int LeadersCount)> GetSystemEntityCountsAsync(CancellationToken cancellationToken = default)
+    {
+        // DbContext is not thread-safe; execute these queries sequentially on a single context instance.
+        var studentsCount = await GetUsersInRoleCountAsync(Role.Student, cancellationToken);
+        var groupsCount = await context.Groups.CountAsync(cancellationToken);
+        var leadersCount = await GetUsersInRoleCountAsync(Role.Leader, cancellationToken);
+
+        return (studentsCount, groupsCount, leadersCount);
+    }
+
+    private Task<int> GetUsersInRoleCountAsync(Role role, CancellationToken cancellationToken)
+    {
+        var normalizedRoleName = role.ToString().ToUpperInvariant();
+
+        return (
+            from userRole in context.UserRoles
+            join identityRole in context.Roles on userRole.RoleId equals identityRole.Id
+            where identityRole.NormalizedName == normalizedRoleName
+            select userRole.UserId
+        ).Distinct().CountAsync(cancellationToken);
     }
 
     private static string BuildUserStorageContainerName(Guid userId)

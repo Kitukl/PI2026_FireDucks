@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Core.Feedbacks.Commands;
@@ -10,6 +12,9 @@ namespace Application.Controllers;
 public class UserProfileController : Controller
 {
     private const string UserAvatarContainer = "user-avatars";
+    private const int FeedbackSubjectMaxLength = 160;
+    private const int FeedbackDescriptionMaxLength = 700;
+    private const string FeedbackSubjectPrefix = "Subject: ";
 
     private readonly UserManager<User> _userManager;
     private readonly IMediator _mediator;
@@ -139,15 +144,48 @@ public class UserProfileController : Controller
             return Forbid();
         }
 
-        if (string.IsNullOrWhiteSpace(description) && string.IsNullOrWhiteSpace(subject))
+        var normalizedSubject = (subject ?? string.Empty).Trim();
+        var normalizedDescription = (description ?? string.Empty)
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace("\r", "\n", StringComparison.Ordinal)
+            .Trim();
+
+        if (normalizedSubject.Length > FeedbackSubjectMaxLength)
+        {
+            normalizedSubject = normalizedSubject[..FeedbackSubjectMaxLength];
+        }
+
+        if (string.IsNullOrWhiteSpace(normalizedDescription) && string.IsNullOrWhiteSpace(normalizedSubject))
         {
             TempData["ProfileFeedbackError"] = "Please fill in request details before sending.";
             return RedirectToAction(nameof(UserProfile));
         }
 
-        var fullDescription = string.IsNullOrWhiteSpace(subject)
-            ? (description ?? string.Empty).Trim()
-            : $"Subject: {subject.Trim()}\n\n{(description ?? string.Empty).Trim()}";
+        string fullDescription;
+        if (string.IsNullOrWhiteSpace(normalizedSubject))
+        {
+            fullDescription = normalizedDescription;
+        }
+        else
+        {
+            var maxBodyLength = FeedbackDescriptionMaxLength - FeedbackSubjectPrefix.Length - normalizedSubject.Length - 2;
+            if (maxBodyLength < 0)
+            {
+                maxBodyLength = 0;
+            }
+
+            if (normalizedDescription.Length > maxBodyLength)
+            {
+                normalizedDescription = normalizedDescription[..maxBodyLength];
+            }
+
+            fullDescription = $"{FeedbackSubjectPrefix}{normalizedSubject}\n\n{normalizedDescription}";
+        }
+
+        if (fullDescription.Length > FeedbackDescriptionMaxLength)
+        {
+            fullDescription = fullDescription[..FeedbackDescriptionMaxLength];
+        }
 
         await _mediator.Send(new CreateFeedbackCommand
         {

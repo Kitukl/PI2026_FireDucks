@@ -8,6 +8,7 @@
         public uint AutoUpdateIntervalDays { get; set; }
         public List<StudyHub.Core.DTOs.GroupDto> Groups { get; set; } = new();
         public Guid? SelectedGroupId { get; set; }
+        public DateTime? SelectedGroupLastUpdate { get; set; }
         public Application.Models.ScheduleViewModel CurrentGroupSchedule { get; set; }
     }
 }

@@ -10,6 +10,8 @@ public class TaskBoardTaskCardViewModel
     public string Description { get; set; } = string.Empty;
     public string SubjectName { get; set; } = string.Empty;
     public string TaskCode { get; set; } = string.Empty;
+    public string OwnerName { get; set; } = string.Empty;
+    public string OwnerPhotoUrl { get; set; } = string.Empty;
     public bool IsGroupTask { get; set; }
     public Status Status { get; set; }
     public DateTime Deadline { get; set; }

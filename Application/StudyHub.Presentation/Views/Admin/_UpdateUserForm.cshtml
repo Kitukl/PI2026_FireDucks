@@ -1,0 +1,70 @@
+@model Application.Models.UpdateUserViewModel
+
+<form asp-action="UpdateUser" method="post" class="admin-form-stack js-update-user-form" style="margin-top: 2px;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.Id" />
+
+    <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert-error" style="margin-top: 10px;"></div>
+    <div class="admin-alert admin-alert-error js-role-client-error" style="margin-top: 10px;" hidden></div>
+
+    <div>
+        <h3 class="admin-section-title">Group</h3>
+        <label asp-for="GroupName" class="admin-label visually-hidden">Group</label>
+        <input asp-for="GroupName" class="admin-input js-admin-group-input" list="existing-groups-@Model.Id" autocomplete="off" />
+        <datalist id="existing-groups-@Model.Id">
+            @foreach (var groupName in Model.ExistingGroups)
+            {
+                <option value="@groupName"></option>
+            }
+        </datalist>
+    </div>
+
+    <h3 class="admin-section-title" style="margin-top: 16px;">Roles</h3>
+
+    <div class="admin-table-wrap update-user-roles-wrap" style="margin-top: 12px;">
+        <table class="admin-table update-user-roles-table">
+            <thead>
+            <tr>
+                <th>Role</th>
+                <th>Selected</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var availableRole in Model.AvailableRoles)
+            {
+                var isSelected = Model.SelectedRoles.Any(role => string.Equals(role, availableRole, StringComparison.OrdinalIgnoreCase));
+                <tr class="js-role-row" data-role="@availableRole">
+                    <td>@availableRole</td>
+                    <td>
+                        @if (isSelected)
+                        {
+                            <input
+                                type="checkbox"
+                                name="SelectedRoles"
+                                value="@availableRole"
+                                class="js-role-checkbox"
+                                data-role="@availableRole"
+                                checked
+                                aria-label="Select role @availableRole" />
+                        }
+                        else
+                        {
+                            <input
+                                type="checkbox"
+                                name="SelectedRoles"
+                                value="@availableRole"
+                                class="js-role-checkbox"
+                                data-role="@availableRole"
+                                aria-label="Select role @availableRole" />
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="admin-actions-inline" style="margin-top: 16px;">
+        <button type="submit" class="admin-btn admin-btn-primary">Save Changes</button>
+    </div>
+</form>

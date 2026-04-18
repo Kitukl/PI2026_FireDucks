@@ -5,7 +5,7 @@
     ViewData["Title"] = "Edit user";
 }
 
-<section class="admin-page" aria-label="Edit user page">
+<section class="admin-page admin-update-user-page" aria-label="Edit user page">
     <div class="admin-page-header admin-page-header-inline">
         <div>
             <h1>Edit user</h1>
@@ -15,15 +15,32 @@
     </div>
 
     <div class="admin-dashboard-grid">
-        <article class="admin-panel" style="grid-column: 1 / -1;">
+        <article class="admin-panel admin-update-user-panel" style="grid-column: 1 / -1;">
             <h2>User access</h2>
 
+            @if (TempData["AdminUsersError"] is string errorMessage)
+            {
+                <div class="admin-alert admin-alert-error" style="margin-top: 10px;">@errorMessage</div>
+            }
+            @if (TempData["AdminUsersMessage"] is string successMessage)
+            {
+                <div class="admin-alert admin-alert-success admin-flash-message js-admin-flash-success" style="margin-top: 10px;">
+                    <span>@successMessage</span>
+                    <button type="button" class="admin-flash-close js-admin-flash-close" aria-label="Dismiss message">&times;</button>
+                </div>
+            }
+
             <form asp-action="UpdateUser" method="post" class="admin-form-stack" style="margin-top: 10px;">
+                @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
 
+                <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert-error" style="margin-top: 10px;"></div>
+                <div class="admin-alert admin-alert-error js-role-client-error" style="margin-top: 10px;" hidden></div>
+
                 <div>
-                    <label asp-for="GroupName" class="admin-label">Group</label>
-                    <input asp-for="GroupName" class="admin-input" list="existing-groups" autocomplete="off" />
+                    <h3 class="admin-section-title">Group</h3>
+                    <label asp-for="GroupName" class="admin-label visually-hidden">Group</label>
+                    <input asp-for="GroupName" class="admin-input js-admin-group-input" list="existing-groups" autocomplete="off" />
                     <datalist id="existing-groups">
                         @foreach (var groupName in Model.ExistingGroups)
                         {
@@ -32,57 +49,216 @@
                     </datalist>
                 </div>
 
-                <div class="admin-actions-inline">
-                    <button type="submit" class="admin-btn admin-btn-primary">Save group</button>
+                <h3 class="admin-section-title" style="margin-top:16px;">Roles</h3>
+
+                <div class="admin-table-wrap update-user-roles-wrap" style="margin-top: 12px;">
+                    <table class="admin-table update-user-roles-table">
+                        <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Selected</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var availableRole in Model.AvailableRoles)
+                        {
+                            var isSelected = Model.SelectedRoles.Any(role => string.Equals(role, availableRole, StringComparison.OrdinalIgnoreCase));
+                            <tr class="js-role-row" data-role="@availableRole">
+                                <td>@availableRole</td>
+                                <td>
+                                    @if (isSelected)
+                                    {
+                                        <input
+                                            type="checkbox"
+                                            name="SelectedRoles"
+                                            value="@availableRole"
+                                            class="js-role-checkbox"
+                                            data-role="@availableRole"
+                                                checked
+                                                aria-label="Select role @availableRole" />
+                                    }
+                                    else
+                                    {
+                                        <input
+                                            type="checkbox"
+                                            name="SelectedRoles"
+                                            value="@availableRole"
+                                            class="js-role-checkbox"
+                                            data-role="@availableRole"
+                                            aria-label="Select role @availableRole" />
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="admin-actions-inline" style="margin-top: 16px;">
+                    <button type="submit" class="admin-btn admin-btn-primary">Save Changes</button>
                 </div>
             </form>
-
-            <h3 style="margin-top:16px;">Roles</h3>
-
-            <form asp-action="AddUserRole" method="post" class="admin-actions-inline" style="margin-top: 10px;">
-                <input type="hidden" name="Id" value="@Model.Id" />
-
-                <select name="Role" class="admin-input" style="max-width: 280px;">
-                    <option selected disabled>Select role to add</option>
-                    @foreach (var availableRole in Model.AvailableRoles.Where(r => !Model.Roles.Contains(r)))
-                    {
-                        <option value="@availableRole">@availableRole</option>
-                    }
-                </select>
-                <button type="submit" class="admin-btn admin-btn-primary">Add</button>
-            </form>
-
-            <div class="admin-table-wrap" style="margin-top: 12px;">
-                <table class="admin-table">
-                    <thead>
-                    <tr>
-                        <th>Current role</th>
-                        <th>Action</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @if (!Model.Roles.Any())
-                    {
-                        <tr>
-                            <td colspan="2" class="text-muted">No roles assigned</td>
-                        </tr>
-                    }
-                    @foreach (var role in Model.Roles)
-                    {
-                        <tr>
-                            <td>@role</td>
-                            <td>
-                                <form asp-action="RemoveUserRole" method="post">
-                                    <input type="hidden" name="Id" value="@Model.Id" />
-                                    <input type="hidden" name="Role" value="@role" />
-                                    <button type="submit" class="admin-link-btn admin-link-btn-danger">Remove</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
         </article>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const form = document.querySelector("form[asp-action='UpdateUser'], form[action*='UpdateUser']") || document.querySelector(".admin-form-stack");
+            const roleCheckboxes = Array.from(document.querySelectorAll(".js-role-checkbox"));
+            const roleRows = Array.from(document.querySelectorAll(".js-role-row"));
+            const groupInput = document.querySelector(".js-admin-group-input");
+            const clientError = document.querySelector(".js-role-client-error");
+            const successFlash = document.querySelector(".js-admin-flash-success");
+            const successFlashClose = document.querySelector(".js-admin-flash-close");
+
+            if (!form || !roleCheckboxes.length || !groupInput) {
+                return;
+            }
+
+            const roleMap = roleCheckboxes.reduce((acc, checkbox) => {
+                const role = (checkbox.dataset.role || "").toLowerCase();
+                if (role) {
+                    acc[role] = checkbox;
+                }
+                return acc;
+            }, {});
+
+            const rowMap = roleRows.reduce((acc, row) => {
+                const role = (row.dataset.role || "").toLowerCase();
+                if (role) {
+                    acc[role] = row;
+                }
+                return acc;
+            }, {});
+
+            function getSelectedRoleState() {
+                const selectedRoles = roleCheckboxes
+                    .filter(checkbox => checkbox.checked)
+                    .map(checkbox => (checkbox.dataset.role || "").toLowerCase());
+
+                return {
+                    selectedRoles,
+                    hasStudent: selectedRoles.includes("student"),
+                    hasLeader: selectedRoles.includes("leader"),
+                    hasAdmin: selectedRoles.includes("admin")
+                };
+            }
+
+            function getRoleValidationMessage() {
+                const state = getSelectedRoleState();
+
+                if (state.selectedRoles.length === 0) {
+                    return "Changes cannot be saved. Please add at least one role.";
+                }
+
+                if (state.hasLeader && !state.hasStudent) {
+                    return "Changes cannot be saved. Leader should has  Student role.";
+                }
+
+                if (state.hasAdmin && (state.hasStudent || state.hasLeader)) {
+                    return "Changes cannot be saved. Admin role cannot be provided to Student.";
+                }
+
+                return "";
+            }
+
+            function setClientError(message) {
+                if (!clientError) {
+                    return;
+                }
+
+                if (!message) {
+                    clientError.hidden = true;
+                    clientError.textContent = "";
+                    return;
+                }
+
+                clientError.hidden = false;
+                clientError.textContent = message;
+            }
+
+            function syncGroupState() {
+                const isAdminSelected = getSelectedRoleState().hasAdmin;
+
+                groupInput.disabled = isAdminSelected;
+                groupInput.classList.toggle("admin-input-locked", isAdminSelected);
+            }
+
+            function markRoleDisabled(role, isDisabled) {
+                const checkbox = roleMap[role];
+                const row = rowMap[role];
+                if (!checkbox) {
+                    return;
+                }
+
+                checkbox.disabled = isDisabled;
+                if (row) {
+                    row.classList.toggle("admin-role-disabled", isDisabled);
+                }
+            }
+
+            function syncRoleAvailability() {
+                const studentCheckbox = roleMap.student;
+                const leaderCheckbox = roleMap.leader;
+                const adminCheckbox = roleMap.admin;
+
+                if (!studentCheckbox || !leaderCheckbox || !adminCheckbox) {
+                    return;
+                }
+
+                if (adminCheckbox.checked) {
+                    if (studentCheckbox.checked) {
+                        studentCheckbox.checked = false;
+                    }
+                    if (leaderCheckbox.checked) {
+                        leaderCheckbox.checked = false;
+                    }
+                }
+
+                if (!studentCheckbox.checked && leaderCheckbox.checked) {
+                    leaderCheckbox.checked = false;
+                }
+
+                markRoleDisabled("student", adminCheckbox.checked);
+                markRoleDisabled("leader", adminCheckbox.checked || !studentCheckbox.checked);
+                markRoleDisabled("admin", studentCheckbox.checked);
+            }
+
+            roleCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener("change", () => {
+                    syncRoleAvailability();
+                    syncGroupState();
+                    setClientError("");
+                });
+            });
+
+            form.addEventListener("submit", event => {
+                const validationMessage = getRoleValidationMessage();
+                if (!validationMessage) {
+                    setClientError("");
+                    return;
+                }
+
+                event.preventDefault();
+                setClientError(validationMessage);
+            });
+
+            if (successFlash) {
+                const hideFlash = () => {
+                    successFlash.classList.add("is-hidden");
+                    setTimeout(() => {
+                        successFlash.remove();
+                    }, 220);
+                };
+
+                successFlashClose?.addEventListener("click", hideFlash);
+                setTimeout(hideFlash, 4200);
+            }
+
+            syncRoleAvailability();
+            syncGroupState();
+        })();
+    </script>
+}

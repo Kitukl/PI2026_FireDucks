@@ -90,6 +90,15 @@ document.addEventListener("DOMContentLoaded", function () {
 			return { text: "Today", state: "is-today" };
 		}
 
+		if (diff > 365) {
+			const years = Math.floor(diff / 365);
+			if (years > 5) {
+				return { text: "N/A", state: "is-unavailable" };
+			}
+
+			return { text: String(years) + "Y", state: "is-countdown" };
+		}
+
 		return { text: String(diff) + "D", state: "is-countdown" };
 	}
 
@@ -133,7 +142,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
 	function getSubject(card) {
 		const subjectNode = card.querySelector("p");
-		return (subjectNode ? subjectNode.textContent : "").trim().toLowerCase();
+		const rawValue = subjectNode?.dataset.subject || subjectNode?.textContent || "";
+		return rawValue.trim().toLowerCase();
 	}
 
 	function getTaskTitle(card) {
@@ -520,19 +530,86 @@ document.addEventListener("DOMContentLoaded", function () {
 	}
 
 	const richEditors = document.querySelectorAll(".js-rich-editor");
+	const userProfileSuccessMessage = document.querySelector(".user-profile-form-success");
+	if (userProfileSuccessMessage) {
+		setTimeout(function () {
+			userProfileSuccessMessage.classList.add("is-hidden");
+			setTimeout(function () {
+				userProfileSuccessMessage.remove();
+			}, 300);
+		}, 2200);
+	}
 
 	richEditors.forEach(function (container) {
 		const editor = container.querySelector(".js-rich-editor-input");
 		const hiddenField = container.querySelector(".js-rich-editor-hidden");
 		const formatButtons = container.querySelectorAll(".js-rich-format-btn");
+		const charCounter = container.querySelector(".js-rich-char-counter");
+		const maxCharsValue = Number.parseInt(editor?.dataset.maxChars || "", 10);
+		const hasStaticMaxChars = Number.isFinite(maxCharsValue) && maxCharsValue > 0;
+		const maxTotalCharsValue = Number.parseInt(container.dataset.maxTotalChars || "", 10);
+		const subjectSelector = container.dataset.subjectSelector || "";
+		const scopeRoot = container.closest("form") || document;
+		const subjectInput = subjectSelector ? scopeRoot.querySelector(subjectSelector) : null;
+		const hasDynamicMaxChars = Number.isFinite(maxTotalCharsValue) && maxTotalCharsValue > 0 && Boolean(subjectInput);
+		const hasCharLimit = hasStaticMaxChars || hasDynamicMaxChars;
+
+		function getEffectiveMaxChars() {
+			if (hasDynamicMaxChars) {
+				const subjectLength = ((subjectInput?.value || "").trim()).length;
+				const prefixLength = subjectLength > 0 ? 11 + subjectLength : 0;
+				return Math.max(0, maxTotalCharsValue - prefixLength);
+			}
+
+			if (hasStaticMaxChars) {
+				return maxCharsValue;
+			}
+
+			return Number.MAX_SAFE_INTEGER;
+		}
 
 		if (!editor || formatButtons.length === 0) {
 			return;
 		}
 
+		function placeCaretAtEnd(element) {
+			element.focus();
+			const range = document.createRange();
+			range.selectNodeContents(element);
+			range.collapse(false);
+			const selection = window.getSelection();
+			selection.removeAllRanges();
+			selection.addRange(range);
+		}
+
+		function truncateEditorToLimit() {
+			if (!hasCharLimit) {
+				return;
+			}
+
+			const effectiveMaxChars = getEffectiveMaxChars();
+			const text = (editor.innerText || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+			if (text.length <= effectiveMaxChars) {
+				return;
+			}
+
+			editor.textContent = text.slice(0, effectiveMaxChars);
+			placeCaretAtEnd(editor);
+		}
+
 		function syncHiddenValue() {
 			if (hiddenField) {
-				hiddenField.value = editor.innerHTML;
+				if (hasCharLimit) {
+					hiddenField.value = (editor.innerText || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+				} else {
+					hiddenField.value = editor.innerHTML;
+				}
+			}
+
+			if (charCounter && hasCharLimit) {
+				const effectiveMaxChars = getEffectiveMaxChars();
+				const currentLength = (editor.innerText || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").length;
+				charCounter.textContent = String(currentLength) + "/" + String(effectiveMaxChars);
 			}
 		}
 
@@ -549,8 +626,92 @@ document.addEventListener("DOMContentLoaded", function () {
 			});
 		});
 
-		editor.addEventListener("input", syncHiddenValue);
+		if (hasCharLimit) {
+			editor.addEventListener("beforeinput", function (event) {
+				const isDelete = event.inputType && event.inputType.startsWith("delete");
+				if (isDelete) {
+					return;
+				}
+
+				const effectiveMaxChars = getEffectiveMaxChars();
+				const currentLength = (editor.innerText || "").length;
+				if (currentLength >= effectiveMaxChars) {
+					event.preventDefault();
+				}
+			});
+
+			editor.addEventListener("paste", function (event) {
+				event.preventDefault();
+				const clipboardText = event.clipboardData?.getData("text/plain") || "";
+				const currentText = (editor.innerText || "");
+				const remaining = Math.max(0, getEffectiveMaxChars() - currentText.length);
+				if (remaining <= 0) {
+					return;
+				}
+
+				const insertText = clipboardText.slice(0, remaining);
+				document.execCommand("insertText", false, insertText);
+				truncateEditorToLimit();
+				syncHiddenValue();
+			});
+		}
+
+		editor.addEventListener("input", function () {
+			truncateEditorToLimit();
+			syncHiddenValue();
+		});
+
+		subjectInput?.addEventListener("input", function () {
+			truncateEditorToLimit();
+			syncHiddenValue();
+		});
+
+		truncateEditorToLimit();
 		syncHiddenValue();
+	});
+
+	const modelValidatedLengthFields = document.querySelectorAll("input[data-val-length-max], textarea[data-val-length-max]");
+	modelValidatedLengthFields.forEach(function (field) {
+		if (field.hasAttribute("maxlength")) {
+			return;
+		}
+
+		const maxLength = Number.parseInt(field.getAttribute("data-val-length-max") || "", 10);
+		if (Number.isFinite(maxLength) && maxLength > 0) {
+			field.setAttribute("maxlength", String(maxLength));
+		}
+	});
+
+	const limitedTextFields = document.querySelectorAll("input[maxlength]:not([type='hidden']):not([type='file']), textarea[maxlength]");
+
+	limitedTextFields.forEach(function (field) {
+		if (field.closest(".js-rich-editor")) {
+			return;
+		}
+
+		const maxLength = Number.parseInt(field.getAttribute("maxlength") || "", 10);
+		if (!Number.isFinite(maxLength) || maxLength <= 0) {
+			return;
+		}
+
+		const explicitCounter = field.parentElement?.querySelector(".field-char-counter[data-counter-for='" + (field.getAttribute("name") || "") + "']");
+		const counter = explicitCounter || document.createElement("div");
+
+		if (!explicitCounter) {
+			counter.className = "field-char-counter";
+			field.insertAdjacentElement("afterend", counter);
+		}
+
+		function syncFieldCounter() {
+			if (field.value.length > maxLength) {
+				field.value = field.value.slice(0, maxLength);
+			}
+
+			counter.textContent = String(field.value.length) + "/" + String(maxLength);
+		}
+
+		field.addEventListener("input", syncFieldCounter);
+		syncFieldCounter();
 	});
 
 	const groupManagePage = document.querySelector(".js-group-manage");

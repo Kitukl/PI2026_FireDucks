@@ -1,4 +1,5 @@
 using Application.Models;
+using Application.Helpers;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -98,7 +99,7 @@ public class DashboardController : Controller
                 subjectCounters[subjectName] += 1;
             }
 
-            var prefix = char.ToUpperInvariant(subjectName[0]);
+            var prefix = TaskFormattingHelper.GenerateTaskCodePrefix(subjectName);
             var taskCode = $"{prefix}-{subjectCounters[subjectName]}";
 
             cards.Add(new TaskBoardTaskCardViewModel
