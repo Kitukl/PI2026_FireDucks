@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StudyHub.Core.Group;
+using StudyHub.Domain.Entities;
 
 namespace StudyHub.Infrastructure.Repositories;
 
@@ -12,7 +13,7 @@ public class GroupRepository : IGroupRepository
         _context = context;
     }
 
-    public async Task<Domain.Entities.Group?> GetGroupByNameAsync(string groupName)
+    public async Task<Group?> GetGroupByNameAsync(string groupName)
     {
         if (string.IsNullOrWhiteSpace(groupName))
         {
@@ -24,8 +25,14 @@ public class GroupRepository : IGroupRepository
         return await _context.Groups
             .FirstOrDefaultAsync(g => g.Name == normalizedGroupName);
     }
+    
+    public async Task<Group?> GetGroupByIdAsync(Guid groupId)
+    {
+        return await _context.Groups
+            .FirstOrDefaultAsync(g => g.Id == groupId);
+    }
 
-    public async Task<Domain.Entities.Group> CreateGroupAsync(string groupName)
+    public async Task<Group> CreateGroupAsync(string groupName)
     {
         var normalizedGroupName = groupName.Trim();
 
@@ -35,7 +42,7 @@ public class GroupRepository : IGroupRepository
             return existingGroup;
         }
 
-        var group = new Domain.Entities.Group
+        var group = new Group
         {
             Id = Guid.NewGuid(),
             Name = normalizedGroupName
@@ -47,7 +54,27 @@ public class GroupRepository : IGroupRepository
         return group;
     }
 
-    public async Task<List<Domain.Entities.Group>> GetAllGroupsAsync()
+    public async Task<bool> UpdateGroupAsync(Guid id, string name)
+    {
+        var updated = await _context.Groups
+            .Where(c => c.Id == id)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Name, name));
+        
+        await _context.SaveChangesAsync();
+        return updated > 0;
+    }
+
+    public async Task<bool> DeleteGroupAsync(Guid id)
+    {
+        var deleted = await _context.Groups
+            .Where(c => c.Id == id)
+            .ExecuteDeleteAsync();
+
+        await _context.SaveChangesAsync();
+        return deleted > 0;
+    }
+
+    public async Task<List<Group>> GetAllGroupsAsync()
     {
         return await _context.Groups.ToListAsync();
     }

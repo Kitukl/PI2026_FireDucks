@@ -1,101 +1,62 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StudyHub.Core.DTOs;
-using StudyHub.Domain.Entities;
-using StudyHub.Infrastructure;
+﻿using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using StudyHub.Core.Group.Commands;
+using StudyHub.Core.Group.Queries;
 
-namespace StudyHub.Mvc.Controllers
+namespace Application.Controllers
 {
     public class GroupController : Controller
     {
-        private readonly SDbContext _context;
+        private readonly IMediator _mediator;
 
-        public GroupController(SDbContext context)
+        public GroupController(IMediator mediator)
         {
-            _context = context;
+            _mediator = mediator;
         }
 
-        // Список усіх груп
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var groups = await _context.Groups
-                .Select(g => new GroupDto
-                {
-                    Id = g.Id,
-                    Name = g.Name
-                })
-                .ToListAsync();
-
+            var groups = await _mediator.Send(new GetAllGroupsQuery());
             return View(groups);
         }
 
-        // GET: Create
-        public IActionResult Create()
-        {
-            return View(new GroupDto());
-        }
-
-        // POST: Create
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(GroupDto groupDto)
+        public async Task<IActionResult> Create(CreateGroupCommand request)
         {
-            if (ModelState.IsValid)
-            {
-                var group = new Group
-                {
-                    Id = Guid.NewGuid(),
-                    Name = groupDto.Name
-                };
-
-                _context.Groups.Add(group);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(groupDto);
+            var response = await _mediator.Send(request);
+            return View(response);
         }
 
         // GET: Edit
-        public async Task<IActionResult> Edit(Guid id)
+        [HttpGet]
+        public async Task<IActionResult> Edit(GetGroupQuery request)
         {
-            var group = await _context.Groups.FindAsync(id);
-            if (group == null) return NotFound();
-
-            var dto = new GroupDto { Id = group.Id, Name = group.Name };
-            return View(dto);
+            var response = await _mediator.Send(request);
+            return View(response);
         }
 
         // POST: Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, GroupDto groupDto)
+        public async Task<IActionResult> Edit(UpdateGroupCommand request)
         {
-            if (id != groupDto.Id) return BadRequest();
-
-            if (ModelState.IsValid)
+            var response = await _mediator.Send(request);
+            if (!response)
             {
-                var group = await _context.Groups.FindAsync(id);
-                if (group == null) return NotFound();
-
-                group.Name = groupDto.Name;
-
-                _context.Groups.Update(group);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return BadRequest();
             }
-            return View(groupDto);
+            return View(request);
         }
 
         // POST: Delete
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete(DeleteGroupCommand request)
         {
-            var group = await _context.Groups.FindAsync(id);
-            if (group != null)
+            var isDeleted = await _mediator.Send(request);
+            if (!isDeleted)
             {
-                _context.Groups.Remove(group);
-                await _context.SaveChangesAsync();
+                return BadRequest();
             }
             return RedirectToAction(nameof(Index));
         }
