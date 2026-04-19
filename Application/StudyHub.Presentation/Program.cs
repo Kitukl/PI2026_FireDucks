@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
-using Application.Security;
 using StudyHub.Infrastructure;
 using StudyHub.Infrastructure.Repositories;
 
@@ -87,7 +86,6 @@ public class Program
         builder.Services.AddScoped<ILessonSlotRepository, LessonSlotRepository>();
         builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
-        builder.Services.AddScoped<IClaimsTransformation, UserRolesClaimsTransformation>();
         builder.Services.AddHostedService<DeadlineSender>();
         builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
         
