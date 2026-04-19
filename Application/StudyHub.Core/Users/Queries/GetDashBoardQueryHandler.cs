@@ -27,18 +27,9 @@ public class GetDashBoardQueryHandler : IRequestHandler<GetDashBoardQuery, Dashb
     }
     public async Task<DashboardViewModel> Handle(GetDashBoardQuery request, CancellationToken cancellationToken)
     {
-        var fullName = "Гість";
-        
         var user = await _userRepository.GetUserById(request.UserId);
-        if (user is not null)
-        {
-            fullName = $"{user.Name} {user.Surname}".Trim();
-        }
+        var fullName = $"{user.Name} {user.Surname}".Trim();X
         
-        else
-        {
-            _logger.LogInformation("Anonymous user opened the Index page");
-        }
         var tasks = await _taskRepository.GetTasksAsync();
         tasks = tasks.Where(task => DashboradHelper.IsVisibleForUser(task, user.Id, user.Group?.Name)).ToList();
         

@@ -6,6 +6,7 @@ using StudyHub.Core.Users.Commands;
 
 namespace Application.Controllers;
 
+[Authorize]
 public class DashboardController : Controller
 {
     private readonly IMediator _mediator;
@@ -15,7 +16,6 @@ public class DashboardController : Controller
     {
         _mediator = mediator;
     }
-    [Authorize]
     [HttpGet("/")]
     public async Task<IActionResult> Index()
     {
