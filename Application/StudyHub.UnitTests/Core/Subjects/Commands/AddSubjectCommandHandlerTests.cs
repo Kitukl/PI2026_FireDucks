@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.DTOs;
 using StudyHub.Core.Subjects.Commands;
 using StudyHub.Core.Subjects.Interfaces;
@@ -8,18 +8,26 @@ namespace StudyHub.UnitTests.Handlers.Subjects.Commands;
 
 public class AddSubjectCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldMapAndCallAdd()
+    private readonly Mock<ISubjectRepository> _repositoryMock;
+
+    public AddSubjectCommandHandlerTests()
     {
+        _repositoryMock = new Mock<ISubjectRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<ISubjectRepository>();
-        var handler = new AddSubjectCommandHandler(repositoryMock.Object);
+        var handler = new AddSubjectCommandHandler(_repositoryMock.Object);
         var dto = new SubjectDto { Id = Guid.NewGuid(), Name = "Math" };
 
         // Act
         await handler.Handle(new AddSubjectRequest(dto), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.AddSubject(It.Is<Subject>(s => s.Id == dto.Id && s.Name == "Math")), Times.Once);
+        _repositoryMock.Verify(x => x.AddSubject(It.Is<Subject>(s => s.Id == dto.Id && s.Name == "Math")), Times.Once);
     }
 }
+

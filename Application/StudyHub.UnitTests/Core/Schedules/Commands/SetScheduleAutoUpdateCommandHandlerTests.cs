@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.Schedules.Commands;
 using StudyHub.Core.Schedules.Interfaces;
 
@@ -6,17 +6,25 @@ namespace StudyHub.UnitTests.Handlers.Schedules.Commands;
 
 public class SetScheduleAutoUpdateCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldSetAutoUpdateFlag()
+    private readonly Mock<IScheduleRepository> _repositoryMock;
+
+    public SetScheduleAutoUpdateCommandHandlerTests()
     {
+        _repositoryMock = new Mock<IScheduleRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<IScheduleRepository>();
-        var handler = new SetScheduleAutoUpdateCommandHandler(repositoryMock.Object);
+        var handler = new SetScheduleAutoUpdateCommandHandler(_repositoryMock.Object);
 
         // Act
         await handler.Handle(new SetScheduleAutoUpdateRequest(true), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.SetScheduleAutoUpdate(true), Times.Once);
+        _repositoryMock.Verify(x => x.SetScheduleAutoUpdate(true), Times.Once);
     }
 }
+

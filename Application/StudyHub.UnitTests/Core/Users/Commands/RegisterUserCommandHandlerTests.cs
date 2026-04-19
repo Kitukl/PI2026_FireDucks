@@ -9,17 +9,27 @@ namespace StudyHub.UnitTests.Handlers.Users.Commands;
 
 public class RegisterUserCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenUserAlreadyExists_ShouldReturnTrueWithoutCreating()
+    private readonly Mock<IGroupRepository> _groupRepositoryMock;
+    private readonly Mock<IUserRepository> _userRepositoryMock;
+
+    public RegisterUserCommandHandlerTests()
     {
+        _groupRepositoryMock = new Mock<IGroupRepository>();
+        _userRepositoryMock = new Mock<IUserRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _groupRepositoryMock.Reset();
+        _userRepositoryMock.Reset();
         // Arrange
         var existingUser = new User { Id = Guid.NewGuid(), Email = "user@test.com" };
 
-        var userRepositoryMock = new Mock<IUserRepository>();
-        userRepositoryMock.Setup(x => x.GetUsersAsync()).ReturnsAsync(new[] { existingUser });
+        _userRepositoryMock.Setup(x => x.GetUsersAsync()).ReturnsAsync(new[] { existingUser });
+        _userRepositoryMock.Setup(x => x.GetRolesByUser(existingUser)).ReturnsAsync(new List<string> { "Student" });
 
-        var groupRepositoryMock = new Mock<IGroupRepository>();
-        var handler = new RegisterUserCommandHandler(userRepositoryMock.Object, groupRepositoryMock.Object);
+        var handler = new RegisterUserCommandHandler(_userRepositoryMock.Object, _groupRepositoryMock.Object);
 
         var command = new RegisterUserCommand
         {
@@ -35,24 +45,24 @@ public class RegisterUserCommandHandlerTests
 
         // Assert
         Assert.True(result);
-        userRepositoryMock.Verify(x => x.CreateUser(It.IsAny<User>()), Times.Never);
-        userRepositoryMock.Verify(x => x.AddExternalLogin(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        userRepositoryMock.Verify(x => x.AddRole(It.IsAny<Role>(), It.IsAny<Guid>()), Times.Never);
+        _userRepositoryMock.Verify(x => x.CreateUser(It.IsAny<User>()), Times.Never);
+        _userRepositoryMock.Verify(x => x.AddExternalLogin(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _userRepositoryMock.Verify(x => x.AddRole(It.IsAny<Role>(), It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenUserIsNew_ShouldCreateUserAndAssignStudentRole()
+    public async System.Threading.Tasks.Task Test_2()
     {
+        _groupRepositoryMock.Reset();
+        _userRepositoryMock.Reset();
         // Arrange
-        var userRepositoryMock = new Mock<IUserRepository>();
-        userRepositoryMock.Setup(x => x.GetUsersAsync()).ReturnsAsync(Array.Empty<User>());
+        _userRepositoryMock.Setup(x => x.GetUsersAsync()).ReturnsAsync(Array.Empty<User>());
 
-        userRepositoryMock
-            .Setup(x => x.CreateUser(It.IsAny<User>()))
-            .ReturnsAsync((User u) => u);
+        _userRepositoryMock
+        .Setup(x => x.CreateUser(It.IsAny<User>()))
+        .ReturnsAsync((User u) => u);
 
-        var groupRepositoryMock = new Mock<IGroupRepository>();
-        var handler = new RegisterUserCommandHandler(userRepositoryMock.Object, groupRepositoryMock.Object);
+        var handler = new RegisterUserCommandHandler(_userRepositoryMock.Object, _groupRepositoryMock.Object);
 
         var command = new RegisterUserCommand
         {
@@ -68,9 +78,9 @@ public class RegisterUserCommandHandlerTests
 
         // Assert
         Assert.True(result);
-        userRepositoryMock.Verify(x => x.CreateUser(It.Is<User>(u => u.Email == "new@test.com" && u.Name == "New")), Times.Once);
-        userRepositoryMock.Verify(x => x.AddExternalLogin(It.IsAny<User>(), "Microsoft", "ms-123"), Times.Once);
-        userRepositoryMock.Verify(x => x.AddRole(Role.Student, It.IsAny<Guid>()), Times.Once);
+        _userRepositoryMock.Verify(x => x.CreateUser(It.Is<User>(u => u.Email == "new@test.com" && u.Name == "New")), Times.Once);
+        _userRepositoryMock.Verify(x => x.AddExternalLogin(It.IsAny<User>(), "Microsoft", "ms-123"), Times.Once);
+        _userRepositoryMock.Verify(x => x.AddRole(Role.Student, It.IsAny<Guid>()), Times.Once);
     }
 }
 

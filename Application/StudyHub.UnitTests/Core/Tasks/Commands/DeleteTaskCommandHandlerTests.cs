@@ -6,23 +6,29 @@ namespace StudyHub.UnitTests.Handlers.Tasks.Commands;
 
 public class DeleteTaskCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldCallDeleteAndReturnId()
+    private readonly Mock<ITaskRepository> _repositoryMock;
+
+    public DeleteTaskCommandHandlerTests()
     {
+        _repositoryMock = new Mock<ITaskRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var taskId = Guid.NewGuid();
-        var repositoryMock = new Mock<ITaskRepository>();
-        repositoryMock.Setup(x => x.DeleteTaskAsync(taskId)).ReturnsAsync(taskId);
+        _repositoryMock.Setup(x => x.DeleteTaskAsync(taskId)).ReturnsAsync(taskId);
 
-        var handler = new DeleteTaskCommandHandler(repositoryMock.Object);
+        var handler = new DeleteTaskCommandHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new DeleteCommand { Id = taskId }, CancellationToken.None);
 
         // Assert
         Assert.Equal(taskId, result);
-        repositoryMock.Verify(x => x.DeleteTaskAsync(taskId), Times.Once);
+        _repositoryMock.Verify(x => x.DeleteTaskAsync(taskId), Times.Once);
     }
 }
-
 

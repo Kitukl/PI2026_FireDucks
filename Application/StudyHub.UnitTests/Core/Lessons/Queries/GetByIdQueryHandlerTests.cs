@@ -7,9 +7,17 @@ namespace StudyHub.UnitTests.Handlers.Lessons.Queries;
 
 public class GetByIdQueryHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenFound_ShouldReturnDto()
+    private readonly Mock<ILessonRepository> _repositoryMock;
+
+    public GetByIdQueryHandlerTests()
     {
+        _repositoryMock = new Mock<ILessonRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var lesson = new Lesson
         {
@@ -17,14 +25,13 @@ public class GetByIdQueryHandlerTests
             Day = DayOfWeek.Wednesday,
             LessonType = "Lecture",
             Subject = new Subject { Id = Guid.NewGuid(), Name = "Bio" },
-            LessonsSlot = new LessonsSlot { Id = Guid.NewGuid(), StartTime = new TimeOnly(10,0), EndTime = new TimeOnly(11,0) },
+            LessonsSlot = new LessonsSlot { Id = Guid.NewGuid(), StartTime = new TimeOnly(10, 0), EndTime = new TimeOnly(11, 0) },
             Lecturers = new List<Lecturer>()
         };
 
-        var repositoryMock = new Mock<ILessonRepository>();
-        repositoryMock.Setup(x => x.GetById(lesson.Id)).ReturnsAsync(lesson);
+        _repositoryMock.Setup(x => x.GetById(lesson.Id)).ReturnsAsync(lesson);
 
-        var handler = new GetByIdQueryHandler(repositoryMock.Object);
+        var handler = new GetByIdQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetLessonByIdRequest(lesson.Id), CancellationToken.None);
@@ -35,13 +42,13 @@ public class GetByIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenMissing_ShouldReturnNull()
+    public async System.Threading.Tasks.Task Test_2()
     {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<ILessonRepository>();
-        repositoryMock.Setup(x => x.GetById(It.IsAny<Guid>())).ReturnsAsync((Lesson?)null);
+        _repositoryMock.Setup(x => x.GetById(It.IsAny<Guid>())).ReturnsAsync((Lesson?)null);
 
-        var handler = new GetByIdQueryHandler(repositoryMock.Object);
+        var handler = new GetByIdQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetLessonByIdRequest(Guid.NewGuid()), CancellationToken.None);
@@ -50,5 +57,4 @@ public class GetByIdQueryHandlerTests
         Assert.Null(result);
     }
 }
-
 

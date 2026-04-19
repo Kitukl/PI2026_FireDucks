@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.Statistics.Interfaces;
 using StudyHub.Core.Statistics.Queries;
 using StudyHub.Domain.Entities;
@@ -7,16 +7,23 @@ namespace StudyHub.UnitTests.Handlers.Statistics.Queries;
 
 public class GetUsersStatisticHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenRecentStatisticMissing_ShouldReturnEmptyActivityAndCurrentFileCount()
-    {
-        // Arrange
-        var repositoryMock = new Mock<IStatisticRepository>();
-        repositoryMock.Setup(x => x.GetRecentStatisticAsync()).ReturnsAsync((Statistic?)null);
-        repositoryMock.Setup(x => x.GetStorageFileCountsAsync(It.IsAny<CancellationToken>())).ReturnsAsync((5, 4));
-        repositoryMock.Setup(x => x.GetSystemEntityCountsAsync(It.IsAny<CancellationToken>())).ReturnsAsync((12, 3, 2));
+    private readonly Mock<IStatisticRepository> _repositoryMock;
 
-        var handler = new GetUsersStatisticHandler(repositoryMock.Object);
+    public GetUsersStatisticHandlerTests()
+    {
+        _repositoryMock = new Mock<IStatisticRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
+        // Arrange
+        _repositoryMock.Setup(x => x.GetRecentStatisticAsync()).ReturnsAsync((Statistic?)null);
+        _repositoryMock.Setup(x => x.GetStorageFileCountsAsync(It.IsAny<CancellationToken>())).ReturnsAsync((5, 4));
+        _repositoryMock.Setup(x => x.GetSystemEntityCountsAsync(It.IsAny<CancellationToken>())).ReturnsAsync((12, 3, 2));
+
+        var handler = new GetUsersStatisticHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetUsersStatisticRequest(), CancellationToken.None);
@@ -29,23 +36,23 @@ public class GetUsersStatisticHandlerTests
         Assert.Equal(3, result.GroupsCount);
         Assert.Equal(2, result.LeadersCount);
         Assert.Empty(result.UserActivityPerMonth);
-        repositoryMock.Verify(x => x.GetYearlyActivityAsync(It.IsAny<int>()), Times.Never);
+        _repositoryMock.Verify(x => x.GetYearlyActivityAsync(It.IsAny<int>()), Times.Never);
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenRecentStatisticExists_ShouldReturnMappedDto()
+    public async System.Threading.Tasks.Task Test_2()
     {
+        _repositoryMock.Reset();
         // Arrange
         var statistic = new Statistic { CreatedAt = new DateTime(2026, 1, 1), FilesCount = 1 };
         var yearly = new Dictionary<int, double> { [1] = 0.5 };
 
-        var repositoryMock = new Mock<IStatisticRepository>();
-        repositoryMock.Setup(x => x.GetRecentStatisticAsync()).ReturnsAsync(statistic);
-        repositoryMock.Setup(x => x.GetYearlyActivityAsync(It.IsAny<int>())).ReturnsAsync(yearly);
-        repositoryMock.Setup(x => x.GetStorageFileCountsAsync(It.IsAny<CancellationToken>())).ReturnsAsync((10, 3));
-        repositoryMock.Setup(x => x.GetSystemEntityCountsAsync(It.IsAny<CancellationToken>())).ReturnsAsync((25, 7, 5));
+        _repositoryMock.Setup(x => x.GetRecentStatisticAsync()).ReturnsAsync(statistic);
+        _repositoryMock.Setup(x => x.GetYearlyActivityAsync(It.IsAny<int>())).ReturnsAsync(yearly);
+        _repositoryMock.Setup(x => x.GetStorageFileCountsAsync(It.IsAny<CancellationToken>())).ReturnsAsync((10, 3));
+        _repositoryMock.Setup(x => x.GetSystemEntityCountsAsync(It.IsAny<CancellationToken>())).ReturnsAsync((25, 7, 5));
 
-        var handler = new GetUsersStatisticHandler(repositoryMock.Object);
+        var handler = new GetUsersStatisticHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetUsersStatisticRequest(), CancellationToken.None);
@@ -61,3 +68,4 @@ public class GetUsersStatisticHandlerTests
         Assert.Equal(0.5, result.UserActivityPerMonth[1]);
     }
 }
+

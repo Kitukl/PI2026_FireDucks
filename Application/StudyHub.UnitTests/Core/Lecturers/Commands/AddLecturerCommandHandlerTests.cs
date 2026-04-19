@@ -8,12 +8,19 @@ namespace StudyHub.UnitTests.Handlers.Lecturers.Commands;
 
 public class AddLecturerCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldMapAndPersistLecturer()
+    private readonly Mock<ILecturerRepository> _repositoryMock;
+
+    public AddLecturerCommandHandlerTests()
     {
+        _repositoryMock = new Mock<ILecturerRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<ILecturerRepository>();
-        var handler = new AddLecturerCommandHandler(repositoryMock.Object);
+        var handler = new AddLecturerCommandHandler(_repositoryMock.Object);
 
         var dto = new LecturerDtoRequest
         {
@@ -21,29 +28,28 @@ public class AddLecturerCommandHandlerTests
             Name = "Ivan",
             Surname = "Petrov",
             Lessons = new List<LessonDto>
-            {
-                new()
-                {
-                    Id = Guid.Empty,
-                    Day = DayOfWeek.Monday,
-                    LessonType = "Lecture",
-                    Subject = new SubjectDto { Id = Guid.NewGuid(), Name = "Math" },
-                    LessonSlot = new LessonSlotDto { StartTime = new TimeOnly(9,0), EndTime = new TimeOnly(10,0) },
-                    Lecturers = new List<LecturerDtoResponse> { new() { Id = Guid.NewGuid(), Name = "A", Surname = "B" } }
-                }
-            }
+        {
+        new()
+        {
+        Id = Guid.Empty,
+        Day = DayOfWeek.Monday,
+        LessonType = "Lecture",
+        Subject = new SubjectDto { Id = Guid.NewGuid(), Name = "Math" },
+        LessonSlot = new LessonSlotDto { StartTime = new TimeOnly(9,0), EndTime = new TimeOnly(10,0) },
+        Lecturers = new List<LecturerDtoResponse> { new() { Id = Guid.NewGuid(), Name = "A", Surname = "B" } }
+        }
+        }
         };
 
         // Act
         await handler.Handle(new AddLecturerRequest(dto), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.AddLecturer(It.Is<Lecturer>(l =>
-            l.Name == "Ivan" &&
-            l.Surname == "Petrov" &&
-            l.Id != Guid.Empty &&
-            l.Lessons.Count == 1)), Times.Once);
+        _repositoryMock.Verify(x => x.AddLecturer(It.Is<Lecturer>(l =>
+        l.Name == "Ivan" &&
+        l.Surname == "Petrov" &&
+        l.Id != Guid.Empty &&
+        l.Lessons.Count == 1)), Times.Once);
     }
 }
-
 

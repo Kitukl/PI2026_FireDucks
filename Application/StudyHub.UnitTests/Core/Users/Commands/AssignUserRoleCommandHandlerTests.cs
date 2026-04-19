@@ -7,20 +7,27 @@ namespace StudyHub.UnitTests.Handlers.Users.Commands;
 
 public class AssignUserRoleCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldAssignRoleToUser()
+    private readonly Mock<IUserRepository> _repositoryMock;
+
+    public AssignUserRoleCommandHandlerTests()
     {
+        _repositoryMock = new Mock<IUserRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var userId = Guid.NewGuid();
-        var repositoryMock = new Mock<IUserRepository>();
-        var handler = new AssignUserRoleCommandHandler(repositoryMock.Object);
+        var handler = new AssignUserRoleCommandHandler(_repositoryMock.Object);
         var command = new AssignUserRoleCommand { UserId = userId, Role = Role.Admin };
 
         // Act
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.AddRole(Role.Admin, userId), Times.Once);
+        _repositoryMock.Verify(x => x.AddRole(Role.Admin, userId), Times.Once);
     }
 }
 

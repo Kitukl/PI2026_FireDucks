@@ -8,39 +8,48 @@ namespace StudyHub.UnitTests.Handlers.Users.Commands;
 
 public class UpdateUserHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldSetGroupAndUpdateUser()
+    private readonly Mock<IGroupRepository> _groupRepositoryMock;
+    private readonly Mock<IUserRepository> _userRepositoryMock;
+
+    public UpdateUserHandlerTests()
     {
+        _groupRepositoryMock = new Mock<IGroupRepository>();
+        _userRepositoryMock = new Mock<IUserRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _groupRepositoryMock.Reset();
+        _userRepositoryMock.Reset();
         // Arrange
         var user = new User { Id = Guid.NewGuid(), Name = "Ira" };
         var group = new Group { Name = "PI-25" };
 
-        var userRepositoryMock = new Mock<IUserRepository>();
-        userRepositoryMock.Setup(x => x.GetUserById(user.Id)).ReturnsAsync(user);
-        userRepositoryMock.Setup(x => x.Update(user)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetUserById(user.Id)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.Update(user)).ReturnsAsync(user);
 
-        var groupRepositoryMock = new Mock<IGroupRepository>();
-        groupRepositoryMock.Setup(x => x.GetGroupByNameAsync("PI-25")).ReturnsAsync(group);
+        _groupRepositoryMock.Setup(x => x.GetGroupByNameAsync("PI-25")).ReturnsAsync(group);
 
-        var handler = new UpdateUserHandler(userRepositoryMock.Object, groupRepositoryMock.Object);
+        var handler = new UpdateUserHandler(_userRepositoryMock.Object, _groupRepositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new UpdateUserCommand { Id = user.Id, GroupName = "PI-25" }, CancellationToken.None);
 
         // Assert
         Assert.Equal(group, result.Group);
-        userRepositoryMock.Verify(x => x.Update(user), Times.Once);
+        _userRepositoryMock.Verify(x => x.Update(user), Times.Once);
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenUserNotFound_ShouldThrow()
+    public async System.Threading.Tasks.Task Test_2()
     {
+        _groupRepositoryMock.Reset();
+        _userRepositoryMock.Reset();
         // Arrange
-        var userRepositoryMock = new Mock<IUserRepository>();
-        userRepositoryMock.Setup(x => x.GetUserById(It.IsAny<Guid>())).ReturnsAsync((User)null!);
+        _userRepositoryMock.Setup(x => x.GetUserById(It.IsAny<Guid>())).ReturnsAsync((User)null!);
 
-        var groupRepositoryMock = new Mock<IGroupRepository>();
-        var handler = new UpdateUserHandler(userRepositoryMock.Object, groupRepositoryMock.Object);
+        var handler = new UpdateUserHandler(_userRepositoryMock.Object, _groupRepositoryMock.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<Exception>(() => handler.Handle(new UpdateUserCommand { Id = Guid.NewGuid(), GroupName = "PI-25" }, CancellationToken.None));

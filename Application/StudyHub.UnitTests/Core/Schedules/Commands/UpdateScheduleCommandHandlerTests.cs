@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.DTOs;
 using StudyHub.Core.Schedules.Commands;
 using StudyHub.Core.Schedules.Interfaces;
@@ -8,9 +8,17 @@ namespace StudyHub.UnitTests.Handlers.Schedules.Commands;
 
 public class UpdateScheduleCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldMapAndUpdateSchedule()
+    private readonly Mock<IScheduleRepository> _repositoryMock;
+
+    public UpdateScheduleCommandHandlerTests()
     {
+        _repositoryMock = new Mock<IScheduleRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var scheduleId = Guid.NewGuid();
         var lessonId = Guid.NewGuid();
@@ -23,16 +31,16 @@ public class UpdateScheduleCommandHandlerTests
             Lessons = new List<LessonDto> { new() { Id = lessonId } }
         };
 
-        var repositoryMock = new Mock<IScheduleRepository>();
-        var handler = new UpdateScheduleCommandHandler(repositoryMock.Object);
+        var handler = new UpdateScheduleCommandHandler(_repositoryMock.Object);
 
         // Act
         await handler.Handle(new UpdateScheduleRequest(dto), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.UpdateScheduleAsync(It.Is<Schedule>(s =>
-            s.Id == scheduleId &&
-            s.Lessons.Count == 1 &&
-            s.Lessons.First().Id == lessonId)), Times.Once);
+        _repositoryMock.Verify(x => x.UpdateScheduleAsync(It.Is<Schedule>(s =>
+        s.Id == scheduleId &&
+        s.Lessons.Count == 1 &&
+        s.Lessons.First().Id == lessonId)), Times.Once);
     }
 }
+

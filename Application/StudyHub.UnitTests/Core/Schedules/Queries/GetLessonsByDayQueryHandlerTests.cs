@@ -8,28 +8,35 @@ namespace StudyHub.UnitTests.Handlers.Schedules.Queries;
 
 public class GetLessonsByDayQueryHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldReturnMappedLessons()
+    private readonly Mock<IScheduleRepository> _repositoryMock;
+
+    public GetLessonsByDayQueryHandlerTests()
     {
+        _repositoryMock = new Mock<IScheduleRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var scheduleId = Guid.NewGuid();
         var lessons = new List<Lesson>
         {
-            new()
-            {
-                Id = Guid.Empty,
-                Day = DayOfWeek.Thursday,
-                LessonType = "Lecture",
-                Subject = new Subject { Id = Guid.NewGuid(), Name = "Math" },
-                LessonsSlot = new LessonsSlot { Id = Guid.NewGuid(), StartTime = new TimeOnly(11,0), EndTime = new TimeOnly(12,0) },
-                Lecturers = new List<Lecturer>()
-            }
+        new()
+        {
+        Id = Guid.Empty,
+        Day = DayOfWeek.Thursday,
+        LessonType = "Lecture",
+        Subject = new Subject { Id = Guid.NewGuid(), Name = "Math" },
+        LessonsSlot = new LessonsSlot { Id = Guid.NewGuid(), StartTime = new TimeOnly(11,0), EndTime = new TimeOnly(12,0) },
+        Lecturers = new List<Lecturer>()
+        }
         };
 
-        var repositoryMock = new Mock<IScheduleRepository>();
-        repositoryMock.Setup(x => x.GetLessonsByDay(scheduleId, DayOfWeek.Thursday)).ReturnsAsync(lessons);
+        _repositoryMock.Setup(x => x.GetLessonsByDay(scheduleId, DayOfWeek.Thursday)).ReturnsAsync(lessons);
 
-        var handler = new GetLessonsByDayQueryHandler(repositoryMock.Object);
+        var handler = new GetLessonsByDayQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetLessonsByDayRequest(new ScheduleDayDto { Id = scheduleId, Day = DayOfWeek.Thursday }), CancellationToken.None);
@@ -40,5 +47,4 @@ public class GetLessonsByDayQueryHandlerTests
         Assert.Equal("Math", result[0].Subject.Name);
     }
 }
-
 

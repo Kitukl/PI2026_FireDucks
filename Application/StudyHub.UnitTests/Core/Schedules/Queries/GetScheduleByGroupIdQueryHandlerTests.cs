@@ -7,9 +7,17 @@ namespace StudyHub.UnitTests.Handlers.Schedules.Queries;
 
 public class GetScheduleByGroupIdQueryHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenFound_ShouldReturnDto()
+    private readonly Mock<IScheduleRepository> _repositoryMock;
+
+    public GetScheduleByGroupIdQueryHandlerTests()
     {
+        _repositoryMock = new Mock<IScheduleRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var groupId = Guid.NewGuid();
         var schedule = new Schedule
@@ -17,23 +25,22 @@ public class GetScheduleByGroupIdQueryHandlerTests
             Id = Guid.NewGuid(),
             Group = new Group { Id = groupId, Name = "PI-31" },
             Lessons = new List<Lesson>
-            {
-                new()
-                {
-                    Id = Guid.NewGuid(),
-                    Day = DayOfWeek.Monday,
-                    LessonType = "Lec",
-                    Subject = new Subject { Id = Guid.NewGuid(), Name = "Math" },
-                    LessonsSlot = new LessonsSlot { Id = Guid.NewGuid(), StartTime = new TimeOnly(8,0), EndTime = new TimeOnly(9,0) },
-                    Lecturers = new List<Lecturer> { new() { Id = Guid.Empty, Name = "A", Surname = "B" } }
-                }
-            }
+        {
+        new()
+        {
+        Id = Guid.NewGuid(),
+        Day = DayOfWeek.Monday,
+        LessonType = "Lec",
+        Subject = new Subject { Id = Guid.NewGuid(), Name = "Math" },
+        LessonsSlot = new LessonsSlot { Id = Guid.NewGuid(), StartTime = new TimeOnly(8,0), EndTime = new TimeOnly(9,0) },
+        Lecturers = new List<Lecturer> { new() { Id = Guid.Empty, Name = "A", Surname = "B" } }
+        }
+        }
         };
 
-        var repositoryMock = new Mock<IScheduleRepository>();
-        repositoryMock.Setup(x => x.GetByGroupIdAsync(groupId)).ReturnsAsync(schedule);
+        _repositoryMock.Setup(x => x.GetByGroupIdAsync(groupId)).ReturnsAsync(schedule);
 
-        var handler = new GetScheduleByGroupIdQueryHandler(repositoryMock.Object);
+        var handler = new GetScheduleByGroupIdQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetScheduleByGroupIdRequest(groupId), CancellationToken.None);
@@ -45,13 +52,13 @@ public class GetScheduleByGroupIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenMissing_ShouldReturnNull()
+    public async System.Threading.Tasks.Task Test_2()
     {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<IScheduleRepository>();
-        repositoryMock.Setup(x => x.GetByGroupIdAsync(It.IsAny<Guid>())).ReturnsAsync((Schedule?)null);
+        _repositoryMock.Setup(x => x.GetByGroupIdAsync(It.IsAny<Guid>())).ReturnsAsync((Schedule?)null);
 
-        var handler = new GetScheduleByGroupIdQueryHandler(repositoryMock.Object);
+        var handler = new GetScheduleByGroupIdQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetScheduleByGroupIdRequest(Guid.NewGuid()), CancellationToken.None);
@@ -60,5 +67,4 @@ public class GetScheduleByGroupIdQueryHandlerTests
         Assert.Null(result);
     }
 }
-
 

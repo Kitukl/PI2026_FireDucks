@@ -8,12 +8,19 @@ namespace StudyHub.UnitTests.Handlers.Lessons.Commands;
 
 public class AddLessonSlotCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldMapAndAddLesson()
+    private readonly Mock<ILessonRepository> _repositoryMock;
+
+    public AddLessonSlotCommandHandlerTests()
     {
+        _repositoryMock = new Mock<ILessonRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<ILessonRepository>();
-        var handler = new AddLessonSlotCommandHandler(repositoryMock.Object);
+        var handler = new AddLessonSlotCommandHandler(_repositoryMock.Object);
 
         var dto = new LessonDto
         {
@@ -29,8 +36,7 @@ public class AddLessonSlotCommandHandlerTests
         await handler.Handle(new AddLessonRequest(dto), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.AddLesson(It.Is<Lesson>(l => l.Id != Guid.Empty && l.Subject.Name == "Math")), Times.Once);
+        _repositoryMock.Verify(x => x.AddLesson(It.Is<Lesson>(l => l.Id != Guid.Empty && l.Subject.Name == "Math")), Times.Once);
     }
 }
-
 

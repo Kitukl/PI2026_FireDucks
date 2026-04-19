@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.Schedules.Interfaces;
 using StudyHub.Core.Schedules.Queries;
 
@@ -6,15 +6,22 @@ namespace StudyHub.UnitTests.Handlers.Schedules.Queries;
 
 public class GetHeadmanUpdateRightsQueryHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldReturnRepositoryValue()
+    private readonly Mock<IScheduleRepository> _repositoryMock;
+
+    public GetHeadmanUpdateRightsQueryHandlerTests()
     {
+        _repositoryMock = new Mock<IScheduleRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var groupId = Guid.NewGuid();
-        var repositoryMock = new Mock<IScheduleRepository>();
-        repositoryMock.Setup(x => x.GetHeadmanUpdateRights(groupId)).ReturnsAsync(true);
+        _repositoryMock.Setup(x => x.GetHeadmanUpdateRights(groupId)).ReturnsAsync(true);
 
-        var handler = new GetHeadmanUpdateRightsQueryHandler(repositoryMock.Object);
+        var handler = new GetHeadmanUpdateRightsQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetHeadmanUpdateRightsRequest(groupId), CancellationToken.None);
@@ -23,3 +30,4 @@ public class GetHeadmanUpdateRightsQueryHandlerTests
         Assert.True(result);
     }
 }
+

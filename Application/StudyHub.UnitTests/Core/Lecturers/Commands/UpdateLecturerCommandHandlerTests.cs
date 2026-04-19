@@ -8,12 +8,19 @@ namespace StudyHub.UnitTests.Handlers.Lecturers.Commands;
 
 public class UpdateLecturerCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldMapAndUpdateLecturer()
+    private readonly Mock<ILecturerRepository> _repositoryMock;
+
+    public UpdateLecturerCommandHandlerTests()
     {
+        _repositoryMock = new Mock<ILecturerRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<ILecturerRepository>();
-        var handler = new UpdateLecturerCommandHandler(repositoryMock.Object);
+        var handler = new UpdateLecturerCommandHandler(_repositoryMock.Object);
 
         var lecturerId = Guid.NewGuid();
         var lessonId = Guid.NewGuid();
@@ -23,27 +30,26 @@ public class UpdateLecturerCommandHandlerTests
             Name = "Ira",
             Surname = "S",
             Lessons = new List<LessonDto>
-            {
-                new()
-                {
-                    Id = lessonId,
-                    Day = DayOfWeek.Tuesday,
-                    LessonType = "Practice",
-                    Subject = new SubjectDto { Id = Guid.NewGuid(), Name = "Physics" },
-                    LessonSlot = new LessonSlotDto { Id = Guid.NewGuid(), StartTime = new TimeOnly(10,0), EndTime = new TimeOnly(11,0) },
-                    Lecturers = new List<LecturerDtoResponse>()
-                }
-            }
+        {
+        new()
+        {
+        Id = lessonId,
+        Day = DayOfWeek.Tuesday,
+        LessonType = "Practice",
+        Subject = new SubjectDto { Id = Guid.NewGuid(), Name = "Physics" },
+        LessonSlot = new LessonSlotDto { Id = Guid.NewGuid(), StartTime = new TimeOnly(10,0), EndTime = new TimeOnly(11,0) },
+        Lecturers = new List<LecturerDtoResponse>()
+        }
+        }
         };
 
         // Act
         await handler.Handle(new UpdateLecturerRequest(dto), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.UpdateLecturer(It.Is<Lecturer>(l =>
-            l.Id == lecturerId &&
-            l.Lessons.First().Id == lessonId)), Times.Once);
+        _repositoryMock.Verify(x => x.UpdateLecturer(It.Is<Lecturer>(l =>
+        l.Id == lecturerId &&
+        l.Lessons.First().Id == lessonId)), Times.Once);
     }
 }
-
 

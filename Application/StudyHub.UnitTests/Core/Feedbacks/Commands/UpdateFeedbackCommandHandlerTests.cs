@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.Feedbacks.Commands;
 using StudyHub.Core.Feedbacks.Interfaces;
 using StudyHub.Domain.Entities;
@@ -8,17 +8,24 @@ namespace StudyHub.UnitTests.Handlers.Feedbacks.Commands;
 
 public class UpdateFeedbackCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenResolved_ShouldSetResolvedAt()
+    private readonly Mock<IFeedbackRepository> _repositoryMock;
+
+    public UpdateFeedbackCommandHandlerTests()
     {
+        _repositoryMock = new Mock<IFeedbackRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Test_1()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var feedback = new Feedback { Id = Guid.NewGuid(), Status = Status.ToDo, Description = "x", CreatorFullname = "u", User = new User() };
 
-        var repositoryMock = new Mock<IFeedbackRepository>();
-        repositoryMock.Setup(x => x.GetFeedbackAsync(feedback.Id)).ReturnsAsync(feedback);
-        repositoryMock.Setup(x => x.UpdateFeedbackAsync(feedback)).ReturnsAsync(feedback.Id);
+        _repositoryMock.Setup(x => x.GetFeedbackAsync(feedback.Id)).ReturnsAsync(feedback);
+        _repositoryMock.Setup(x => x.UpdateFeedbackAsync(feedback)).ReturnsAsync(feedback.Id);
 
-        var handler = new UpdateFeedbackCommandHandler(repositoryMock.Object);
+        var handler = new UpdateFeedbackCommandHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new UpdateFeedbackCommand { Id = feedback.Id, Status = Status.Resolved }, CancellationToken.None);
@@ -31,16 +38,16 @@ public class UpdateFeedbackCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenNotResolved_ShouldClearResolvedAt()
+    public async System.Threading.Tasks.Task Test_2()
     {
+        _repositoryMock.Reset();
         // Arrange
         var feedback = new Feedback { Id = Guid.NewGuid(), Status = Status.Resolved, ResolvedAt = DateTime.UtcNow, Description = "x", CreatorFullname = "u", User = new User() };
 
-        var repositoryMock = new Mock<IFeedbackRepository>();
-        repositoryMock.Setup(x => x.GetFeedbackAsync(feedback.Id)).ReturnsAsync(feedback);
-        repositoryMock.Setup(x => x.UpdateFeedbackAsync(feedback)).ReturnsAsync(feedback.Id);
+        _repositoryMock.Setup(x => x.GetFeedbackAsync(feedback.Id)).ReturnsAsync(feedback);
+        _repositoryMock.Setup(x => x.UpdateFeedbackAsync(feedback)).ReturnsAsync(feedback.Id);
 
-        var handler = new UpdateFeedbackCommandHandler(repositoryMock.Object);
+        var handler = new UpdateFeedbackCommandHandler(_repositoryMock.Object);
 
         // Act
         await handler.Handle(new UpdateFeedbackCommand { Id = feedback.Id, Status = Status.InProgress }, CancellationToken.None);
@@ -50,15 +57,16 @@ public class UpdateFeedbackCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenMissing_ShouldThrow()
+    public async System.Threading.Tasks.Task Test_3()
     {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<IFeedbackRepository>();
-        repositoryMock.Setup(x => x.GetFeedbackAsync(It.IsAny<Guid>())).ReturnsAsync((Feedback?)null);
+        _repositoryMock.Setup(x => x.GetFeedbackAsync(It.IsAny<Guid>())).ReturnsAsync((Feedback?)null);
 
-        var handler = new UpdateFeedbackCommandHandler(repositoryMock.Object);
+        var handler = new UpdateFeedbackCommandHandler(_repositoryMock.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<Exception>(() => handler.Handle(new UpdateFeedbackCommand { Id = Guid.NewGuid(), Status = Status.ToDo }, CancellationToken.None));
     }
 }
+
