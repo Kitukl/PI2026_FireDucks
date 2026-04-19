@@ -28,7 +28,7 @@ public class GetDashBoardQueryHandler : IRequestHandler<GetDashBoardQuery, Dashb
     public async Task<DashboardViewModel> Handle(GetDashBoardQuery request, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetUserById(request.UserId);
-        var fullName = $"{user.Name} {user.Surname}".Trim();X
+        var fullName = $"{user.Name} {user.Surname}".Trim();
         
         var tasks = await _taskRepository.GetTasksAsync();
         tasks = tasks.Where(task => DashboradHelper.IsVisibleForUser(task, user.Id, user.Group?.Name)).ToList();
