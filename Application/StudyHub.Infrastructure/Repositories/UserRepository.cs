@@ -24,6 +24,12 @@ public class UserRepository : IUserRepository
         return await _context.Users.Include(u=>u.Group).ToListAsync();
     }
 
+    public async Task<bool> IsHeadman(Guid id)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        return await _userManager.IsInRoleAsync(user, Role.Leader.ToString());
+    }
+
     public async Task<List<string>> GetAllEmailsAsync()
     {
         return await _context.Users

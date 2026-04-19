@@ -369,9 +369,9 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
         return RedirectToAction(nameof(Schedule));
     }
 
-    private Application.Models.ScheduleViewModel BuildScheduleGridViewModel(ScheduleDto dto)
+    private ScheduleViewModel BuildScheduleGridViewModel(ScheduleDto dto)
     {
-        var vm = new Application.Models.ScheduleViewModel
+        var vm = new ScheduleViewModel
         {
             GroupId = dto.Group.Id,
             GroupName = dto.Group.Name,
