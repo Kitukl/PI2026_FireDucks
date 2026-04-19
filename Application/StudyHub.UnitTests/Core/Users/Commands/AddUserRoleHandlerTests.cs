@@ -18,7 +18,7 @@ public class AddUserRoleCommandHandlerTests
     public async System.Threading.Tasks.Task Test_1()
     {
         _repositoryMock.Reset();
-        // Arrange
+        // Arrang
         var userId = Guid.NewGuid();
         var handler = new AddUserRoleCommandHandler(_repositoryMock.Object);
         var command = new AddUserRoleCommand { UserId = userId, Role = Role.Leader };
