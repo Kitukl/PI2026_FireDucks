@@ -17,7 +17,7 @@ public class SendGlobalAnnouncementCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldSendGlobalAnnouncement_WhenSubjectIsWhitespace()
     {
         _senderMock.Reset();
         _userRepositoryMock.Reset();
@@ -34,7 +34,7 @@ public class SendGlobalAnnouncementCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldSendGlobalAnnouncement_WhenRecipientsListIsEmpty()
     {
         _senderMock.Reset();
         _userRepositoryMock.Reset();
@@ -51,7 +51,7 @@ public class SendGlobalAnnouncementCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_3()
+    public async System.Threading.Tasks.Task Handle_ShouldSendGlobalAnnouncement_WhenRecipientsExist()
     {
         _senderMock.Reset();
         _userRepositoryMock.Reset();
@@ -73,4 +73,6 @@ public class SendGlobalAnnouncementCommandHandlerTests
         It.IsAny<CancellationToken>()), Times.Once);
     }
 }
+
+
 

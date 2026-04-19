@@ -16,7 +16,7 @@ public class UpdateTaskCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateTask_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -54,7 +54,7 @@ public class UpdateTaskCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateTask_WhenTaskNotFound()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -71,4 +71,6 @@ public class UpdateTaskCommandHandlerTests
         }, CancellationToken.None));
     }
 }
+
+
 

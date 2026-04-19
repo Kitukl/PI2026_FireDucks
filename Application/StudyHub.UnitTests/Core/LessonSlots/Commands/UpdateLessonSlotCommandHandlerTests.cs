@@ -16,7 +16,7 @@ public class UpdateLessonSlotCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateLessonSlot_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -30,4 +30,6 @@ public class UpdateLessonSlotCommandHandlerTests
         _repositoryMock.Verify(x => x.UpdateLessonSlot(It.Is<LessonsSlot>(s => s.Id == dto.Id && s.EndTime == dto.EndTime)), Times.Once);
     }
 }
+
+
 

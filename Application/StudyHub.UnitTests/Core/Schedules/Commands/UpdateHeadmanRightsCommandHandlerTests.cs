@@ -16,7 +16,7 @@ public class UpdateHeadmanRightsCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateHeadmanRights_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -34,7 +34,7 @@ public class UpdateHeadmanRightsCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateHeadmanRights_WhenScheduleNotFound()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -49,4 +49,6 @@ public class UpdateHeadmanRightsCommandHandlerTests
         _repositoryMock.Verify(x => x.UpdateHeadmanRights(It.IsAny<Schedule>()), Times.Never);
     }
 }
+
+
 

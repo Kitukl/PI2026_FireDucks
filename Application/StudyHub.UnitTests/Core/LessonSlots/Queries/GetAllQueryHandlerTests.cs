@@ -15,7 +15,7 @@ public class GetAllQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldReturnLessonSlots_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -36,4 +36,6 @@ public class GetAllQueryHandlerTests
         Assert.NotEqual(Guid.Empty, result[0].Id);
     }
 }
+
+
 

@@ -14,7 +14,7 @@ public class DeleteLessonSlotCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldDeleteLessonSlot_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -28,4 +28,6 @@ public class DeleteLessonSlotCommandHandlerTests
         _repositoryMock.Verify(x => x.DeleteLessonSlot(id), Times.Once);
     }
 }
+
+
 

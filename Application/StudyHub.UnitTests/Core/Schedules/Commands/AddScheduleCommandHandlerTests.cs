@@ -16,7 +16,7 @@ public class AddScheduleCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldAddSchedule_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -53,4 +53,6 @@ public class AddScheduleCommandHandlerTests
         s.Lessons.Count == 1)), Times.Once);
     }
 }
+
+
 

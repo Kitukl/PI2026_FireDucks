@@ -15,7 +15,7 @@ public class GetUsersHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetUsers_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -48,7 +48,7 @@ public class GetUsersHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldGetUsers_WhenNoUsersExist()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -64,4 +64,6 @@ public class GetUsersHandlerTests
         _repositoryMock.Verify(x => x.GetUsersAsync(), Times.Once);
     }
 }
+
+
 

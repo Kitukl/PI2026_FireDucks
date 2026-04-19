@@ -15,7 +15,7 @@ public class GetUsersStatisticHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetUsersStatistic_WhenRecentStatisticDoesNotExist()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -40,7 +40,7 @@ public class GetUsersStatisticHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldGetUsersStatistic_WhenRecentStatisticExists()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -68,4 +68,6 @@ public class GetUsersStatisticHandlerTests
         Assert.Equal(0.5, result.UserActivityPerMonth[1]);
     }
 }
+
+
 

@@ -15,7 +15,7 @@ public class GetFeedbacksCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetFeedbacks_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -36,4 +36,6 @@ public class GetFeedbacksCommandHandlerTests
         _repositoryMock.Verify(x => x.GetFeedbacksAsync(), Times.Once);
     }
 }
+
+
 

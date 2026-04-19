@@ -14,7 +14,7 @@ public class GetTaskCountHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetTaskCount_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -30,4 +30,6 @@ public class GetTaskCountHandlerTests
         _repositoryMock.Verify(x => x.GetCountAsync(), Times.Once);
     }
 }
+
+
 

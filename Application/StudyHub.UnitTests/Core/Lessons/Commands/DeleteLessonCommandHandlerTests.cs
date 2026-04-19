@@ -14,7 +14,7 @@ public class DeleteLessonCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldDeleteLesson_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -28,4 +28,6 @@ public class DeleteLessonCommandHandlerTests
         _repositoryMock.Verify(x => x.DeleteLesson(id), Times.Once);
     }
 }
+
+
 

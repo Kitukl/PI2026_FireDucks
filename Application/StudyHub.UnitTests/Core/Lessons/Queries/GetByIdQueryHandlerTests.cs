@@ -15,7 +15,7 @@ public class GetByIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldReturnLesson_WhenLessonExists()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -42,7 +42,7 @@ public class GetByIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldGetById_WhenLessonNotFound()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -57,4 +57,6 @@ public class GetByIdQueryHandlerTests
         Assert.Null(result);
     }
 }
+
+
 

@@ -15,7 +15,7 @@ public class GetScheduleByGroupIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetScheduleByGroupId_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -52,7 +52,7 @@ public class GetScheduleByGroupIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldGetScheduleByGroupId_WhenScheduleNotFoundForGroup()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -67,4 +67,6 @@ public class GetScheduleByGroupIdQueryHandlerTests
         Assert.Null(result);
     }
 }
+
+
 

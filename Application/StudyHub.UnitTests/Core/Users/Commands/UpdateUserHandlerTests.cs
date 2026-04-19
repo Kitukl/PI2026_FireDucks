@@ -18,7 +18,7 @@ public class UpdateUserHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateUser_WhenRequestIsValid()
     {
         _groupRepositoryMock.Reset();
         _userRepositoryMock.Reset();
@@ -42,7 +42,7 @@ public class UpdateUserHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateUser_WhenUserNotFound()
     {
         _groupRepositoryMock.Reset();
         _userRepositoryMock.Reset();
@@ -55,4 +55,6 @@ public class UpdateUserHandlerTests
         await Assert.ThrowsAsync<Exception>(() => handler.Handle(new UpdateUserCommand { Id = Guid.NewGuid(), GroupName = "PI-25" }, CancellationToken.None));
     }
 }
+
+
 

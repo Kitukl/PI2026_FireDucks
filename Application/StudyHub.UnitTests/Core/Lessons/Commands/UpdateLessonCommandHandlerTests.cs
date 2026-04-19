@@ -16,7 +16,7 @@ public class UpdateLessonCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateLesson_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -39,4 +39,6 @@ public class UpdateLessonCommandHandlerTests
         _repositoryMock.Verify(x => x.UpdateLesson(It.Is<Lesson>(l => l.Id == dto.Id && l.LessonType == "Practice")), Times.Once);
     }
 }
+
+
 

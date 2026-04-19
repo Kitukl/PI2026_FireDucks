@@ -16,7 +16,7 @@ public class UpdateFeedbackCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateFeedback_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -38,7 +38,7 @@ public class UpdateFeedbackCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateFeedback_WhenResolvedFeedbackMovesToInProgress()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -57,7 +57,7 @@ public class UpdateFeedbackCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_3()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateFeedback_WhenFeedbackNotFound()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -69,4 +69,6 @@ public class UpdateFeedbackCommandHandlerTests
         await Assert.ThrowsAsync<Exception>(() => handler.Handle(new UpdateFeedbackCommand { Id = Guid.NewGuid(), Status = Status.ToDo }, CancellationToken.None));
     }
 }
+
+
 

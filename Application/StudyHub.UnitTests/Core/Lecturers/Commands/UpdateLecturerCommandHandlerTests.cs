@@ -16,7 +16,7 @@ public class UpdateLecturerCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateLecturer_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -52,4 +52,6 @@ public class UpdateLecturerCommandHandlerTests
         l.Lessons.First().Id == lessonId)), Times.Once);
     }
 }
+
+
 

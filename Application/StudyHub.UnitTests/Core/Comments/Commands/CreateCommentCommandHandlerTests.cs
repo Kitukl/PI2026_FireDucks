@@ -18,7 +18,7 @@ public class CreateCommentCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldCreateComment_WhenRequestIsValid()
     {
         _commentRepositoryMock.Reset();
         _taskRepositoryMock.Reset();
@@ -46,7 +46,7 @@ public class CreateCommentCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldCreateComment_WhenTaskNotFound()
     {
         _commentRepositoryMock.Reset();
         _taskRepositoryMock.Reset();
@@ -60,4 +60,6 @@ public class CreateCommentCommandHandlerTests
         _commentRepositoryMock.Verify(x => x.CreateCommentAsync(It.IsAny<Comment>()), Times.Never);
     }
 }
+
+
 

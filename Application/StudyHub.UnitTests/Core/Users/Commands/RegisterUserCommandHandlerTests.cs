@@ -19,7 +19,7 @@ public class RegisterUserCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldRegisterUser_WhenUserAlreadyExists()
     {
         _groupRepositoryMock.Reset();
         _userRepositoryMock.Reset();
@@ -51,7 +51,7 @@ public class RegisterUserCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldRegisterUser_WhenUserDoesNotExist()
     {
         _groupRepositoryMock.Reset();
         _userRepositoryMock.Reset();
@@ -83,4 +83,6 @@ public class RegisterUserCommandHandlerTests
         _userRepositoryMock.Verify(x => x.AddRole(Role.Student, It.IsAny<Guid>()), Times.Once);
     }
 }
+
+
 

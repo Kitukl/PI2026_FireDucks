@@ -19,7 +19,7 @@ public class CreateTaskCommandsHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldCreateTaskCommands_WhenRequestIsValid()
     {
         _taskRepositoryMock.Reset();
         _userRepositoryMock.Reset();
@@ -64,7 +64,7 @@ public class CreateTaskCommandsHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldCreateTaskCommands_WhenDeadlineIsLocalTime()
     {
         _taskRepositoryMock.Reset();
         _userRepositoryMock.Reset();
@@ -95,4 +95,6 @@ public class CreateTaskCommandsHandlerTests
         _taskRepositoryMock.Verify(x => x.AddTaskAsync(It.Is<StudyHub.Domain.Entities.Task>(task => task.Deadline.Kind == DateTimeKind.Utc)), Times.Once);
     }
 }
+
+
 

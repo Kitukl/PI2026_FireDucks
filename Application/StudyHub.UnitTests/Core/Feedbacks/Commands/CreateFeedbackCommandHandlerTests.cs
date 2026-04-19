@@ -19,7 +19,7 @@ public class CreateFeedbackCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldCreateFeedback_WhenRequestIsValid()
     {
         _feedbackRepositoryMock.Reset();
         _userRepositoryMock.Reset();
@@ -52,7 +52,7 @@ public class CreateFeedbackCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldCreateFeedback_WhenDescriptionContainsOnlyWhitespace()
     {
         _feedbackRepositoryMock.Reset();
         _userRepositoryMock.Reset();
@@ -78,4 +78,6 @@ public class CreateFeedbackCommandHandlerTests
         _feedbackRepositoryMock.Verify(x => x.AddFeedbackAsync(It.Is<Feedback>(f => f.Description == string.Empty)), Times.Once);
     }
 }
+
+
 

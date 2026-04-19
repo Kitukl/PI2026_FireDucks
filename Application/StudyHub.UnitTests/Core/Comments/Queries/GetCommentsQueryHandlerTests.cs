@@ -15,7 +15,7 @@ public class GetCommentsQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetComments_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -38,4 +38,6 @@ public class GetCommentsQueryHandlerTests
         _repositoryMock.Verify(x => x.GetCommentsAsync(taskId), Times.Once);
     }
 }
+
+
 

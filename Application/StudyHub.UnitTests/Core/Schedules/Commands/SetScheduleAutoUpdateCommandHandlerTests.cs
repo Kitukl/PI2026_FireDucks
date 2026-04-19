@@ -14,7 +14,7 @@ public class SetScheduleAutoUpdateCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldSetScheduleAutoUpdate_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -27,4 +27,6 @@ public class SetScheduleAutoUpdateCommandHandlerTests
         _repositoryMock.Verify(x => x.SetScheduleAutoUpdate(true), Times.Once);
     }
 }
+
+
 

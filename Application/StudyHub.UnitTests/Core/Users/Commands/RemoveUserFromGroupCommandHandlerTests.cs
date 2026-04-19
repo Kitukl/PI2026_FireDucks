@@ -15,7 +15,7 @@ public class RemoveUserFromGroupCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldRemoveUserFromGroup_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -35,7 +35,7 @@ public class RemoveUserFromGroupCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldRemoveUserFromGroup_WhenUserNotFound()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -46,4 +46,6 @@ public class RemoveUserFromGroupCommandHandlerTests
         await Assert.ThrowsAsync<Exception>(() => handler.Handle(new RemoveUserFromGroupCommand { UserId = Guid.NewGuid() }, CancellationToken.None));
     }
 }
+
+
 

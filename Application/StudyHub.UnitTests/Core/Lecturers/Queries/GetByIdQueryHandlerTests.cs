@@ -15,7 +15,7 @@ public class GetByIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldReturnLecturer_WhenLecturerExists()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -33,7 +33,7 @@ public class GetByIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldGetById_WhenLecturerNotFound()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -48,4 +48,6 @@ public class GetByIdQueryHandlerTests
         Assert.Null(result);
     }
 }
+
+
 

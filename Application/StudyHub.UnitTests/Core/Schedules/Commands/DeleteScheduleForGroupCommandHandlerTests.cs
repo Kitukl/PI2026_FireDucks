@@ -14,7 +14,7 @@ public class DeleteScheduleForGroupCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldDeleteScheduleForGroup_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -28,4 +28,6 @@ public class DeleteScheduleForGroupCommandHandlerTests
         _repositoryMock.Verify(x => x.DeleteScheduleForGroup(groupId), Times.Once);
     }
 }
+
+
 

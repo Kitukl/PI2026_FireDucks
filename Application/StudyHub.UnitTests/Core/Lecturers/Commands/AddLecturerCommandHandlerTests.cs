@@ -16,7 +16,7 @@ public class AddLecturerCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldAddLecturer_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -52,4 +52,6 @@ public class AddLecturerCommandHandlerTests
         l.Lessons.Count == 1)), Times.Once);
     }
 }
+
+
 

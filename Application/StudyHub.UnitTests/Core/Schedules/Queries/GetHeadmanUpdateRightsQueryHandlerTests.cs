@@ -14,7 +14,7 @@ public class GetHeadmanUpdateRightsQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetHeadmanUpdateRights_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -30,4 +30,6 @@ public class GetHeadmanUpdateRightsQueryHandlerTests
         Assert.True(result);
     }
 }
+
+
 

@@ -14,7 +14,7 @@ public class DeleteUserCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldDeleteUser_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -29,4 +29,6 @@ public class DeleteUserCommandHandlerTests
         _repositoryMock.Verify(x => x.Delete(userId), Times.Once);
     }
 }
+
+
 

@@ -15,7 +15,7 @@ public class GetTasksQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetTasks_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -38,4 +38,6 @@ public class GetTasksQueryHandlerTests
         _repositoryMock.Verify(x => x.GetTasksAsync(), Times.Once);
     }
 }
+
+
 

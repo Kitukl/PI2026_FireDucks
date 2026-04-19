@@ -14,7 +14,7 @@ public class DeleteTaskCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldDeleteTask_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -31,4 +31,6 @@ public class DeleteTaskCommandHandlerTests
         _repositoryMock.Verify(x => x.DeleteTaskAsync(taskId), Times.Once);
     }
 }
+
+
 

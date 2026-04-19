@@ -15,7 +15,7 @@ public class RemoveUserRoleHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldRemoveUserRole_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -30,4 +30,6 @@ public class RemoveUserRoleHandlerTests
         _repositoryMock.Verify(x => x.RemoveRole(Role.Student, userId), Times.Once);
     }
 }
+
+
 

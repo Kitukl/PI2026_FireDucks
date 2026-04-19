@@ -16,7 +16,7 @@ public class AddSubjectCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldAddSubject_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -30,4 +30,6 @@ public class AddSubjectCommandHandlerTests
         _repositoryMock.Verify(x => x.AddSubject(It.Is<Subject>(s => s.Id == dto.Id && s.Name == "Math")), Times.Once);
     }
 }
+
+
 

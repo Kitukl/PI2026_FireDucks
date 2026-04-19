@@ -14,7 +14,7 @@ public class GetAllSchedulesQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetAllSchedules_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -51,4 +51,6 @@ public class GetAllSchedulesQueryHandlerTests
         Assert.Equal("PI-21", result[0].Group.Name);
     }
 }
+
+
 

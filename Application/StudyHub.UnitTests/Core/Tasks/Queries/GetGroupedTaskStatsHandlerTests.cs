@@ -15,7 +15,7 @@ public class GetGroupedTaskStatsHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetGroupedTaskStats_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -38,4 +38,6 @@ public class GetGroupedTaskStatsHandlerTests
         Assert.Equal(3, result["Group Tasks"]["Done"]);
     }
 }
+
+
 

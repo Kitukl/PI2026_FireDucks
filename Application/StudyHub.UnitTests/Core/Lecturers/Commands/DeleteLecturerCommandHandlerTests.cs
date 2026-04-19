@@ -14,7 +14,7 @@ public class DeleteLecturerCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldDeleteLecturer_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -28,4 +28,6 @@ public class DeleteLecturerCommandHandlerTests
         _repositoryMock.Verify(x => x.DeleteLecturer(id), Times.Once);
     }
 }
+
+
 

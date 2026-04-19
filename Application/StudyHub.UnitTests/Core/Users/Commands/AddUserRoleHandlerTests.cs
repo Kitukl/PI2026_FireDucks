@@ -15,7 +15,7 @@ public class AddUserRoleCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldAddUserRole_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -30,4 +30,6 @@ public class AddUserRoleCommandHandlerTests
         _repositoryMock.Verify(x => x.AddRole(Role.Leader, userId), Times.Once);
     }
 }
+
+
 

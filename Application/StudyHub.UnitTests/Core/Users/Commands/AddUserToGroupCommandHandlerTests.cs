@@ -18,7 +18,7 @@ public class AddUserToGroupCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldAddUserToGroup_WhenRequestIsValid()
     {
         _groupRepositoryMock.Reset();
         _userRepositoryMock.Reset();
@@ -42,4 +42,6 @@ public class AddUserToGroupCommandHandlerTests
         _userRepositoryMock.Verify(x => x.Update(user), Times.Once);
     }
 }
+
+
 

@@ -14,7 +14,7 @@ public class DeleteSubjectCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldDeleteSubject_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -28,4 +28,6 @@ public class DeleteSubjectCommandHandlerTests
         _repositoryMock.Verify(x => x.DeleteSubject(id), Times.Once);
     }
 }
+
+
 

@@ -16,7 +16,7 @@ public class UpdateScheduleCommandHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateSchedule_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -43,4 +43,6 @@ public class UpdateScheduleCommandHandlerTests
         s.Lessons.First().Id == lessonId)), Times.Once);
     }
 }
+
+
 

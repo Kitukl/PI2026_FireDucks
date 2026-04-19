@@ -15,7 +15,7 @@ public class GetUserHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetUser_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -47,4 +47,6 @@ public class GetUserHandlerTests
         _repositoryMock.Verify(x => x.GetRolesByUser(user), Times.Once);
     }
 }
+
+
 

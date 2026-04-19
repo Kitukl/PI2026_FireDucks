@@ -16,7 +16,7 @@ public class GetLessonsByDayQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetLessonsByDay_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -47,4 +47,6 @@ public class GetLessonsByDayQueryHandlerTests
         Assert.Equal("Math", result[0].Subject.Name);
     }
 }
+
+
 

@@ -15,7 +15,7 @@ public class GetTaskQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetTask_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -35,7 +35,7 @@ public class GetTaskQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldGetTask_WhenTaskNotFound()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -47,4 +47,6 @@ public class GetTaskQueryHandlerTests
         await Assert.ThrowsAsync<Exception>(() => handler.Handle(new GetTaskQuery { Id = Guid.NewGuid() }, CancellationToken.None));
     }
 }
+
+
 

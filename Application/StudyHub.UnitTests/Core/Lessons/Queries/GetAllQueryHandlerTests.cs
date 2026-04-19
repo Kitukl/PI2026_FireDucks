@@ -15,7 +15,7 @@ public class GetAllQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldReturnLessons_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -44,4 +44,6 @@ public class GetAllQueryHandlerTests
         Assert.Equal("Math", result[0].Subject.Name);
     }
 }
+
+
 

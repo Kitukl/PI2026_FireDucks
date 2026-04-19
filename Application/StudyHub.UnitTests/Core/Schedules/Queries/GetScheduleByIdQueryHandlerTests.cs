@@ -14,7 +14,7 @@ public class GetScheduleByIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_1()
+    public async System.Threading.Tasks.Task Handle_ShouldGetScheduleById_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -39,7 +39,7 @@ public class GetScheduleByIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Test_2()
+    public async System.Threading.Tasks.Task Handle_ShouldGetScheduleById_WhenScheduleNotFound()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -54,4 +54,6 @@ public class GetScheduleByIdQueryHandlerTests
         Assert.Null(result);
     }
 }
+
+
 
