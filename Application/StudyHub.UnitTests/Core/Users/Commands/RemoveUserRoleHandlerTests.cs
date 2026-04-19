@@ -7,20 +7,29 @@ namespace StudyHub.UnitTests.Handlers.Users.Commands;
 
 public class RemoveUserRoleHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldRemoveRoleFromUser()
+    private readonly Mock<IUserRepository> _repositoryMock;
+
+    public RemoveUserRoleHandlerTests()
     {
+        _repositoryMock = new Mock<IUserRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldRemoveUserRole_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var userId = Guid.NewGuid();
-        var repositoryMock = new Mock<IUserRepository>();
-        var handler = new RemoveUserRoleHandler(repositoryMock.Object);
+        var handler = new RemoveUserRoleHandler(_repositoryMock.Object);
         var command = new RemoveUserRoleCommand { UserId = userId, Role = Role.Student };
 
         // Act
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.RemoveRole(Role.Student, userId), Times.Once);
+        _repositoryMock.Verify(x => x.RemoveRole(Role.Student, userId), Times.Once);
     }
 }
+
+
 

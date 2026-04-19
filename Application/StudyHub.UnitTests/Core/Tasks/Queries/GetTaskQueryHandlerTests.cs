@@ -7,36 +7,46 @@ namespace StudyHub.UnitTests.Handlers.Tasks.Queries;
 
 public class GetTaskQueryHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenTaskExists_ShouldReturnTask()
+    private readonly Mock<ITaskRepository> _repositoryMock;
+
+    public GetTaskQueryHandlerTests()
     {
+        _repositoryMock = new Mock<ITaskRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldGetTask_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var id = Guid.NewGuid();
         var task = new StudyHub.Domain.Entities.Task { Id = id, Title = "Task", Description = "Desc", Subject = new Subject { Name = "Math" }, User = new User() };
 
-        var repositoryMock = new Mock<ITaskRepository>();
-        repositoryMock.Setup(x => x.GetTaskAsync(id)).ReturnsAsync(task);
+        _repositoryMock.Setup(x => x.GetTaskAsync(id)).ReturnsAsync(task);
 
-        var handler = new GetTaskQueryHandler(repositoryMock.Object);
+        var handler = new GetTaskQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetTaskQuery { Id = id }, CancellationToken.None);
 
         // Assert
         Assert.Equal(id, result.Id);
-        repositoryMock.Verify(x => x.GetTaskAsync(id), Times.Once);
+        _repositoryMock.Verify(x => x.GetTaskAsync(id), Times.Once);
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenTaskMissing_ShouldThrow()
+    public async System.Threading.Tasks.Task Handle_ShouldGetTask_WhenTaskNotFound()
     {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<ITaskRepository>();
-        repositoryMock.Setup(x => x.GetTaskAsync(It.IsAny<Guid>())).ReturnsAsync((StudyHub.Domain.Entities.Task?)null);
+        _repositoryMock.Setup(x => x.GetTaskAsync(It.IsAny<Guid>())).ReturnsAsync((StudyHub.Domain.Entities.Task?)null);
 
-        var handler = new GetTaskQueryHandler(repositoryMock.Object);
+        var handler = new GetTaskQueryHandler(_repositoryMock.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<Exception>(() => handler.Handle(new GetTaskQuery { Id = Guid.NewGuid() }, CancellationToken.None));
     }
 }
+
+
+

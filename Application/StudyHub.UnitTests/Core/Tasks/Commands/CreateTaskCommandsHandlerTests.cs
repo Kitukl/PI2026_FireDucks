@@ -9,9 +9,20 @@ namespace StudyHub.UnitTests.Handlers.Tasks.Commands;
 
 public class CreateTaskCommandsHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldCreateTaskWithTrimmedDescriptionAndDefaultStatus()
+    private readonly Mock<ITaskRepository> _taskRepositoryMock;
+    private readonly Mock<IUserRepository> _userRepositoryMock;
+
+    public CreateTaskCommandsHandlerTests()
     {
+        _taskRepositoryMock = new Mock<ITaskRepository>();
+        _userRepositoryMock = new Mock<IUserRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldCreateTaskCommands_WhenRequestIsValid()
+    {
+        _taskRepositoryMock.Reset();
+        _userRepositoryMock.Reset();
         // Arrange
         var userId = Guid.NewGuid();
         var subject = new Subject { Id = Guid.NewGuid(), Name = "Math" };
@@ -19,15 +30,13 @@ public class CreateTaskCommandsHandlerTests
         var deadline = new DateTime(2026, 4, 1, 10, 0, 0, DateTimeKind.Unspecified);
         var expectedId = Guid.NewGuid();
 
-        var userRepositoryMock = new Mock<IUserRepository>();
-        userRepositoryMock.Setup(x => x.GetUserById(userId)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetUserById(userId)).ReturnsAsync(user);
 
-        var taskRepositoryMock = new Mock<ITaskRepository>();
-        taskRepositoryMock
-            .Setup(x => x.AddTaskAsync(It.IsAny<StudyHub.Domain.Entities.Task>()))
-            .ReturnsAsync(expectedId);
+        _taskRepositoryMock
+        .Setup(x => x.AddTaskAsync(It.IsAny<StudyHub.Domain.Entities.Task>()))
+        .ReturnsAsync(expectedId);
 
-        var handler = new CreateTaskCommandsHandler(taskRepositoryMock.Object, userRepositoryMock.Object);
+        var handler = new CreateTaskCommandsHandler(_taskRepositoryMock.Object, _userRepositoryMock.Object);
 
         var command = new CreateTaskCommand
         {
@@ -44,33 +53,33 @@ public class CreateTaskCommandsHandlerTests
 
         // Assert
         Assert.Equal(expectedId, result);
-        taskRepositoryMock.Verify(x => x.AddTaskAsync(It.Is<StudyHub.Domain.Entities.Task>(task =>
-            task.User == user &&
-            task.Subject == subject &&
-            task.Title == "Task title" &&
-            task.Description == "some desc" &&
-            task.Status == Status.ToDo &&
-            task.IsGroupTask &&
-            task.Deadline.Kind == DateTimeKind.Utc)), Times.Once);
+        _taskRepositoryMock.Verify(x => x.AddTaskAsync(It.Is<StudyHub.Domain.Entities.Task>(task =>
+        task.User == user &&
+        task.Subject == subject &&
+        task.Title == "Task title" &&
+        task.Description == "some desc" &&
+        task.Status == Status.ToDo &&
+        task.IsGroupTask &&
+        task.Deadline.Kind == DateTimeKind.Utc)), Times.Once);
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenDeadlineIsLocal_ShouldConvertToUtc()
+    public async System.Threading.Tasks.Task Handle_ShouldCreateTaskCommands_WhenDeadlineIsLocalTime()
     {
+        _taskRepositoryMock.Reset();
+        _userRepositoryMock.Reset();
         // Arrange
         var userId = Guid.NewGuid();
         var user = new User { Id = userId };
         var localDeadline = new DateTime(2026, 4, 2, 15, 30, 0, DateTimeKind.Local);
 
-        var userRepositoryMock = new Mock<IUserRepository>();
-        userRepositoryMock.Setup(x => x.GetUserById(userId)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetUserById(userId)).ReturnsAsync(user);
 
-        var taskRepositoryMock = new Mock<ITaskRepository>();
-        taskRepositoryMock
-            .Setup(x => x.AddTaskAsync(It.IsAny<StudyHub.Domain.Entities.Task>()))
-            .ReturnsAsync(Guid.NewGuid());
+        _taskRepositoryMock
+        .Setup(x => x.AddTaskAsync(It.IsAny<StudyHub.Domain.Entities.Task>()))
+        .ReturnsAsync(Guid.NewGuid());
 
-        var handler = new CreateTaskCommandsHandler(taskRepositoryMock.Object, userRepositoryMock.Object);
+        var handler = new CreateTaskCommandsHandler(_taskRepositoryMock.Object, _userRepositoryMock.Object);
 
         // Act
         await handler.Handle(new CreateTaskCommand
@@ -83,8 +92,9 @@ public class CreateTaskCommandsHandlerTests
         }, CancellationToken.None);
 
         // Assert
-        taskRepositoryMock.Verify(x => x.AddTaskAsync(It.Is<StudyHub.Domain.Entities.Task>(task => task.Deadline.Kind == DateTimeKind.Utc)), Times.Once);
+        _taskRepositoryMock.Verify(x => x.AddTaskAsync(It.Is<StudyHub.Domain.Entities.Task>(task => task.Deadline.Kind == DateTimeKind.Utc)), Times.Once);
     }
 }
+
 
 

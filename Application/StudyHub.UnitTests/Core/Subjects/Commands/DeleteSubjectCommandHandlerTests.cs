@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.Subjects.Commands;
 using StudyHub.Core.Subjects.Interfaces;
 
@@ -6,18 +6,28 @@ namespace StudyHub.UnitTests.Handlers.Subjects.Commands;
 
 public class DeleteSubjectCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldDeleteById()
+    private readonly Mock<ISubjectRepository> _repositoryMock;
+
+    public DeleteSubjectCommandHandlerTests()
     {
+        _repositoryMock = new Mock<ISubjectRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldDeleteSubject_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var id = Guid.NewGuid();
-        var repositoryMock = new Mock<ISubjectRepository>();
-        var handler = new DeleteSubjectCommandHandler(repositoryMock.Object);
+        var handler = new DeleteSubjectCommandHandler(_repositoryMock.Object);
 
         // Act
         await handler.Handle(new DeleteSubjectRequest(id), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.DeleteSubject(id), Times.Once);
+        _repositoryMock.Verify(x => x.DeleteSubject(id), Times.Once);
     }
 }
+
+
+

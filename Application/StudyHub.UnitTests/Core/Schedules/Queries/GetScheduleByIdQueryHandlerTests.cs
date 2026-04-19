@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.Schedules.Interfaces;
 using StudyHub.Domain.Entities;
 
@@ -6,9 +6,17 @@ namespace StudyHub.UnitTests.Handlers.Schedules.Queries;
 
 public class GetScheduleByIdQueryHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenFound_ShouldReturnDto()
+    private readonly Mock<IScheduleRepository> _repositoryMock;
+
+    public GetScheduleByIdQueryHandlerTests()
     {
+        _repositoryMock = new Mock<IScheduleRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldGetScheduleById_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var id = Guid.NewGuid();
         var schedule = new Schedule
@@ -18,10 +26,9 @@ public class GetScheduleByIdQueryHandlerTests
             Lessons = new List<Lesson>()
         };
 
-        var repositoryMock = new Mock<IScheduleRepository>();
-        repositoryMock.Setup(x => x.GetById(id)).ReturnsAsync(schedule);
+        _repositoryMock.Setup(x => x.GetById(id)).ReturnsAsync(schedule);
 
-        var handler = new GetScheduleByIdQueryHandler(repositoryMock.Object);
+        var handler = new GetScheduleByIdQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetScheduleByIdRequest(id), CancellationToken.None);
@@ -32,13 +39,13 @@ public class GetScheduleByIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenMissing_ShouldReturnNull()
+    public async System.Threading.Tasks.Task Handle_ShouldGetScheduleById_WhenScheduleNotFound()
     {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<IScheduleRepository>();
-        repositoryMock.Setup(x => x.GetById(It.IsAny<Guid>())).ReturnsAsync((Schedule?)null);
+        _repositoryMock.Setup(x => x.GetById(It.IsAny<Guid>())).ReturnsAsync((Schedule?)null);
 
-        var handler = new GetScheduleByIdQueryHandler(repositoryMock.Object);
+        var handler = new GetScheduleByIdQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetScheduleByIdRequest(Guid.NewGuid()), CancellationToken.None);
@@ -47,3 +54,6 @@ public class GetScheduleByIdQueryHandlerTests
         Assert.Null(result);
     }
 }
+
+
+

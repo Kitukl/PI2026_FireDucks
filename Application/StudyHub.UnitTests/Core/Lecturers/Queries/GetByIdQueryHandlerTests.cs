@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.Lecturers.Interfaces;
 using StudyHub.Core.Lecturers.Queries;
 using StudyHub.Domain.Entities;
@@ -7,15 +7,22 @@ namespace StudyHub.UnitTests.Handlers.Lecturers.Queries;
 
 public class GetByIdQueryHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenFound_ShouldReturnDto()
+    private readonly Mock<ILecturerRepository> _repositoryMock;
+
+    public GetByIdQueryHandlerTests()
     {
+        _repositoryMock = new Mock<ILecturerRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldReturnLecturer_WhenLecturerExists()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var entity = new Lecturer { Id = Guid.NewGuid(), Name = "A", Surname = "B" };
-        var repositoryMock = new Mock<ILecturerRepository>();
-        repositoryMock.Setup(x => x.GetById(entity.Id)).ReturnsAsync(entity);
+        _repositoryMock.Setup(x => x.GetById(entity.Id)).ReturnsAsync(entity);
 
-        var handler = new GetByIdQueryHandler(repositoryMock.Object);
+        var handler = new GetByIdQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetLecturerByIdRequest(entity.Id), CancellationToken.None);
@@ -26,13 +33,13 @@ public class GetByIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenNotFound_ShouldReturnNull()
+    public async System.Threading.Tasks.Task Handle_ShouldGetById_WhenLecturerNotFound()
     {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<ILecturerRepository>();
-        repositoryMock.Setup(x => x.GetById(It.IsAny<Guid>())).ReturnsAsync((Lecturer?)null);
+        _repositoryMock.Setup(x => x.GetById(It.IsAny<Guid>())).ReturnsAsync((Lecturer?)null);
 
-        var handler = new GetByIdQueryHandler(repositoryMock.Object);
+        var handler = new GetByIdQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetLecturerByIdRequest(Guid.NewGuid()), CancellationToken.None);
@@ -41,3 +48,6 @@ public class GetByIdQueryHandlerTests
         Assert.Null(result);
     }
 }
+
+
+

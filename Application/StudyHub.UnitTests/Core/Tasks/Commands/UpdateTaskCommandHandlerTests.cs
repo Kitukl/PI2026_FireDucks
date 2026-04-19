@@ -8,9 +8,17 @@ namespace StudyHub.UnitTests.Handlers.Tasks.Commands;
 
 public class UpdateTaskCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenTaskExists_ShouldUpdateStatusAndSubject()
+    private readonly Mock<ITaskRepository> _repositoryMock;
+
+    public UpdateTaskCommandHandlerTests()
     {
+        _repositoryMock = new Mock<ITaskRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateTask_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var taskId = Guid.NewGuid();
         var originalTask = new StudyHub.Domain.Entities.Task
@@ -25,11 +33,10 @@ public class UpdateTaskCommandHandlerTests
 
         var newSubject = new Subject { Name = "New" };
 
-        var repositoryMock = new Mock<ITaskRepository>();
-        repositoryMock.Setup(x => x.GetTaskAsync(taskId)).ReturnsAsync(originalTask);
-        repositoryMock.Setup(x => x.UpdateTaskAsync(originalTask)).ReturnsAsync(taskId);
+        _repositoryMock.Setup(x => x.GetTaskAsync(taskId)).ReturnsAsync(originalTask);
+        _repositoryMock.Setup(x => x.UpdateTaskAsync(originalTask)).ReturnsAsync(taskId);
 
-        var handler = new UpdateTaskCommandHandler(repositoryMock.Object);
+        var handler = new UpdateTaskCommandHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new UpdateTaskCommand
@@ -43,17 +50,17 @@ public class UpdateTaskCommandHandlerTests
         Assert.Equal(taskId, result);
         Assert.Equal(Status.Done, originalTask.Status);
         Assert.Equal(newSubject, originalTask.Subject);
-        repositoryMock.Verify(x => x.UpdateTaskAsync(originalTask), Times.Once);
+        _repositoryMock.Verify(x => x.UpdateTaskAsync(originalTask), Times.Once);
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenTaskMissing_ShouldThrow()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateTask_WhenTaskNotFound()
     {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<ITaskRepository>();
-        repositoryMock.Setup(x => x.GetTaskAsync(It.IsAny<Guid>())).ReturnsAsync((StudyHub.Domain.Entities.Task?)null);
+        _repositoryMock.Setup(x => x.GetTaskAsync(It.IsAny<Guid>())).ReturnsAsync((StudyHub.Domain.Entities.Task?)null);
 
-        var handler = new UpdateTaskCommandHandler(repositoryMock.Object);
+        var handler = new UpdateTaskCommandHandler(_repositoryMock.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<Exception>(() => handler.Handle(new UpdateTaskCommand
@@ -64,5 +71,6 @@ public class UpdateTaskCommandHandlerTests
         }, CancellationToken.None));
     }
 }
+
 
 

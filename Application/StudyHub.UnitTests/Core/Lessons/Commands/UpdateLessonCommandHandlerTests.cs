@@ -8,12 +8,19 @@ namespace StudyHub.UnitTests.Handlers.Lessons.Commands;
 
 public class UpdateLessonCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldMapAndUpdateLesson()
+    private readonly Mock<ILessonRepository> _repositoryMock;
+
+    public UpdateLessonCommandHandlerTests()
     {
+        _repositoryMock = new Mock<ILessonRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateLesson_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<ILessonRepository>();
-        var handler = new UpdateLessonCommandHandler(repositoryMock.Object);
+        var handler = new UpdateLessonCommandHandler(_repositoryMock.Object);
 
         var dto = new LessonDto
         {
@@ -29,8 +36,9 @@ public class UpdateLessonCommandHandlerTests
         await handler.Handle(new UpdateLessonRequest(dto), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.UpdateLesson(It.Is<Lesson>(l => l.Id == dto.Id && l.LessonType == "Practice")), Times.Once);
+        _repositoryMock.Verify(x => x.UpdateLesson(It.Is<Lesson>(l => l.Id == dto.Id && l.LessonType == "Practice")), Times.Once);
     }
 }
+
 
 
