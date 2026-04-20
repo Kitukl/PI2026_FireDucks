@@ -1,5 +1,4 @@
 ﻿using Moq;
-using StudyHub.Core.Group;
 using StudyHub.Core.Users.Commands;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Domain.Entities;
@@ -9,19 +8,19 @@ namespace StudyHub.UnitTests.Handlers.Users.Commands;
 
 public class RegisterUserCommandHandlerTests
 {
-    private readonly Mock<IGroupRepository> _groupRepositoryMock;
+    private readonly Mock<IUserAuthRepository> _userAuthRepositoryMock;
     private readonly Mock<IUserRepository> _userRepositoryMock;
 
     public RegisterUserCommandHandlerTests()
     {
-        _groupRepositoryMock = new Mock<IGroupRepository>();
+        _userAuthRepositoryMock = new Mock<IUserAuthRepository>();
         _userRepositoryMock = new Mock<IUserRepository>();
     }
 
     [Fact]
     public async System.Threading.Tasks.Task Handle_ShouldRegisterUser_WhenUserAlreadyExists()
     {
-        _groupRepositoryMock.Reset();
+        _userAuthRepositoryMock.Reset();
         _userRepositoryMock.Reset();
         // Arrange
         var existingUser = new User { Id = Guid.NewGuid(), Email = "user@test.com" };
@@ -29,7 +28,9 @@ public class RegisterUserCommandHandlerTests
         _userRepositoryMock.Setup(x => x.GetUsersAsync()).ReturnsAsync(new[] { existingUser });
         _userRepositoryMock.Setup(x => x.GetRolesByUser(existingUser)).ReturnsAsync(new List<string> { "Student" });
 
-        var handler = new RegisterUserCommandHandler(_userRepositoryMock.Object, _groupRepositoryMock.Object);
+        var handler = new RegisterUserCommandHandler(
+            _userRepositoryMock.Object,
+            _userAuthRepositoryMock.Object);
 
         var command = new RegisterUserCommand
         {
@@ -53,7 +54,7 @@ public class RegisterUserCommandHandlerTests
     [Fact]
     public async System.Threading.Tasks.Task Handle_ShouldRegisterUser_WhenUserDoesNotExist()
     {
-        _groupRepositoryMock.Reset();
+        _userAuthRepositoryMock.Reset();
         _userRepositoryMock.Reset();
         // Arrange
         _userRepositoryMock.Setup(x => x.GetUsersAsync()).ReturnsAsync(Array.Empty<User>());
@@ -62,7 +63,9 @@ public class RegisterUserCommandHandlerTests
         .Setup(x => x.CreateUser(It.IsAny<User>()))
         .ReturnsAsync((User u) => u);
 
-        var handler = new RegisterUserCommandHandler(_userRepositoryMock.Object, _groupRepositoryMock.Object);
+        var handler = new RegisterUserCommandHandler(
+            _userRepositoryMock.Object,
+            _userAuthRepositoryMock.Object);
 
         var command = new RegisterUserCommand
         {

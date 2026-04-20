@@ -1,5 +1,4 @@
 ﻿using MediatR;
-using StudyHub.Core.Group;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Domain.Entities;
 using StudyHub.Domain.Enums;
@@ -14,17 +13,20 @@ public class RegisterUserCommand : IRequest<bool>
     public string GroupName { get; set; }
     public string ProviderName { get; set; }
     public string MicrosoftId { get; set; }
+    public bool SignInAfterRegister { get; set; }
 }
 
 public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, bool>
 {
     private readonly IUserRepository _userRepository;
-    private readonly IGroupRepository _groupRepository;
+    private readonly IUserAuthRepository _userAuthRepository;
 
-    public RegisterUserCommandHandler(IUserRepository userRepository, IGroupRepository groupRepository)
+    public RegisterUserCommandHandler(
+        IUserRepository userRepository,
+        IUserAuthRepository userAuthRepository)
     {
         _userRepository = userRepository;
-        _groupRepository = groupRepository;
+        _userAuthRepository = userAuthRepository;
     }
     public async Task<bool> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
@@ -37,6 +39,11 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, b
             if (!existingRoles.Any(role => string.Equals(role, nameof(Role.Student), StringComparison.OrdinalIgnoreCase)))
             {
                 await _userRepository.AddRole(Role.Student, existingUser.Id);
+            }
+
+            if (request.SignInAfterRegister && !string.IsNullOrWhiteSpace(request.Email))
+            {
+                await _userAuthRepository.SignInByEmailAsync(request.Email, true);
             }
 
             return true;
@@ -53,10 +60,15 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, b
             LastActivity = DateTime.UtcNow,
             EmailConfirmed = true
         };
-        
+
         await _userRepository.CreateUser(user);
         await _userRepository.AddExternalLogin(user, request.ProviderName, request.MicrosoftId);
         await _userRepository.AddRole(Role.Student, user.Id);
+
+        if (request.SignInAfterRegister && !string.IsNullOrWhiteSpace(request.Email))
+        {
+            await _userAuthRepository.SignInByEmailAsync(request.Email, true);
+        }
 
         return true;
     }

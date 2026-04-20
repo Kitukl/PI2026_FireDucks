@@ -2,53 +2,44 @@ using Application.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StudyHub.Core.DTOs;
+using StudyHub.Core.Admin.Commands;
+using StudyHub.Core.Admin.Queries;
 using StudyHub.Core.Feedbacks.Commands;
-using StudyHub.Core.Feedbacks.Queries;
 using StudyHub.Core.Schedules.Commands;
-using StudyHub.Core.Schedules.Queries;
-using StudyHub.Core.Statistics.Queries;
-using StudyHub.Core.Tasks.Queries;
 using StudyHub.Core.Users.Commands;
 using StudyHub.Core.Users.Queries;
-using StudyHub.Domain.Entities;
 using StudyHub.Domain.Enums;
-using StudyHub.Infrastructure;
-using DayOfWeek = StudyHub.Domain.Enums.DayOfWeek;
 
 namespace Application.Controllers;
 
 [Authorize(Roles = nameof(Role.Admin))]
-public class AdminController(IMediator mediator, SDbContext _context) : Controller
+public class AdminController(IMediator mediator) : Controller
 {
     public async Task<IActionResult> Dashboard()
     {
-        var user = await mediator.Send(new GetUsersStatisticRequest());
-        var tasksCount = await mediator.Send(new GetTaskCountRequest());
-        var taskStatusCount = await mediator.Send(new GetGroupedTaskStatsRequest());
-        
-        var viewModel = new SystemStatisticViewModel()
+        var data = await mediator.Send(new GetAdminDashboardQuery());
+
+        var viewModel = new SystemStatisticViewModel
         {
-            CreatedAt = user.CreatedAt,
-            UserActivityPerMonth = user.UserActivityPerMonth,
-            GropedTaskCount = taskStatusCount,
-            StudentsCount = user.StudentsCount,
-            GroupsCount = user.GroupsCount,
-            LeadersCount = user.LeadersCount,
-            UserFilesCount = user.UserFilesCount,
-            GroupFilesCount = user.GroupFilesCount,
-            FileCount = user.FileCount,
-            TaskCount = tasksCount
+            CreatedAt = data.CreatedAt,
+            UserActivityPerMonth = data.UserActivityPerMonth,
+            GropedTaskCount = data.GroupedTaskCount,
+            StudentsCount = data.StudentsCount,
+            GroupsCount = data.GroupsCount,
+            LeadersCount = data.LeadersCount,
+            UserFilesCount = data.UserFilesCount,
+            GroupFilesCount = data.GroupFilesCount,
+            FileCount = data.FileCount,
+            TaskCount = data.TaskCount
         };
-            
+
         return View(viewModel);
     }
 
     public async Task<IActionResult> Users()
     {
         var users = await mediator.Send(new GetUsersRequest());
-        
+
         return View(users);
     }
 
@@ -91,44 +82,64 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     [HttpGet]
     public async Task<IActionResult> GetUserModal(Guid id)
     {
-        var viewModel = await BuildUpdateUserViewModel(id);
+        var data = await mediator.Send(new GetAdminUpdateUserFormQuery
+        {
+            UserId = id
+        });
+
+        var viewModel = new UpdateUserViewModel
+        {
+            Id = data.Id,
+            Name = data.Name,
+            Surname = data.Surname,
+            PhotoUrl = data.PhotoUrl,
+            GroupName = data.GroupName,
+            Roles = data.Roles,
+            SelectedRoles = data.SelectedRoles,
+            AvailableRoles = data.AvailableRoles,
+            ExistingGroups = data.ExistingGroups
+        };
+
         return PartialView("_UpdateUserForm", viewModel);
     }
-    
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateUser(UpdateUserViewModel model)
     {
-        var normalizedSelectedRoles = (model.SelectedRoles ?? [])
-            .Where(role => Enum.GetNames(typeof(Role)).Any(r => string.Equals(r, role, StringComparison.OrdinalIgnoreCase)))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        model.SelectedRoles = normalizedSelectedRoles;
-
-        if (normalizedSelectedRoles.Count == 0)
+        var result = await mediator.Send(new UpdateAdminUserWithFormCommand
         {
-            ModelState.AddModelError(string.Empty, "Changes cannot be saved. Please add at least one role.");
-        }
+            UserId = model.Id,
+            GroupName = model.GroupName,
+            SelectedRoles = model.SelectedRoles
+        });
 
-        var hasAdminRole = normalizedSelectedRoles.Any(role => string.Equals(role, nameof(Role.Admin), StringComparison.OrdinalIgnoreCase));
-        var hasStudentRole = normalizedSelectedRoles.Any(role => string.Equals(role, nameof(Role.Student), StringComparison.OrdinalIgnoreCase));
-        var hasLeaderRole = normalizedSelectedRoles.Any(role => string.Equals(role, nameof(Role.Leader), StringComparison.OrdinalIgnoreCase));
+        var isAjaxRequest = string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
-        if (hasLeaderRole && !hasStudentRole)
+        if (result.HasValidationErrors)
         {
-            ModelState.AddModelError(string.Empty, "Changes cannot be saved. Leader should has  Student role.");
-        }
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error);
+            }
 
-        if (hasAdminRole && (hasStudentRole || hasLeaderRole))
-        {
-            ModelState.AddModelError(string.Empty, "Changes cannot be saved. Admin role cannot be provided to Student.");
-        }
+            var invalidData = result.InvalidData;
+            var invalidModel = invalidData == null
+                ? new UpdateUserViewModel { Id = model.Id }
+                : new UpdateUserViewModel
+                {
+                    Id = invalidData.Id,
+                    Name = invalidData.Name,
+                    Surname = invalidData.Surname,
+                    PhotoUrl = invalidData.PhotoUrl,
+                    GroupName = invalidData.GroupName,
+                    Roles = invalidData.Roles,
+                    SelectedRoles = invalidData.SelectedRoles,
+                    AvailableRoles = invalidData.AvailableRoles,
+                    ExistingGroups = invalidData.ExistingGroups
+                };
 
-        if (!ModelState.IsValid)
-        {
-            var invalidModel = await BuildUpdateUserViewModel(model.Id, model);
-            if (IsAjaxRequest())
+            if (isAjaxRequest)
             {
                 Response.StatusCode = StatusCodes.Status400BadRequest;
                 return PartialView("_UpdateUserForm", invalidModel);
@@ -137,107 +148,64 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
             return View("UpdateUser", invalidModel);
         }
 
-        var userDto = await mediator.Send(new GetUserRequest(model.Id));
-        var existingRoles = (userDto.Roles ?? [])
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var rolesToRemove = existingRoles
-            .Where(role => !normalizedSelectedRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
-            .ToList();
-        var rolesToAdd = normalizedSelectedRoles
-            .Where(role => !existingRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
-            .ToList();
-
-        foreach (var role in rolesToRemove)
-        {
-            if (!Enum.TryParse<Role>(role, true, out var parsedRole))
-            {
-                continue;
-            }
-
-            await mediator.Send(new RemoveUserRoleCommand
-            {
-                UserId = model.Id,
-                Role = parsedRole
-            });
-        }
-
-        foreach (var role in rolesToAdd)
-        {
-            if (!Enum.TryParse<Role>(role, true, out var parsedRole))
-            {
-                continue;
-            }
-
-            await mediator.Send(new AssignUserRoleCommand
-            {
-                UserId = model.Id,
-                Role = parsedRole
-            });
-        }
-
-        await mediator.Send(new UpdateUserCommand
-        {
-            Id = model.Id,
-            GroupName = model.GroupName ?? string.Empty
-        });
-
-        if (IsAjaxRequest())
+        if (isAjaxRequest)
         {
             return Json(new
             {
                 success = true,
                 message = "User changes were saved.",
-                userId = model.Id,
-                roles = normalizedSelectedRoles,
-                groupName = model.GroupName ?? string.Empty
+                userId = result.UserId,
+                roles = result.Roles,
+                groupName = result.GroupName
             });
         }
 
         TempData["AdminUsersMessage"] = "User changes were saved.";
         return RedirectToAction(nameof(Users));
     }
-    
+
     [HttpPost]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         await mediator.Send(new DeleteUserCommand { UserId = id });
-    
-        return RedirectToAction("Users"); 
+
+        return RedirectToAction("Users");
     }
-    
+
     [HttpGet("/Admin/Requests")]
     public async Task<IActionResult> Requests()
     {
-        var feedbacks = await mediator.Send(new GetFeedbacksCommand());
-        var model = BuildRequestsViewModel(feedbacks, null, false);
+        var data = await mediator.Send(new GetAdminRequestsPageQuery
+        {
+            OpenModal = false
+        });
+
+        var model = new AdminRequestsViewModel
+        {
+            Requests = data.Requests,
+            ActiveRequest = data.ActiveRequest,
+            OpenRequestModal = data.OpenRequestModal
+        };
+
         return View(model);
     }
 
     [HttpGet("/Admin/Requests/View/{feedbackId?}")]
     public async Task<IActionResult> RequestView(string? feedbackId)
     {
-        var feedbacks = await mediator.Send(new GetFeedbacksCommand());
-
-        Feedback? activeRequest = null;
-        if (!string.IsNullOrWhiteSpace(feedbackId) && Guid.TryParse(feedbackId, out var parsedId))
+        var data = await mediator.Send(new GetAdminRequestsPageQuery
         {
-            activeRequest = feedbacks.FirstOrDefault(item => item.Id == parsedId);
-            if (activeRequest == null)
-            {
-                try
-                {
-                    activeRequest = await mediator.Send(new GetFeedbackCommand { Id = parsedId });
-                }
-                catch
-                {
-                    activeRequest = null;
-                }
-            }
-        }
+            FeedbackId = feedbackId,
+            OpenModal = true
+        });
 
-        var model = BuildRequestsViewModel(feedbacks, activeRequest, true);
+        var model = new AdminRequestsViewModel
+        {
+            Requests = data.Requests,
+            ActiveRequest = data.ActiveRequest,
+            OpenRequestModal = data.OpenRequestModal
+        };
+
         return View("Requests", model);
     }
 
@@ -245,36 +213,31 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateRequestStatus(Guid feedbackId, Status status)
     {
-        var allowedStatuses = new[] { Status.ToDo, Status.InProgress, Status.Resolved };
-        if (!allowedStatuses.Contains(status))
+        var result = await mediator.Send(new UpdateAdminRequestStatusCommand
         {
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            FeedbackId = feedbackId,
+            Status = status
+        });
+
+        var isAjaxRequest = string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+        if (!result.IsSuccess)
+        {
+            if (isAjaxRequest)
             {
-                return BadRequest(new { message = "Unsupported status." });
+                return BadRequest(new { message = result.ErrorMessage });
             }
 
             return RedirectToAction(nameof(RequestView), new { feedbackId });
         }
 
-        await mediator.Send(new UpdateFeedbackCommand
-        {
-            Id = feedbackId,
-            Status = status
-        });
-
-        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        if (isAjaxRequest)
         {
             return Ok(new
             {
                 feedbackId,
-                status = status.ToString(),
-                statusLabel = status switch
-                {
-                    Status.ToDo => "To do",
-                    Status.InProgress => "In progress",
-                    Status.Resolved => "Resolved",
-                    _ => status.ToString()
-                }
+                status = result.Status,
+                statusLabel = result.StatusLabel
             });
         }
 
@@ -284,35 +247,22 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     [HttpGet("/Admin/Schedule/{groupId?}")]
     public async Task<IActionResult> Schedule(Guid? groupId)
     {
-        var groups = await _context.Groups
-            .OrderBy(g => g.Name)
-            .Select(g => new GroupDto { Id = g.Id, Name = g.Name })
-            .ToListAsync();
-
-        var allSchedules = await mediator.Send(new GetAllSchedulesRequest());
-        var firstWithSettings = allSchedules.FirstOrDefault();
+        var data = await mediator.Send(new GetAdminSchedulePageQuery
+        {
+            GroupId = groupId
+        });
 
         var model = new AdminScheduleViewModel
         {
-            Groups = groups,
-            SelectedGroupId = groupId,
-            IsAutoUpdateEnabled = firstWithSettings?.IsAutoUpdate ?? false,
-            AllowLeadersToUpdate = firstWithSettings?.HeadmanUpdate ?? false,
-            LastGlobalUpdate = allSchedules.Any()
-                ? allSchedules.Max(s => s.UpdateAt)
-                : DateTime.MinValue,
-            AutoUpdateIntervalDays = firstWithSettings?.UpdateInterval ?? 3
+            Groups = data.Groups,
+            SelectedGroupId = data.SelectedGroupId,
+            IsAutoUpdateEnabled = data.IsAutoUpdateEnabled,
+            AllowLeadersToUpdate = data.AllowLeadersToUpdate,
+            LastGlobalUpdate = data.LastGlobalUpdate,
+            AutoUpdateIntervalDays = data.AutoUpdateIntervalDays,
+            SelectedGroupLastUpdate = data.SelectedGroupLastUpdate,
+            CurrentGroupSchedule = data.CurrentGroupSchedule ?? new ScheduleViewModel()
         };
-
-        if (groupId.HasValue)
-        {
-            var scheduleDto = await mediator.Send(new GetScheduleByGroupIdRequest(groupId.Value));
-            if (scheduleDto != null)
-            {
-                model.SelectedGroupLastUpdate = scheduleDto.UpdateAt;
-                model.CurrentGroupSchedule = BuildScheduleGridViewModel(scheduleDto);
-            }
-        }
 
         return View(model);
     }
@@ -320,12 +270,7 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     [HttpPost]
     public async Task<IActionResult> RunGlobalUpdate()
     {
-        var groupNames = await _context.Groups.Select(g => g.Name).ToListAsync();
-
-        foreach (var name in groupNames)
-        {
-            await mediator.Send(new ParseAndSaveScheduleCommand(name));
-        }
+        await mediator.Send(new RunGlobalScheduleUpdateRequest());
 
         return RedirectToAction(nameof(Schedule));
     }
@@ -333,11 +278,8 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     [HttpPost]
     public async Task<IActionResult> UpdateGroupSchedule(Guid groupId)
     {
-        var group = await _context.Groups.FindAsync(groupId);
-        if (group != null)
-        {
-            await mediator.Send(new ParseAndSaveScheduleCommand(group.Name));
-        }
+        await mediator.Send(new UpdateGroupScheduleRequest(groupId));
+
         return RedirectToAction(nameof(Schedule), new { groupId });
     }
 
@@ -358,125 +300,8 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     [HttpPost]
     public async Task<IActionResult> UpdateGlobalSettings(bool isAutoUpdate, bool allowLeaders, uint intervalDays)
     {
-        Console.WriteLine($"DEBUG: AutoUpdate={isAutoUpdate}, AllowLeaders={allowLeaders}, Interval={intervalDays}");
-
-        await _context.Schedules.ExecuteUpdateAsync(s => s
-            .SetProperty(b => b.IsAutoUpdate, isAutoUpdate)
-            .SetProperty(b => b.CanHeadmanUpdate, allowLeaders)
-            .SetProperty(b => b.UpdateInterval, intervalDays)
-            .SetProperty(b => b.UpdatedAt, DateTime.UtcNow));
+        await mediator.Send(new UpdateGlobalScheduleSettingsRequest(isAutoUpdate, allowLeaders, intervalDays));
 
         return RedirectToAction(nameof(Schedule));
-    }
-
-    private ScheduleViewModel BuildScheduleGridViewModel(ScheduleDto dto)
-    {
-        var vm = new ScheduleViewModel
-        {
-            GroupId = dto.Group.Id,
-            GroupName = dto.Group.Name,
-            CanHeadmanUpdate = dto.HeadmanUpdate,
-            IsHeadman = false
-        };
-
-        if (dto.Lessons != null && dto.Lessons.Any())
-        {
-            vm.UniqueSlots = dto.Lessons
-                .Select(l => l.LessonSlot)
-                .Where(s => s != null)
-                .GroupBy(s => s.Id)
-                .Select(g => g.First())
-                .OrderBy(s => s.StartTime)
-                .ToList();
-
-            vm.Days = new List<DayOfWeek>
-            {
-                DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
-                DayOfWeek.Thursday, DayOfWeek.Friday
-            };
-
-            foreach (var lesson in dto.Lessons)
-            {
-                var key = $"{(int)lesson.Day}-{lesson.LessonSlot.Id}";
-
-                if (!vm.Grid.ContainsKey(key))
-                {
-                    vm.Grid[key] = new List<LessonDto>();
-                }
-                vm.Grid[key].Add(lesson);
-            }
-        }
-
-        return vm;
-    }
-
-
-
-    private static AdminRequestsViewModel BuildRequestsViewModel(
-        IEnumerable<Feedback> feedbacks,
-        Feedback? activeRequest,
-        bool openModal)
-    {
-        var allowedStatuses = new[] { Status.ToDo, Status.InProgress, Status.Resolved };
-
-        var filteredRequests = feedbacks
-            .Where(request => allowedStatuses.Contains(request.Status))
-            .OrderByDescending(request => request.CreatedAt)
-            .ToList();
-
-        if (activeRequest == null)
-        {
-            activeRequest = filteredRequests.FirstOrDefault();
-        }
-
-        return new AdminRequestsViewModel
-        {
-            Requests = filteredRequests,
-            ActiveRequest = activeRequest,
-            OpenRequestModal = openModal && activeRequest != null
-        };
-    }
-
-    private async Task<UpdateUserViewModel> BuildUpdateUserViewModel(Guid id, UpdateUserViewModel? source = null)
-    {
-        var userDto = await mediator.Send(new GetUserRequest(id));
-        var users = await mediator.Send(new GetUsersRequest());
-        var existingGroups = users
-            .Select(user => user.GroupName)
-            .Where(groupName => !string.IsNullOrWhiteSpace(groupName))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(groupName => groupName)
-            .ToList();
-
-        var availableRoles = Enum.GetNames(typeof(Role)).ToList();
-        var selectedRoles = source?.SelectedRoles?.Any() == true
-            ? source.SelectedRoles
-            : (userDto.Roles ?? []);
-
-        return new UpdateUserViewModel
-        {
-            Id = userDto.Id,
-            Name = userDto.Name,
-            Surname = userDto.Surname ?? string.Empty,
-            PhotoUrl = userDto.PhotoUrl ?? string.Empty,
-            GroupName = source?.GroupName ?? userDto.GroupName ?? string.Empty,
-            Roles = userDto.Roles ?? [],
-            SelectedRoles = selectedRoles
-                .Where(role => availableRoles.Any(r => string.Equals(r, role, StringComparison.OrdinalIgnoreCase)))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList(),
-            AvailableRoles = availableRoles,
-            ExistingGroups = existingGroups
-        };
-    }
-
-    private bool IsAjaxRequest()
-    {
-        if (!Request.Headers.TryGetValue("X-Requested-With", out var headerValue))
-        {
-            return false;
-        }
-
-        return string.Equals(headerValue.ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
     }
 }
