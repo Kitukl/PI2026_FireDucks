@@ -196,6 +196,17 @@ public class ScheduleRepository : IScheduleRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task UpdateGlobalSettings(bool isAutoUpdate, bool allowLeaders, uint intervalDays, DateTime updatedAt)
+    {
+        await _context.Schedules.ExecuteUpdateAsync(s => s
+            .SetProperty(b => b.IsAutoUpdate, isAutoUpdate)
+            .SetProperty(b => b.CanHeadmanUpdate, allowLeaders)
+            .SetProperty(b => b.UpdateInterval, intervalDays)
+            .SetProperty(b => b.UpdatedAt, updatedAt));
+
+        await _context.SaveChangesAsync();
+    }
+
     public async Task SyncParsedScheduleAsync(string groupName, ParsedScheduleResponse parsedData, CancellationToken cancellationToken)
     {
         _context.ChangeTracker.Clear();

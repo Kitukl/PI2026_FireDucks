@@ -1,6 +1,7 @@
 using Application.Models;
 using StudyHub.Core.DTOs;
 using StudyHub.Core.Storage.DTOs;
+using StudyHub.Core.Storage.Interfaces;
 
 namespace StudyHub.Core.Common;
 
@@ -8,13 +9,13 @@ public static class StorageHelper
 {
     private const string UserStoragePrefix = "user-storage-";
     private const string GroupStoragePrefix = "group-storage-";
-    
-    public static async Task<StoragePageViewModel> BuildStoragePageModelAsync(UserDto user, CancellationToken cancellationToken)
+
+    public static async Task<StoragePageViewModel> BuildStoragePageModelAsync(UserDto user, IBlobService blobService, CancellationToken cancellationToken)
     {
         var model = new StoragePageViewModel();
 
         var personalContainer = BuildUserStorageContainerName(user.Id);
-        var personalFiles = await _blobService.ListFilesAsync(personalContainer, cancellationToken);
+        var personalFiles = await blobService.ListFilesAsync(personalContainer, cancellationToken);
         model.Files.AddRange(personalFiles.Select(file => MapStorageFile(file, "personal", false)));
 
         if (!string.IsNullOrWhiteSpace(user.GroupName))
@@ -23,7 +24,7 @@ public static class StorageHelper
             model.CanShareWithGroup = true;
 
             var groupContainer = BuildGroupStorageContainerName(user.GroupName);
-            var groupFiles = await _blobService.ListFilesAsync(groupContainer, cancellationToken);
+            var groupFiles = await blobService.ListFilesAsync(groupContainer, cancellationToken);
             model.Files.AddRange(groupFiles.Select(file => MapStorageFile(file, "group", true)));
         }
 
@@ -66,11 +67,6 @@ public static class StorageHelper
         return $"{GroupStoragePrefix}{groupName}";
     }
 
-    private static string BuildStoredBlobName(string originalName)
-    {
-        return $"{Guid.NewGuid():N}__{originalName}";
-    }
-
     private static string StripStoredFilePrefix(string fileName)
     {
         var normalized = Path.GetFileName(fileName);
@@ -108,24 +104,6 @@ public static class StorageHelper
             "TXT" => true,
             "CSV" => true,
             _ => false
-        };
-    }
-
-    private static string GetContentTypeByFileName(string fileName)
-    {
-        var extension = Path.GetExtension(fileName).ToLowerInvariant();
-        return extension switch
-        {
-            ".png" => "image/png",
-            ".jpg" => "image/jpeg",
-            ".jpeg" => "image/jpeg",
-            ".gif" => "image/gif",
-            ".webp" => "image/webp",
-            ".bmp" => "image/bmp",
-            ".pdf" => "application/pdf",
-            ".txt" => "text/plain",
-            ".csv" => "text/csv",
-            _ => "application/octet-stream"
         };
     }
 

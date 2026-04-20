@@ -23,8 +23,6 @@ using StudyHub.Core.Tasks.Interfaces;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Core.Notifications.Interfaces;
 using StudyHub.Domain.Entities;
-using StudyHub.Infrastructure;
-using StudyHub.Infrastructure.Repositories;
 using StudyHub.Infrastructure.Services;
 using StudyHub.Domain.Enums;
 using StudyHub.Infrastructure.Notifications;
@@ -58,11 +56,11 @@ public class Program
 
         builder.Host.UseSerilog((context, configuration) =>
             configuration.ReadFrom.Configuration(context.Configuration));
-        
+
         builder.Services.AddControllersWithViews();
         builder.Services.AddDbContext<SDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-        
+
         builder.Services.AddIdentity<User, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<SDbContext>()
             .AddDefaultTokenProviders();
@@ -72,10 +70,11 @@ public class Program
             options.LoginPath = "/login";
             options.AccessDeniedPath = "/user/access-denied";
         });
-        
+
         builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
         builder.Services.AddScoped<ITaskRepository, TaskRepository>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IUserAuthRepository, UserAuthRepository>();
         builder.Services.AddScoped<IBlobService, BlobService>();
         builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
         builder.Services.AddScoped<ICommentRepository, CommentRepository>();
@@ -88,7 +87,7 @@ public class Program
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
         builder.Services.AddHostedService<DeadlineSender>();
         builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
-        
+
         var authenticationBuilder = builder.Services.AddAuthentication();
         var microsoftClientId = builder.Configuration["Authentication:Microsoft:ClientId"];
         var microsoftClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"];
@@ -113,7 +112,7 @@ public class Program
                 };
             });
         }
-        
+
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));
 
@@ -133,7 +132,7 @@ public class Program
         app.UseHttpsRedirection();
         app.UseRouting();
 
-        app.UseAuthentication(); 
+        app.UseAuthentication();
 
         app.Use(async (context, next) =>
         {

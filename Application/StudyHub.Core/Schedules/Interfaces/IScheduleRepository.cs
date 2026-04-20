@@ -19,6 +19,7 @@ namespace StudyHub.Core.Schedules.Interfaces
         Task<bool> GetHeadmanUpdateRights(Guid groupId);
         Task SetScheduleAutoUpdate(bool value);
         Task SetScheduleAutoUpdateInterval(uint interval);
+        Task UpdateGlobalSettings(bool isAutoUpdate, bool allowLeaders, uint intervalDays, DateTime updatedAt);
         Task SyncParsedScheduleAsync(string groupName, ParsedScheduleResponse parsedData, CancellationToken cancellationToken);
     }
 }

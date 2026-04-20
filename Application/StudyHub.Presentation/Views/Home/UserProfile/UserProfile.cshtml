@@ -23,7 +23,7 @@
         <section class="user-profile-left">
             @* Блок фото *@
             <div class="user-photo-card">
-                <form asp-controller="UserProfile" asp-action="UploadProfilePhoto" method="post" enctype="multipart/form-data" class="js-profile-photo-form">
+                <form asp-controller="User" asp-action="UploadProfilePhoto" method="post" enctype="multipart/form-data" class="js-profile-photo-form">
                     @Html.AntiForgeryToken()
                     <input id="profilePhotoInput" name="photoFile" type="file" accept="image/*" hidden class="js-profile-photo-input" />
                     <button type="button" class="user-photo-btn js-profile-photo-btn">Choose Profile Photo</button>
@@ -41,7 +41,7 @@
 
             @* БЛОК НАЛАШТУВАНЬ З ВИПРАВЛЕНИМ SELECTED *@
             <fieldset class="user-settings-card js-user-settings" 
-                      data-update-url="@Url.Action("UpdateReminderSettings", "UserProfile")">
+                      data-update-url="@Url.Action("UpdateReminderSettings", "User")">
                 @Html.AntiForgeryToken()
                 <legend>Settings</legend>
 
@@ -100,7 +100,7 @@
                     <p class="user-profile-form-success">@successMessage</p>
                 }
 
-                <form asp-controller="UserProfile" asp-action="UserProfileSendRequest" method="post">
+                <form asp-controller="User" asp-action="UserProfileSendRequest" method="post">
                     @Html.AntiForgeryToken()
 
                     <label class="user-contact-row">

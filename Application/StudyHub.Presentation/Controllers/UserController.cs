@@ -1,11 +1,10 @@
-﻿using System.Security.Claims;
-using MediatR;
-using Microsoft.AspNetCore.Authentication;
+﻿using MediatR;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Application.Helpers;
 using StudyHub.Core.Users.Commands;
+using StudyHub.Core.Users.Queries;
 using StudyHub.Domain.Entities;
 using StudyHub.Domain.Enums;
 
@@ -15,17 +14,10 @@ namespace Application.Controllers;
 public class UserController : Controller
 {
     private readonly ISender _mediator;
-    private readonly UserManager<User> _userManager;
-    private readonly SignInManager<User> _signInManager;
 
-    public UserController(
-        ISender mediator, 
-        UserManager<User> userManager, 
-        SignInManager<User> signInManager)
+    public UserController(ISender mediator)
     {
         _mediator = mediator;
-        _userManager = userManager;
-        _signInManager = signInManager;
     }
 
     [AllowAnonymous]
@@ -39,20 +31,17 @@ public class UserController : Controller
 
         return View("Login");
     }
-    
+
     [AllowAnonymous]
     [HttpGet("login-microsoft")]
     public async Task<IActionResult> LoginMicrosoft()
     {
-        var schemeProvider = HttpContext.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
-        var microsoftScheme = await schemeProvider.GetSchemeAsync(MicrosoftAccountDefaults.AuthenticationScheme);
-        if (microsoftScheme == null)
+        var properties = await UserControllerHelper.CreateMicrosoftChallengePropertiesAsync(HttpContext, Url);
+        if (properties == null)
         {
             return RedirectToAction("Index", "Home");
         }
 
-        var redirectUrl = Url.Action("ExternalCallback", "User"); 
-        var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
         return Challenge(properties, MicrosoftAccountDefaults.AuthenticationScheme);
     }
 
@@ -60,37 +49,14 @@ public class UserController : Controller
     [HttpGet("callback")]
     public async Task<IActionResult> ExternalCallback()
     {
-        var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
-        
-        if (!result.Succeeded || result.Principal == null)
+        var command = await UserControllerHelper.CreateExternalRegisterCommandAsync(HttpContext);
+        if (command == null)
         {
             return RedirectToAction("Index", "Home");
         }
 
-        var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
-        var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-
-        if (string.IsNullOrEmpty(email)) return RedirectToAction("Index", "Home");
-
-        var command = new RegisterUserCommand
-        {
-            Email = email,
-            Name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value,
-            Surname = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value,
-            MicrosoftId = claims?.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value,
-            ProviderName = "Microsoft",
-            GroupName = "Default"
-        };
-
         await _mediator.Send(command);
-
-        var user = await _userManager.FindByEmailAsync(email);
-        if (user != null)
-        {
-            await _signInManager.SignInAsync(user, isPersistent: true);
-        }
-        
-        await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        await UserControllerHelper.SignOutExternalSchemeAsync(HttpContext);
 
         return RedirectToAction("Index", "Home");
     }
@@ -100,7 +66,7 @@ public class UserController : Controller
     {
         returnUrl ??= Request.Query["ReturnUrl"].FirstOrDefault();
 
-        if (IsPath(returnUrl, "/Admin"))
+        if (UserControllerHelper.IsPath(returnUrl, "/Admin"))
         {
             return RedirectToAction("Dashboard", "Admin");
         }
@@ -111,10 +77,10 @@ public class UserController : Controller
     [HttpGet("logout")]
     public async Task<IActionResult> Logout()
     {
-        await _signInManager.SignOutAsync();
+        await _mediator.Send(new SignOutUserCommand());
         return RedirectToAction("Index", "Home");
     }
-    
+
     [Authorize(Roles = nameof(Role.Leader))]
     [HttpPut]
     public async Task<IActionResult> AddUserToGroup(AddUserToGroupCommand request)
@@ -122,7 +88,7 @@ public class UserController : Controller
         await _mediator.Send(request);
         return View();
     }
-    
+
     [Authorize(Roles = nameof(Role.Leader))]
     [HttpPut]
     public async Task<IActionResult> RemoveUserFromGroup(RemoveUserFromGroupCommand request)
@@ -131,9 +97,114 @@ public class UserController : Controller
         return View();
     }
 
-    private static bool IsPath(string? value, string prefix)
+    [HttpGet("/myprofile")]
+    [HttpGet("/UserProfile")]
+    public async Task<IActionResult> UserProfile()
     {
-        return !string.IsNullOrWhiteSpace(value) &&
-               value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+        var parsedUserId = UserControllerHelper.GetCurrentUserId(User);
+
+        var data = await _mediator.Send(new GetUserProfilePageQuery
+        {
+            UserId = parsedUserId
+        });
+
+        ViewBag.FullName = data.FullName;
+        ViewBag.PhotoUrl = data.PhotoUrl;
+        ViewBag.IsNotified = data.IsNotified;
+        ViewBag.ReminderOffset = data.ReminderOffset;
+        ViewBag.ReminderTimeType = data.ReminderTimeType;
+
+        return View("~/Views/Home/UserProfile/UserProfile.cshtml");
     }
+
+    [HttpPost("/UserProfile/Photo")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadProfilePhoto(IFormFile? photoFile, CancellationToken cancellationToken)
+    {
+        var parsedUserId = UserControllerHelper.GetCurrentUserId(User);
+        var command = await UserControllerHelper.BuildUploadProfilePhotoCommandAsync(photoFile, parsedUserId, cancellationToken);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsForbidden)
+        {
+            return Forbid();
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+        {
+            TempData["ProfileFeedbackError"] = result.ErrorMessage;
+            return RedirectToAction(nameof(UserProfile));
+        }
+
+        TempData["ProfileFeedbackSuccess"] = result.SuccessMessage;
+        return RedirectToAction(nameof(UserProfile));
+    }
+
+    [HttpGet("/UserProfile/PhotoFile")]
+    public async Task<IActionResult> UserProfilePhoto([FromQuery] string path, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new DownloadUserProfilePhotoQuery
+        {
+            Path = path
+        }, cancellationToken);
+
+        if (result.IsNotFound || result.Content == null)
+        {
+            return NotFound();
+        }
+
+        return File(result.Content, result.ContentType);
+    }
+
+    [HttpPost("/UserProfile/UpdateSettings")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateReminderSettings(bool isNotified, uint offset, TimeType timeType)
+    {
+        var parsedUserId = UserControllerHelper.GetCurrentUserId(User);
+
+        var result = await _mediator.Send(new UpdateUserReminderSettingsCommand
+        {
+            UserId = parsedUserId,
+            IsNotified = isNotified,
+            Offset = offset,
+            TimeType = timeType
+        });
+
+        return Json(new { success = result.IsSuccess });
+    }
+
+    [HttpPost("/UserProfile/SendRequest")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UserProfileSendRequest(
+        FeedbackType feedbackType,
+        Category category,
+        string? subject,
+        string? description)
+    {
+        var parsedUserId = UserControllerHelper.GetCurrentUserId(User);
+
+        var result = await _mediator.Send(new CreateUserProfileRequestCommand
+        {
+            UserId = parsedUserId,
+            FeedbackType = feedbackType,
+            Category = category,
+            Subject = subject,
+            Description = description
+        });
+
+        if (result.IsForbidden)
+        {
+            return Forbid();
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+        {
+            TempData["ProfileFeedbackError"] = result.ErrorMessage;
+            return RedirectToAction(nameof(UserProfile));
+        }
+
+        TempData["ProfileFeedbackSuccess"] = result.SuccessMessage;
+        return RedirectToAction(nameof(UserProfile));
+    }
+
 }
