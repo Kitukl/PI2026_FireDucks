@@ -12,11 +12,11 @@ using Application.Helpers;
 
 namespace Application.Controllers;
 
-public class TaskController : Controller
+public class TaskBoardController : Controller
 {
     private readonly IMediator _mediator;
 
-    public TaskController(IMediator mediator)
+    public TaskBoardController(IMediator mediator)
     {
         _mediator = mediator;
     }
@@ -32,8 +32,8 @@ public class TaskController : Controller
         return View("~/Views/Home/TaskBoard/TaskBoard.cshtml", model);
     }
 
-    [HttpGet("/TaskBoard/Create")]
-    [HttpGet("/TaskBoard/CreateTask")]
+    [HttpGet("/Create")]
+    [HttpGet("/CreateTask")]
     public async Task<IActionResult> TaskBoardCreate()
     {
         var modelData = await _mediator.Send(new GetTaskBoardCreatePageQuery
@@ -45,7 +45,7 @@ public class TaskController : Controller
         return View("~/Views/Home/TaskBoard/TaskBoardCreate.cshtml", model);
     }
 
-    [HttpPost("/TaskBoard/Create")]
+    [HttpPost("/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardCreate(TaskBoardCreatePageViewModel model)
     {
@@ -89,7 +89,7 @@ public class TaskController : Controller
         return RedirectToAction(nameof(TaskBoardViewTask), new { taskCode = createResult.CreatedTaskId });
     }
 
-    [HttpGet("/TaskBoard/ViewTask/{taskCode?}")]
+    [HttpGet("/ViewTask/{taskCode?}")]
     public async Task<IActionResult> TaskBoardViewTask(string? taskCode)
     {
         var pageData = await _mediator.Send(new GetTaskBoardViewTaskPageQuery
@@ -110,7 +110,7 @@ public class TaskController : Controller
         return View("~/Views/Home/TaskBoard/TaskBoardViewTask.cshtml", model);
     }
 
-    [HttpPost("/TaskBoard/ViewTask/Delete")]
+    [HttpPost("/ViewTask/Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardViewTaskDelete(Guid taskId)
     {
@@ -128,7 +128,7 @@ public class TaskController : Controller
         return RedirectToAction(nameof(TaskBoard));
     }
 
-    [HttpPost("/TaskBoard/ViewTask/AddComment")]
+    [HttpPost("/ViewTask/AddComment")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardViewTaskAddComment(Guid taskId, string? description)
     {
@@ -147,7 +147,7 @@ public class TaskController : Controller
         return RedirectToAction(nameof(TaskBoardViewTask), new { taskCode = taskId });
     }
 
-    [HttpPost("/TaskBoard/ViewTask/DeleteComment")]
+    [HttpPost("/ViewTask/DeleteComment")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardViewTaskDeleteComment(Guid taskId, Guid commentId)
     {
@@ -167,7 +167,7 @@ public class TaskController : Controller
         return RedirectToAction(nameof(TaskBoardViewTask), new { taskCode = taskId });
     }
 
-    [HttpPost("/TaskBoard/ViewTask/UpdateStatus")]
+    [HttpPost("/ViewTask/UpdateStatus")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardViewTaskUpdateStatus(Guid taskId, string status)
     {
@@ -206,7 +206,7 @@ public class TaskController : Controller
         return RedirectToAction(nameof(TaskBoardViewTask), new { taskCode = taskId });
     }
 
-    [HttpGet("/TaskBoard/ReviewGroup")]
+    [HttpGet("/ReviewGroup")]
     [Authorize(Roles = nameof(Role.Leader))]
     public async Task<IActionResult> TaskBoardReviewGroup()
     {
@@ -226,7 +226,7 @@ public class TaskController : Controller
         return View("~/Views/Home/TaskBoard/TaskBoardReviewGroup.cshtml", model);
     }
 
-    [HttpPost("/TaskBoard/ReviewGroup/AddUsers")]
+    [HttpPost("/ReviewGroup/AddUsers")]
     [Authorize(Roles = nameof(Role.Leader))]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardReviewGroupAddUsers(List<Guid> selectedUserIds)
@@ -245,7 +245,7 @@ public class TaskController : Controller
         return RedirectToAction(nameof(TaskBoardReviewGroup));
     }
 
-    [HttpPost("/TaskBoard/ReviewGroup/RemoveUser")]
+    [HttpPost("/ReviewGroup/RemoveUser")]
     [Authorize(Roles = nameof(Role.Leader))]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TaskBoardReviewGroupRemoveUser(Guid userId)

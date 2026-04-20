@@ -30,10 +30,21 @@ namespace Application.Controllers
         public async Task<IActionResult> MySchedule()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return RedirectToAction("Login", "User");
+            }
+
             var response = await _mediator.Send(new GetScheduleForUserQuery
             {
                 UserId = userId
             });
+
+            if (response == null)
+            {
+                return View("NoGroupAssigned");
+            }
 
             return View(response);
         }
@@ -173,7 +184,8 @@ namespace Application.Controllers
         private async Task PrepareLessonsViewBag()
         {
             var lessons = await _mediator.Send(new GetAllLessonsRequest());
-            ViewBag.Lessons = new SelectList(lessons.Select(l => new {
+            ViewBag.Lessons = new SelectList(lessons.Select(l => new
+            {
                 Id = l.Id,
                 Display = $"{l.Subject.Name} ({l.LessonType}) - Day {l.Day}"
             }), "Id", "Display");
