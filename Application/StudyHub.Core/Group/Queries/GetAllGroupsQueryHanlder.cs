@@ -4,7 +4,7 @@ namespace StudyHub.Core.Group.Queries;
 
 public class GetAllGroupsQuery : IRequest<List<Domain.Entities.Group>>;
 
-public class GetAllGroupsQueryHanlder : IRequestHandler<GetAllGroupsQuery, IEnumerable<Domain.Entities.Group>>
+public class GetAllGroupsQueryHanlder : IRequestHandler<GetAllGroupsQuery, List<Domain.Entities.Group>>
 {
     private readonly IGroupRepository _groupRepository;
 
@@ -12,8 +12,9 @@ public class GetAllGroupsQueryHanlder : IRequestHandler<GetAllGroupsQuery, IEnum
     {
         _groupRepository = groupRepository;
     }
-    public async Task<IEnumerable<Domain.Entities.Group>> Handle(GetAllGroupsQuery request, CancellationToken cancellationToken)
+    public async Task<List<Domain.Entities.Group>> Handle(GetAllGroupsQuery request, CancellationToken cancellationToken)
     {
-        return await _groupRepository.GetAllGroupsAsync();
+        var groups = await _groupRepository.GetAllGroupsAsync();
+        return groups.ToList();
     }
 }
