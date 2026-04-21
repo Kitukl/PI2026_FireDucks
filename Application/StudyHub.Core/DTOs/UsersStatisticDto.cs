@@ -4,5 +4,12 @@ public record UsersStatisticDto
 (
     DateTime CreatedAt,
     Dictionary<int,double> UserActivityPerMonth,
-    int FileCount
-);
+    int UserFilesCount,
+    int GroupFilesCount,
+    int StudentsCount,
+    int GroupsCount,
+    int LeadersCount
+)
+{
+    public int FileCount => UserFilesCount + GroupFilesCount;
+}

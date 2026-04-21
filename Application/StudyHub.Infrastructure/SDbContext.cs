@@ -21,6 +21,7 @@ public class SDbContext(DbContextOptions<SDbContext> options)
     public DbSet<Statistic> Statistics { get; set; }
     public DbSet<Subject> Subjects { get; set; }
     public DbSet<Task> Tasks { get; set; }
+    public DbSet<UserSession> UserSessions { get; set; }
     public DbSet<Reminder> Reminders { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -32,19 +33,19 @@ public class SDbContext(DbContextOptions<SDbContext> options)
         builder.Entity<IdentityRole<Guid>>().HasData(
             new IdentityRole<Guid>
             {
-                Id = Guid.Parse("e94dc167-9d67-4d56-9d0c-92a193f5cc0f"), 
+                Id = studentId, 
                 Name = nameof(Role.Student),
                 NormalizedName = "STUDENT"
             },
             new IdentityRole<Guid>
             {
-                Id = Guid.Parse("c195766b-5b2d-4f5a-94de-f3d67114099b"),
+                Id = adminId,
                 Name = nameof(Role.Admin),
                 NormalizedName = "ADMIN"
             },
             new IdentityRole<Guid>
             {
-                Id = Guid.Parse("9a9aa371-da25-46cd-90d3-dded994118a8"),
+                Id = leaderId,
                 Name = nameof(Role.Leader),
                 NormalizedName = "LEADER"
             }

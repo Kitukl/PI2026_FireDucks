@@ -1,90 +1,52 @@
-﻿using Application.Models;
+﻿using System.Security.Claims;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using StudyHub.Core.DTOs;
+using StudyHub.Core.Group.Queries;
 using StudyHub.Core.Lessons.Queries;
 using StudyHub.Core.Schedules.Commands;
-using StudyHub.Core.Schedules.Queries;
-using StudyHub.Core.Users.Interfaces;
-using StudyHub.Domain.Entities;
-using StudyHub.Domain.Enums;
-using StudyHub.Infrastructure;
-using DayOfWeek = StudyHub.Domain.Enums.DayOfWeek;
 using Task = System.Threading.Tasks.Task;
 
-namespace StudyHub.Mvc.Controllers
+namespace Application.Controllers
 {
+    [Authorize]
     public class ScheduleController : Controller
     {
         private readonly IMediator _mediator;
-        private readonly SDbContext _context;
-        private readonly UserManager<User> _userManager;
-        private readonly IUserRepository _userRepo;
-
-        public ScheduleController(IMediator mediator, SDbContext context, UserManager<User> userManager, IUserRepository userRepo)
+        public ScheduleController(IMediator mediator)
         {
             _mediator = mediator;
-            _context = context;
-            _userManager = userManager;
-            _userRepo = userRepo;
         }
 
+        [HttpGet("/Schedule")]
+        public IActionResult Schedule()
+        {
+            return RedirectToAction("MySchedule", "Schedule");
+        }
 
         [HttpGet]
         public async Task<IActionResult> MySchedule()
         {
-            var userIdString = _userManager.GetUserId(User);
-            if (string.IsNullOrEmpty(userIdString)) return RedirectToAction("Login", "User");
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var users = await _userRepo.GetUsersAsync();
-            var currentUser = users.FirstOrDefault(u => u.Id == Guid.Parse(userIdString));
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return RedirectToAction("Login", "User");
+            }
 
-            if (currentUser?.Group == null)
+            var response = await _mediator.Send(new GetScheduleForUserQuery
+            {
+                UserId = userId
+            });
+
+            if (response == null)
             {
                 return View("NoGroupAssigned");
             }
 
-            var schedule = await _mediator.Send(new GetScheduleByGroupIdRequest(currentUser.Group.Id));
-
-            var isHeadman = await _userManager.IsInRoleAsync(currentUser, Role.Leader.ToString());
-
-            var vm = new ScheduleViewModel
-            {
-                GroupId = currentUser.Group.Id,
-                GroupName = currentUser.Group.Name,
-                IsHeadman = isHeadman,
-                CanHeadmanUpdate = schedule?.HeadmanUpdate ?? false
-            };
-
-            if (schedule != null && schedule.Lessons.Any())
-            {
-                vm.UniqueSlots = schedule.Lessons
-                    .Select(l => l.LessonSlot)
-                    .GroupBy(s => s.Id)
-                    .Select(g => g.First())
-                    .OrderBy(s => s.StartTime)
-                    .ToList();
-
-                vm.Days = new List<DayOfWeek> {
-                    DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
-                    DayOfWeek.Thursday, DayOfWeek.Friday
-                };
-
-                foreach (var lesson in schedule.Lessons)
-                {
-                    var key = $"{(int)lesson.Day}-{lesson.LessonSlot.Id}";
-                    if (!vm.Grid.ContainsKey(key))
-                    {
-                        vm.Grid[key] = new List<LessonDto>();
-                    }
-                    vm.Grid[key].Add(lesson);
-                }
-            }
-
-            return View(vm);
+            return View(response);
         }
 
         [HttpPost]
@@ -104,7 +66,7 @@ namespace StudyHub.Mvc.Controllers
             return RedirectToAction(nameof(MySchedule));
         }
 
-
+        [HttpGet]
         public async Task<IActionResult> SchedulesList()
         {
             var schedules = await _mediator.Send(new GetAllSchedulesRequest());
@@ -112,7 +74,7 @@ namespace StudyHub.Mvc.Controllers
         }
 
 
-
+        [HttpGet]
         public async Task<IActionResult> ScheduleCreate(Guid? groupId)
         {
             await PrepareGroupsViewBag();
@@ -188,14 +150,12 @@ namespace StudyHub.Mvc.Controllers
             return View(schedule);
         }
 
-        private async Task ReloadLessonsNames(ScheduleDto dto)
+        private async Task ReloadLessonsNames(ScheduleDto scheduleDto)
         {
-            if (dto.Lessons == null) return;
-            foreach (var lesson in dto.Lessons)
+            if (scheduleDto.Lessons == null) return;
+            foreach (var lesson in scheduleDto.Lessons)
             {
-                var dbLesson = await _context.Lessons
-                    .Include(l => l.Subject)
-                    .FirstOrDefaultAsync(l => l.Id == lesson.Id);
+                var dbLesson = await _mediator.Send(new GetLessonByIdRequest(lesson.Id));
                 if (dbLesson != null)
                 {
                     lesson.Subject = new SubjectDto { Name = dbLesson.Subject.Name };
@@ -216,33 +176,17 @@ namespace StudyHub.Mvc.Controllers
             return RedirectToAction(nameof(SchedulesList));
         }
 
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> ScheduleDelete(Guid id)
-        //{
-        //    var schedule = await _mediator.Send(new GetScheduleByIdRequest(id));
-
-        //    if (schedule != null && schedule.Group != null)
-        //    {
-        //        await _mediator.Send(new DeleteScheduleForGroupRequest(schedule.Group.Id));
-        //    }
-
-        //    return RedirectToAction(nameof(SchedulesList));
-        //}
-
         private async Task PrepareGroupsViewBag()
         {
-            var groups = await _context.Groups
-                .Select(g => new { g.Id, g.Name })
-                .ToListAsync();
-
+            var groups = await _mediator.Send(new GetAllGroupsQuery());
             ViewBag.Groups = new SelectList(groups, "Id", "Name");
         }
 
         private async Task PrepareLessonsViewBag()
         {
             var lessons = await _mediator.Send(new GetAllLessonsRequest());
-            ViewBag.Lessons = new SelectList(lessons.Select(l => new {
+            ViewBag.Lessons = new SelectList(lessons.Select(l => new
+            {
                 Id = l.Id,
                 Display = $"{l.Subject.Name} ({l.LessonType}) - Day {l.Day}"
             }), "Id", "Display");

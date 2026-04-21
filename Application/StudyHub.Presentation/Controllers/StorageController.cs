@@ -1,48 +1,30 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using StudyHub.Core.Storage.DTOs;
-using StudyHub.Core.Storage.Interfaces;
-using StudyHub.Core.Users.Queries;
-using StudyHub.Domain.Entities;
-using Application.Models;
+using StudyHub.Core.Storage.Commands;
+using StudyHub.Core.Storage.Queries;
 
 namespace Application.Controllers;
 
 public class StorageController : Controller
 {
-    private readonly UserManager<User> _userManager;
     private readonly IMediator _mediator;
-    private readonly IBlobService _blobService;
 
-    private const string UserStoragePrefix = "user-storage-";
-    private const string GroupStoragePrefix = "group-storage-";
-
-    public StorageController(
-        UserManager<User> userManager,
-        IMediator mediator,
-        IBlobService blobService)
+    public StorageController(IMediator mediator)
     {
-        _userManager = userManager;
         _mediator = mediator;
-        _blobService = blobService;
     }
 
     [HttpGet("/Storage")]
     public async Task<IActionResult> Storage(CancellationToken cancellationToken)
     {
-        if (User.Identity?.IsAuthenticated != true)
-        {
-            return Forbid();
-        }
+        var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        var user = await _userManager.GetUserAsync(User);
-        if (user == null)
+        var model = await _mediator.Send(new GetStoragePageDataQuery
         {
-            return Forbid();
-        }
+            UserId = currentUserId
+        }, cancellationToken);
 
-        var model = await BuildStoragePageModelAsync(user, cancellationToken);
         return View("~/Views/Home/Storage/Storage.cshtml", model);
     }
 
@@ -50,16 +32,7 @@ public class StorageController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UploadStorageFile(IFormFile? uploadFile, bool shareWithGroup, CancellationToken cancellationToken)
     {
-        if (User.Identity?.IsAuthenticated != true)
-        {
-            return Forbid();
-        }
-
-        var user = await _userManager.GetUserAsync(User);
-        if (user == null)
-        {
-            return Forbid();
-        }
+        var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         if (uploadFile is not { Length: > 0 })
         {
@@ -67,30 +40,32 @@ public class StorageController : Controller
             return RedirectToAction(nameof(Storage));
         }
 
-        var userDto = await _mediator.Send(new GetUserRequest(user.Id), cancellationToken);
-        var hasGroup = !string.IsNullOrWhiteSpace(userDto.GroupName);
-
-        var targetContainer = BuildUserStorageContainerName(user.Id);
-        var isGroupUpload = false;
-        if (shareWithGroup && hasGroup)
-        {
-            targetContainer = BuildGroupStorageContainerName(userDto.GroupName!);
-            isGroupUpload = true;
-        }
-
-        var originalName = Path.GetFileName(uploadFile.FileName);
-        if (string.IsNullOrWhiteSpace(originalName))
-        {
-            originalName = $"file-{Guid.NewGuid():N}";
-        }
-
-        var blobName = BuildStoredBlobName(originalName);
         await using var stream = uploadFile.OpenReadStream();
-        await _blobService.UploadFileAsync(targetContainer, blobName, stream, uploadFile.ContentType, cancellationToken);
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream, cancellationToken);
 
-        TempData["StorageMessage"] = isGroupUpload
-            ? "File uploaded to your group storage."
-            : "File uploaded to your personal storage.";
+        var result = await _mediator.Send(new UploadStorageFileCommand
+        {
+            UserId = currentUserId,
+            ShareWithGroup = shareWithGroup,
+            FileName = uploadFile.FileName,
+            ContentType = uploadFile.ContentType,
+            Content = memoryStream.ToArray()
+        }, cancellationToken);
+
+        if (result.IsForbidden)
+        {
+            return Forbid();
+        }
+
+        if (result.IsSuccess)
+        {
+            TempData["StorageMessage"] = result.Message;
+        }
+        else
+        {
+            TempData["StorageError"] = result.Message;
+        }
 
         return RedirectToAction(nameof(Storage));
     }
@@ -98,273 +73,111 @@ public class StorageController : Controller
     [HttpGet("/Storage/Download")]
     public async Task<IActionResult> DownloadStorageFile(string scope, string name, CancellationToken cancellationToken)
     {
-        if (User.Identity?.IsAuthenticated != true)
+        var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        var file = await _mediator.Send(new DownloadStorageFileQuery
+        {
+            UserId = currentUserId,
+            Scope = scope,
+            Name = name
+        }, cancellationToken);
+
+        if (file.IsForbidden)
         {
             return Forbid();
         }
 
-        var user = await _userManager.GetUserAsync(User);
-        if (user == null)
-        {
-            return Forbid();
-        }
-
-        if (string.IsNullOrWhiteSpace(name))
+        if (file.IsNotFound)
         {
             return NotFound();
         }
 
-        var userDto = await _mediator.Send(new GetUserRequest(user.Id), cancellationToken);
-        string containerName;
-
-        if (string.Equals(scope, "group", StringComparison.OrdinalIgnoreCase))
-        {
-            if (string.IsNullOrWhiteSpace(userDto.GroupName))
-            {
-                return Forbid();
-            }
-
-            containerName = BuildGroupStorageContainerName(userDto.GroupName);
-        }
-        else
-        {
-            containerName = BuildUserStorageContainerName(user.Id);
-        }
-
-        var safeName = Path.GetFileName(name);
-        var stream = await _blobService.GetFileAsync(containerName, safeName, cancellationToken);
-        if (stream == null)
-        {
-            return NotFound();
-        }
-
-        return File(stream, GetContentTypeByFileName(safeName), StripStoredFilePrefix(safeName));
+        return File(file.Content, file.ContentType, file.DownloadName);
     }
 
     [HttpGet("/Storage/Preview")]
     public async Task<IActionResult> PreviewStorageFile(string scope, string name, CancellationToken cancellationToken)
     {
-        if (User.Identity?.IsAuthenticated != true)
+        var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        var file = await _mediator.Send(new DownloadStorageFileQuery
+        {
+            UserId = currentUserId,
+            Scope = scope,
+            Name = name
+        }, cancellationToken);
+
+        if (file.IsForbidden)
         {
             return Forbid();
         }
 
-        var user = await _userManager.GetUserAsync(User);
-        if (user == null)
-        {
-            return Forbid();
-        }
-
-        if (string.IsNullOrWhiteSpace(name))
+        if (file.IsNotFound)
         {
             return NotFound();
         }
 
-        var userDto = await _mediator.Send(new GetUserRequest(user.Id), cancellationToken);
-        string containerName;
-
-        if (string.Equals(scope, "group", StringComparison.OrdinalIgnoreCase))
-        {
-            if (string.IsNullOrWhiteSpace(userDto.GroupName))
-            {
-                return Forbid();
-            }
-
-            containerName = BuildGroupStorageContainerName(userDto.GroupName);
-        }
-        else
-        {
-            containerName = BuildUserStorageContainerName(user.Id);
-        }
-
-        var safeName = Path.GetFileName(name);
-        var stream = await _blobService.GetFileAsync(containerName, safeName, cancellationToken);
-        if (stream == null)
-        {
-            return NotFound();
-        }
-
-        return File(stream, GetContentTypeByFileName(safeName));
+        return File(file.Content, file.ContentType);
     }
 
     [HttpPost("/Storage/Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteStorageFile(string scope, string name, CancellationToken cancellationToken)
     {
-        if (User.Identity?.IsAuthenticated != true)
+        var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        var result = await _mediator.Send(new DeleteStorageFileCommand
+        {
+            UserId = currentUserId,
+            Scope = scope,
+            Name = name
+        }, cancellationToken);
+
+        if (result.IsForbidden)
         {
             return Forbid();
         }
 
-        var user = await _userManager.GetUserAsync(User);
-        if (user == null)
+        if (result.IsSuccess)
         {
-            return Forbid();
-        }
-
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            TempData["StorageError"] = "File name is required.";
-            return RedirectToAction(nameof(Storage));
-        }
-
-        var userDto = await _mediator.Send(new GetUserRequest(user.Id), cancellationToken);
-        string containerName;
-
-        if (string.Equals(scope, "group", StringComparison.OrdinalIgnoreCase))
-        {
-            if (string.IsNullOrWhiteSpace(userDto.GroupName))
-            {
-                return Forbid();
-            }
-
-            containerName = BuildGroupStorageContainerName(userDto.GroupName);
+            TempData["StorageMessage"] = result.Message;
         }
         else
         {
-            containerName = BuildUserStorageContainerName(user.Id);
+            TempData["StorageError"] = result.Message;
         }
 
-        var safeName = Path.GetFileName(name);
-        await _blobService.DeleteFileAsync(containerName, safeName, cancellationToken);
-
-        TempData["StorageMessage"] = "File deleted.";
         return RedirectToAction(nameof(Storage));
     }
 
-    private async Task<StoragePageViewModel> BuildStoragePageModelAsync(User user, CancellationToken cancellationToken)
+    [HttpPost("/Storage/Rename")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RenameStorageFile(string scope, string name, string newName, CancellationToken cancellationToken)
     {
-        var model = new StoragePageViewModel();
-        var currentUser = await _mediator.Send(new GetUserRequest(user.Id), cancellationToken);
+        var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        var personalContainer = BuildUserStorageContainerName(user.Id);
-        var personalFiles = await _blobService.ListFilesAsync(personalContainer, cancellationToken);
-        model.Files.AddRange(personalFiles.Select(file => MapStorageFile(file, "personal", false)));
-
-        if (!string.IsNullOrWhiteSpace(currentUser.GroupName))
+        var result = await _mediator.Send(new RenameStorageFileCommand
         {
-            model.GroupName = currentUser.GroupName;
-            model.CanShareWithGroup = true;
-
-            var groupContainer = BuildGroupStorageContainerName(currentUser.GroupName);
-            var groupFiles = await _blobService.ListFilesAsync(groupContainer, cancellationToken);
-            model.Files.AddRange(groupFiles.Select(file => MapStorageFile(file, "group", true)));
-        }
-
-        model.Files = model.Files
-            .OrderByDescending(item => item.LastModified)
-            .ThenBy(item => item.Name)
-            .ToList();
-
-        return model;
-    }
-
-    private static StorageFileItemViewModel MapStorageFile(BlobFileInfoDto blobFile, string scope, bool isGroupFile)
-    {
-        var rawName = Path.GetFileName(blobFile.Name);
-        var cleanName = StripStoredFilePrefix(rawName);
-        var ext = Path.GetExtension(cleanName).TrimStart('.').ToUpperInvariant();
-
-        return new StorageFileItemViewModel
-        {
-            Name = cleanName,
-            BlobName = rawName,
-            DownloadName = cleanName,
+            UserId = currentUserId,
             Scope = scope,
-            Extension = string.IsNullOrWhiteSpace(ext) ? "-" : ext,
-            SizeDisplay = FormatFileSize(blobFile.Size),
-            LastModified = blobFile.LastModified,
-            LastModifiedDisplay = blobFile.LastModified?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "-",
-            CanPreview = CanPreviewFileByExtension(ext),
-            IsGroupFile = isGroupFile
-        };
-    }
+            Name = name,
+            NewName = newName
+        }, cancellationToken);
 
-    private static string BuildUserStorageContainerName(Guid userId)
-    {
-        return $"{UserStoragePrefix}{userId:D}";
-    }
-
-    private static string BuildGroupStorageContainerName(string groupName)
-    {
-        return $"{GroupStoragePrefix}{groupName}";
-    }
-
-    private static string BuildStoredBlobName(string originalName)
-    {
-        return $"{Guid.NewGuid():N}__{originalName}";
-    }
-
-    private static string StripStoredFilePrefix(string fileName)
-    {
-        var normalized = Path.GetFileName(fileName);
-        if (string.IsNullOrWhiteSpace(normalized))
+        if (result.IsForbidden)
         {
-            return fileName;
+            return Forbid();
         }
 
-        var separatorIndex = normalized.IndexOf("__", StringComparison.Ordinal);
-        if (separatorIndex > 0 && separatorIndex + 2 < normalized.Length)
+        if (result.IsSuccess)
         {
-            return normalized[(separatorIndex + 2)..];
+            TempData["StorageMessage"] = result.Message;
+        }
+        else
+        {
+            TempData["StorageError"] = result.Message;
         }
 
-        var dashIndex = normalized.IndexOf('-', StringComparison.Ordinal);
-        if (dashIndex > 20 && dashIndex + 1 < normalized.Length)
-        {
-            return normalized[(dashIndex + 1)..];
-        }
-
-        return normalized;
-    }
-
-    private static bool CanPreviewFileByExtension(string extension)
-    {
-        return extension switch
-        {
-            "PNG" => true,
-            "JPG" => true,
-            "JPEG" => true,
-            "WEBP" => true,
-            "GIF" => true,
-            "BMP" => true,
-            "PDF" => true,
-            "TXT" => true,
-            "CSV" => true,
-            _ => false
-        };
-    }
-
-    private static string GetContentTypeByFileName(string fileName)
-    {
-        var extension = Path.GetExtension(fileName).ToLowerInvariant();
-        return extension switch
-        {
-            ".png" => "image/png",
-            ".jpg" => "image/jpeg",
-            ".jpeg" => "image/jpeg",
-            ".gif" => "image/gif",
-            ".webp" => "image/webp",
-            ".bmp" => "image/bmp",
-            ".pdf" => "application/pdf",
-            ".txt" => "text/plain",
-            ".csv" => "text/csv",
-            _ => "application/octet-stream"
-        };
-    }
-
-    private static string FormatFileSize(long bytes)
-    {
-        string[] units = ["B", "KB", "MB", "GB"];
-        double size = bytes;
-        var unitIndex = 0;
-
-        while (size >= 1024 && unitIndex < units.Length - 1)
-        {
-            size /= 1024;
-            unitIndex++;
-        }
-
-        return $"{size:0.#} {units[unitIndex]}";
+        return RedirectToAction(nameof(Storage));
     }
 }

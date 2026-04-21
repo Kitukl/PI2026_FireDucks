@@ -8,21 +8,30 @@ namespace StudyHub.UnitTests.Handlers.Comments.Commands;
 
 public class CreateCommentCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenTaskExists_ShouldCreateComment()
+    private readonly Mock<ICommentRepository> _commentRepositoryMock;
+    private readonly Mock<ITaskRepository> _taskRepositoryMock;
+
+    public CreateCommentCommandHandlerTests()
     {
+        _commentRepositoryMock = new Mock<ICommentRepository>();
+        _taskRepositoryMock = new Mock<ITaskRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldCreateComment_WhenRequestIsValid()
+    {
+        _commentRepositoryMock.Reset();
+        _taskRepositoryMock.Reset();
         // Arrange
         var taskId = Guid.NewGuid();
         var task = new StudyHub.Domain.Entities.Task { Id = taskId, Title = "T", Description = "D", Subject = new Subject { Name = "Math" }, User = new User() };
         var expectedId = Guid.NewGuid();
 
-        var commentRepositoryMock = new Mock<ICommentRepository>();
-        commentRepositoryMock.Setup(x => x.CreateCommentAsync(It.IsAny<Comment>())).ReturnsAsync(expectedId);
+        _commentRepositoryMock.Setup(x => x.CreateCommentAsync(It.IsAny<Comment>())).ReturnsAsync(expectedId);
 
-        var taskRepositoryMock = new Mock<ITaskRepository>();
-        taskRepositoryMock.Setup(x => x.GetTaskAsync(taskId)).ReturnsAsync(task);
+        _taskRepositoryMock.Setup(x => x.GetTaskAsync(taskId)).ReturnsAsync(task);
 
-        var handler = new CreateCommentCommandHandler(commentRepositoryMock.Object, taskRepositoryMock.Object);
+        var handler = new CreateCommentCommandHandler(_commentRepositoryMock.Object, _taskRepositoryMock.Object);
         var command = new CreateCommentCommand { TaskId = taskId, UserName = "User", Description = "Text" };
 
         // Act
@@ -30,24 +39,27 @@ public class CreateCommentCommandHandlerTests
 
         // Assert
         Assert.Equal(expectedId, result);
-        commentRepositoryMock.Verify(x => x.CreateCommentAsync(It.Is<Comment>(c =>
-            c.Task == task &&
-            c.UserName == "User" &&
-            c.Description == "Text")), Times.Once);
+        _commentRepositoryMock.Verify(x => x.CreateCommentAsync(It.Is<Comment>(c =>
+        c.Task == task &&
+        c.UserName == "User" &&
+        c.Description == "Text")), Times.Once);
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenTaskMissing_ShouldThrow()
+    public async System.Threading.Tasks.Task Handle_ShouldCreateComment_WhenTaskNotFound()
     {
+        _commentRepositoryMock.Reset();
+        _taskRepositoryMock.Reset();
         // Arrange
-        var taskRepositoryMock = new Mock<ITaskRepository>();
-        taskRepositoryMock.Setup(x => x.GetTaskAsync(It.IsAny<Guid>())).ReturnsAsync((StudyHub.Domain.Entities.Task?)null);
+        _taskRepositoryMock.Setup(x => x.GetTaskAsync(It.IsAny<Guid>())).ReturnsAsync((StudyHub.Domain.Entities.Task?)null);
 
-        var commentRepositoryMock = new Mock<ICommentRepository>();
-        var handler = new CreateCommentCommandHandler(commentRepositoryMock.Object, taskRepositoryMock.Object);
+        var handler = new CreateCommentCommandHandler(_commentRepositoryMock.Object, _taskRepositoryMock.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<Exception>(() => handler.Handle(new CreateCommentCommand { TaskId = Guid.NewGuid() }, CancellationToken.None));
-        commentRepositoryMock.Verify(x => x.CreateCommentAsync(It.IsAny<Comment>()), Times.Never);
+        _commentRepositoryMock.Verify(x => x.CreateCommentAsync(It.IsAny<Comment>()), Times.Never);
     }
 }
+
+
+

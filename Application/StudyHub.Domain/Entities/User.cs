@@ -22,4 +22,5 @@ public class User : IdentityUser<Guid>
     public ICollection<Task>? Tasks { get; set; }
     public ICollection<Feedback>? Feedbacks { get; set; }
     public ICollection<Statistic>? Statistics { get; set; }
+    public ICollection<UserSession>? Sessions { get; set; }
 }

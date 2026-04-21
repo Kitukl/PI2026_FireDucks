@@ -21,7 +21,13 @@ public class UserRepository : IUserRepository
 
     public async Task<IEnumerable<User>> GetUsersAsync()
     {
-        return await _context.Users.Include(u=>u.Group).ToListAsync();
+        return await _context.Users.Include(u => u.Group).ToListAsync();
+    }
+
+    public async Task<bool> IsHeadman(Guid id)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        return await _userManager.IsInRoleAsync(user, Role.Leader.ToString());
     }
 
     public async Task<List<string>> GetAllEmailsAsync()
@@ -39,11 +45,11 @@ public class UserRepository : IUserRepository
             .Where(u => u.Id == userId)
             .ExecuteDeleteAsync();
     }
-    
+
     public async Task<User> Update(User user)
     {
         _context.Update(user);
-        
+
         await _context.SaveChangesAsync();
 
         return user;
@@ -51,7 +57,7 @@ public class UserRepository : IUserRepository
 
     public async Task AddRole(Role userRole, Guid userId)
     {
-        var user = await _context.Users.FirstAsync(u => u.Id == userId); 
+        var user = await _context.Users.FirstAsync(u => u.Id == userId);
         var result = await _userManager.AddToRoleAsync(user, userRole.ToString());
 
         if (!result.Succeeded && result.Errors.All(e => e.Code != "UserAlreadyInRole"))
@@ -70,6 +76,7 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
                    .Include(u => u.Group)
+                   .Include(u => u.Reminder)
                    .FirstOrDefaultAsync(u => u.Id == requestId)
                ?? throw new Exception("User not found");
     }
@@ -85,12 +92,12 @@ public class UserRepository : IUserRepository
         var roles = await _userManager.GetRolesAsync(user);
         return roles.ToList();
     }
-    
+
     public async Task AddExternalLogin(User user, string provider, string providerKey)
     {
         var info = new UserLoginInfo(provider, providerKey, provider);
         var result = await _userManager.AddLoginAsync(user, info);
-    
+
         if (!result.Succeeded)
         {
             throw new Exception("Не вдалося прив'язати зовнішній акаунт");

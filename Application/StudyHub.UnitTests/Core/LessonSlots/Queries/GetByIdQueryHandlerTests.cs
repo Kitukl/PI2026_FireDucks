@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.LessonSlots.Interfaces;
 using StudyHub.Core.LessonSlots.Queries;
 using StudyHub.Domain.Entities;
@@ -7,15 +7,22 @@ namespace StudyHub.UnitTests.Handlers.LessonSlots.Queries;
 
 public class GetByIdQueryHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenFound_ShouldReturnDto()
+    private readonly Mock<ILessonSlotRepository> _repositoryMock;
+
+    public GetByIdQueryHandlerTests()
     {
+        _repositoryMock = new Mock<ILessonSlotRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldReturnLessonSlot_WhenLessonSlotExists()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var slot = new LessonsSlot { Id = Guid.Empty, StartTime = new TimeOnly(7, 0), EndTime = new TimeOnly(8, 0) };
-        var repositoryMock = new Mock<ILessonSlotRepository>();
-        repositoryMock.Setup(x => x.GetById(It.IsAny<Guid>())).ReturnsAsync(slot);
+        _repositoryMock.Setup(x => x.GetById(It.IsAny<Guid>())).ReturnsAsync(slot);
 
-        var handler = new GetByIdQueryHandler(repositoryMock.Object);
+        var handler = new GetByIdQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetLessonSlotByIdRequest(Guid.NewGuid()), CancellationToken.None);
@@ -26,13 +33,13 @@ public class GetByIdQueryHandlerTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenMissing_ShouldReturnNull()
+    public async System.Threading.Tasks.Task Handle_ShouldGetById_WhenLessonSlotNotFound()
     {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<ILessonSlotRepository>();
-        repositoryMock.Setup(x => x.GetById(It.IsAny<Guid>())).ReturnsAsync((LessonsSlot?)null);
+        _repositoryMock.Setup(x => x.GetById(It.IsAny<Guid>())).ReturnsAsync((LessonsSlot?)null);
 
-        var handler = new GetByIdQueryHandler(repositoryMock.Object);
+        var handler = new GetByIdQueryHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetLessonSlotByIdRequest(Guid.NewGuid()), CancellationToken.None);
@@ -41,3 +48,6 @@ public class GetByIdQueryHandlerTests
         Assert.Null(result);
     }
 }
+
+
+

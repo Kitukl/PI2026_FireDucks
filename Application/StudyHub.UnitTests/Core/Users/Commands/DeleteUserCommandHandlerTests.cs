@@ -6,20 +6,29 @@ namespace StudyHub.UnitTests.Handlers.Users.Commands;
 
 public class DeleteUserCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldDeleteUserAndReturnUserId()
+    private readonly Mock<IUserRepository> _repositoryMock;
+
+    public DeleteUserCommandHandlerTests()
     {
+        _repositoryMock = new Mock<IUserRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldDeleteUser_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var userId = Guid.NewGuid();
-        var repositoryMock = new Mock<IUserRepository>();
-        var handler = new DeleteUserCommandHandler(repositoryMock.Object);
+        var handler = new DeleteUserCommandHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new DeleteUserCommand { UserId = userId }, CancellationToken.None);
 
         // Assert
         Assert.Equal(userId, result);
-        repositoryMock.Verify(x => x.Delete(userId), Times.Once);
+        _repositoryMock.Verify(x => x.Delete(userId), Times.Once);
     }
 }
+
+
 

@@ -33,7 +33,7 @@
                         <a asp-action="ScheduleEdit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning">Configure</a>
                         <a asp-action="ScheduleDetails" asp-route-id="@item.Id" class="btn btn-sm btn-info">View</a>
                         <a asp-action="ScheduleDelete" asp-route-id="@item.Id" class="btn btn-sm btn-info">Delete</a>
-                        <form asp-action="ScheduleDelete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Delete this group schedule?')">
+                        <form asp-action="ScheduleDelete" asp-route-id="@item.Id" method="post" data-confirm-message="Delete this group schedule?">
                             <button type="submit" class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash"></i></button>
                         </form>
                     </div>

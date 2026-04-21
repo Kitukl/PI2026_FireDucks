@@ -17,7 +17,7 @@
     };
 }
 
-<section class="taskboard-page" data-task-status-update-url="@Url.Action("TaskBoardViewTaskUpdateStatus", "Home")">
+<section class="taskboard-page" data-task-status-update-url="@Url.Action("TaskBoardViewTaskUpdateStatus", "TaskBoard")">
     <form class="js-taskboard-anti-forgery" method="post" hidden>
         @Html.AntiForgeryToken()
     </form>
@@ -95,20 +95,38 @@
                 {
                     <article class="task-card" draggable="true" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
                         <header>
-                            <h3>@task.Title</h3>
+                            <h3 title="@task.Title">@task.Title</h3>
                             <span class="task-card-status"></span>
                         </header>
-                        <p>@task.SubjectName</p>
+                        <p class="task-card-subject" data-subject="@task.SubjectName" title="@task.SubjectName">@task.SubjectName</p>
                         <div class="task-card-meta">
                             @if (task.IsGroupTask)
                             {
                                 <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
-                                <span class="task-card-badge">&#128100;</span>
+                                <span class="task-card-badge" title="@task.OwnerName">
+                                    @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                    {
+                                        <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="task-card-badge-fallback">&#128100;</span>
+                                    }
+                                </span>
                             }
                             else
                             {
                                 <span></span>
-                                <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                                <span class="task-card-badge" title="@task.OwnerName">
+                                    @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                    {
+                                        <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="task-card-badge-fallback">&#128105;&#8205;&#128188;</span>
+                                    }
+                                </span>
                             }
                         </div>
                         <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
@@ -122,20 +140,38 @@
                 {
                     <article class="task-card" draggable="true" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
                         <header>
-                            <h3>@task.Title</h3>
+                            <h3 title="@task.Title">@task.Title</h3>
                             <span class="task-card-status"></span>
                         </header>
-                        <p>@task.SubjectName</p>
+                        <p class="task-card-subject" data-subject="@task.SubjectName" title="@task.SubjectName">@task.SubjectName</p>
                         <div class="task-card-meta">
                             @if (task.IsGroupTask)
                             {
                                 <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
-                                <span class="task-card-badge">&#128100;</span>
+                                <span class="task-card-badge" title="@task.OwnerName">
+                                    @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                    {
+                                        <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="task-card-badge-fallback">&#128100;</span>
+                                    }
+                                </span>
                             }
                             else
                             {
                                 <span></span>
-                                <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                                <span class="task-card-badge" title="@task.OwnerName">
+                                    @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                    {
+                                        <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="task-card-badge-fallback">&#128105;&#8205;&#128188;</span>
+                                    }
+                                </span>
                             }
                         </div>
                         <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
@@ -149,20 +185,38 @@
                 {
                     <article class="task-card" draggable="true" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
                         <header>
-                            <h3>@task.Title</h3>
+                            <h3 title="@task.Title">@task.Title</h3>
                             <span class="task-card-state soft" aria-hidden="true"></span>
                         </header>
-                        <p>@task.SubjectName</p>
+                        <p class="task-card-subject" data-subject="@task.SubjectName" title="@task.SubjectName">@task.SubjectName</p>
                         <div class="task-card-meta">
                             @if (task.IsGroupTask)
                             {
                                 <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
-                                <span class="task-card-badge">&#128100;</span>
+                                <span class="task-card-badge" title="@task.OwnerName">
+                                    @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                    {
+                                        <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="task-card-badge-fallback">&#128100;</span>
+                                    }
+                                </span>
                             }
                             else
                             {
                                 <span></span>
-                                <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                                <span class="task-card-badge" title="@task.OwnerName">
+                                    @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                    {
+                                        <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="task-card-badge-fallback">&#128105;&#8205;&#128188;</span>
+                                    }
+                                </span>
                             }
                         </div>
                         <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
@@ -176,20 +230,38 @@
                 {
                     <article class="task-card" draggable="true" data-status="done" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")" data-completed-at="@DateTime.UtcNow.ToString("yyyy-MM-dd")">
                         <header>
-                            <h3>@task.Title</h3>
+                            <h3 title="@task.Title">@task.Title</h3>
                             <span class="task-card-state">&#10003;</span>
                         </header>
-                        <p>@task.SubjectName</p>
+                        <p class="task-card-subject" data-subject="@task.SubjectName" title="@task.SubjectName">@task.SubjectName</p>
                         <div class="task-card-meta">
                             @if (task.IsGroupTask)
                             {
                                 <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
-                                <span class="task-card-badge">&#128100;</span>
+                                <span class="task-card-badge" title="@task.OwnerName">
+                                    @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                    {
+                                        <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="task-card-badge-fallback">&#128100;</span>
+                                    }
+                                </span>
                             }
                             else
                             {
                                 <span></span>
-                                <span class="task-card-badge">&#128105;&#8205;&#128188;</span>
+                                <span class="task-card-badge" title="@task.OwnerName">
+                                    @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                    {
+                                        <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="task-card-badge-fallback">&#128105;&#8205;&#128188;</span>
+                                    }
+                                </span>
                             }
                         </div>
                         <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>

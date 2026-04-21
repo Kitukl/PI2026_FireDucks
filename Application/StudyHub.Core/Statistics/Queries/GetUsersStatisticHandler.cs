@@ -17,20 +17,24 @@ public class GetUsersStatisticHandler : IRequestHandler<GetUsersStatisticRequest
     public async Task<UsersStatisticDto> Handle(GetUsersStatisticRequest request, CancellationToken cancellationToken)
     {
         var rawData = await repository.GetRecentStatisticAsync();
+        var (userFilesCount, groupFilesCount) = await repository.GetStorageFileCountsAsync(cancellationToken);
+        var (studentsCount, groupsCount, leadersCount) = await repository.GetSystemEntityCountsAsync(cancellationToken);
         
         if (rawData is null)
         {
-            var emptyStorageFileCount = await repository.GetStorageFileCountAsync(cancellationToken);
-            return new UsersStatisticDto(DateTime.Now, [], emptyStorageFileCount);
+            return new UsersStatisticDto(DateTime.Now, [], userFilesCount, groupFilesCount, studentsCount, groupsCount, leadersCount);
         }
         
         var userActivityPerMonth = await repository.GetYearlyActivityAsync(DateTime.Now.Year);
-        var storageFileCount = await repository.GetStorageFileCountAsync(cancellationToken);
 
         return new UsersStatisticDto(
             rawData.CreatedAt,
             userActivityPerMonth,
-            storageFileCount
+            userFilesCount,
+            groupFilesCount,
+            studentsCount,
+            groupsCount,
+            leadersCount
         );
     }
 }

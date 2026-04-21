@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.Schedules.Commands;
 using StudyHub.Core.Schedules.Interfaces;
 
@@ -6,17 +6,27 @@ namespace StudyHub.UnitTests.Handlers.Schedules.Commands;
 
 public class SetScheduleAutoUpdateIntervalCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldSetAutoUpdateInterval()
+    private readonly Mock<IScheduleRepository> _repositoryMock;
+
+    public SetScheduleAutoUpdateIntervalCommandHandlerTests()
     {
+        _repositoryMock = new Mock<IScheduleRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldSetScheduleAutoUpdateInterval_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<IScheduleRepository>();
-        var handler = new SetScheduleAutoUpdateIntervalCommandHandler(repositoryMock.Object);
+        var handler = new SetScheduleAutoUpdateIntervalCommandHandler(_repositoryMock.Object);
 
         // Act
         await handler.Handle(new SetScheduleAutoUpdateIntervalRequest(15), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.SetScheduleAutoUpdateInterval(15), Times.Once);
+        _repositoryMock.Verify(x => x.SetScheduleAutoUpdateInterval(15), Times.Once);
     }
 }
+
+
+

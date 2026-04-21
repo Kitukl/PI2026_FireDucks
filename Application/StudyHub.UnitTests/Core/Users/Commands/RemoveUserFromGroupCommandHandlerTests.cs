@@ -7,16 +7,23 @@ namespace StudyHub.UnitTests.Handlers.Users.Commands;
 
 public class RemoveUserFromGroupCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldClearGroupAndReturnUserName()
+    private readonly Mock<IUserRepository> _repositoryMock;
+
+    public RemoveUserFromGroupCommandHandlerTests()
     {
+        _repositoryMock = new Mock<IUserRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldRemoveUserFromGroup_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var user = new User { Id = Guid.NewGuid(), Name = "Oleh", Group = new Group { Name = "PI-23" } };
-        var repositoryMock = new Mock<IUserRepository>();
-        repositoryMock.Setup(x => x.GetUserById(user.Id)).ReturnsAsync(user);
-        repositoryMock.Setup(x => x.Update(user)).ReturnsAsync(user);
+        _repositoryMock.Setup(x => x.GetUserById(user.Id)).ReturnsAsync(user);
+        _repositoryMock.Setup(x => x.Update(user)).ReturnsAsync(user);
 
-        var handler = new RemoveUserFromGroupCommandHandler(repositoryMock.Object);
+        var handler = new RemoveUserFromGroupCommandHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new RemoveUserFromGroupCommand { UserId = user.Id }, CancellationToken.None);
@@ -24,19 +31,21 @@ public class RemoveUserFromGroupCommandHandlerTests
         // Assert
         Assert.Equal("Oleh", result);
         Assert.Null(user.Group);
-        repositoryMock.Verify(x => x.Update(user), Times.Once);
+        _repositoryMock.Verify(x => x.Update(user), Times.Once);
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenUserNotFound_ShouldThrow()
+    public async System.Threading.Tasks.Task Handle_ShouldRemoveUserFromGroup_WhenUserNotFound()
     {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<IUserRepository>();
-        repositoryMock.Setup(x => x.GetUserById(It.IsAny<Guid>())).ReturnsAsync((User)null!);
-        var handler = new RemoveUserFromGroupCommandHandler(repositoryMock.Object);
+        _repositoryMock.Setup(x => x.GetUserById(It.IsAny<Guid>())).ReturnsAsync((User)null!);
+        var handler = new RemoveUserFromGroupCommandHandler(_repositoryMock.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<Exception>(() => handler.Handle(new RemoveUserFromGroupCommand { UserId = Guid.NewGuid() }, CancellationToken.None));
     }
 }
+
+
 

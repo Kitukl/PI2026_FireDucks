@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.Extensions.Options
+@inject IOptions<StudyHub.Infrastructure.Services.SessionTrackingOptions> SessionTrackingOptionsAccessor
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
@@ -14,9 +16,9 @@
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
-    var requestPath = Context.Request.Path.Value ?? string.Empty;
     var isInsideAdminController = currentController.Equals("Admin", StringComparison.OrdinalIgnoreCase);
     var isAdminUser = isInsideAdminController;
+    var heartbeatIntervalMilliseconds = Math.Max(5, SessionTrackingOptionsAccessor.Value.HeartbeatIntervalSeconds) * 1000;
 }
 <body class="@(isAdminUser ? "admin-body" : "app-body")">
 @if (!isAdminUser)
@@ -36,13 +38,13 @@
                 <a class="sh-nav-link @(currentController == "TaskBoard" ? "active" : string.Empty)"
                    asp-area="" asp-controller="TaskBoard" asp-action="TaskBoard">Task board</a>
                 <a class="sh-nav-link @(currentController == "SchedulePage" ? "active" : string.Empty)"
-                   asp-area="" asp-controller="SchedulePage" asp-action="Schedule">Schedule</a>
+                   asp-area="" asp-controller="Schedule" asp-action="MySchedule">Schedule</a>
                 <a class="sh-nav-link @(currentController == "Storage" ? "active" : string.Empty)"
                    asp-area="" asp-controller="Storage" asp-action="Storage">Storage</a>
             </nav>
 
             <div class="sh-user-actions">
-                <a class="sh-icon-btn" asp-area="" asp-controller="UserProfile" asp-action="UserProfile" aria-label="Profile">
+                <a class="sh-icon-btn" asp-area="" asp-controller="User" asp-action="UserProfile" aria-label="Profile">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path d="M12 13.2c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2.4c-3.34 0-10 1.68-10 5v1.2h20V20.6c0-3.32-6.66-5-10-5z"></path>
                     </svg>
@@ -92,5 +94,15 @@ else
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
+<script>
+    function heartbeat() {
+        fetch('/session/heartbeat',{
+            method: 'POST',
+            credentials: 'include'
+        }).catch(() => {});
+    }
+    heartbeat();
+    const intervalId = setInterval(heartbeat, @heartbeatIntervalMilliseconds);
+</script>
 </body>
 </html>

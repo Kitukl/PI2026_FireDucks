@@ -1,12 +1,7 @@
+using Application.Middleware;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
-using Application.Security;
-using StudyHub.Infrastructure;
-using StudyHub.Infrastructure.Repositories;
-
 using Serilog;
 using StudyHub.Core.Comments.Interfaces;
 using StudyHub.Core.Feedbacks.Interfaces;
@@ -21,14 +16,14 @@ using StudyHub.Core.Statistics.Queries;
 using StudyHub.Core.Storage.Interfaces;
 using StudyHub.Core.Subjects.Interfaces;
 using StudyHub.Core.Tasks.Interfaces;
+using StudyHub.Core.UserSessions.Interfaces;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Core.Notifications.Interfaces;
 using StudyHub.Domain.Entities;
 using StudyHub.Infrastructure;
-using StudyHub.Infrastructure.Repositories;
 using StudyHub.Infrastructure.Services;
-using StudyHub.Domain.Enums;
 using StudyHub.Infrastructure.Notifications;
+using StudyHub.Infrastructure.Repositories;
 using StudyHub.Infrastructure.Storage;
 
 namespace Application;
@@ -61,8 +56,11 @@ public class Program
             configuration.ReadFrom.Configuration(context.Configuration));
         
         builder.Services.AddControllersWithViews();
+        builder.Services.Configure<SessionTrackingOptions>(
+            builder.Configuration.GetSection(SessionTrackingOptions.SectionName));
         builder.Services.AddDbContext<SDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Services.AddHttpContextAccessor();
         
         builder.Services.AddIdentity<User, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<SDbContext>()
@@ -77,6 +75,7 @@ public class Program
         builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
         builder.Services.AddScoped<ITaskRepository, TaskRepository>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
+        builder.Services.AddScoped<IUserAuthRepository, UserAuthRepository>();
         builder.Services.AddScoped<IBlobService, BlobService>();
         builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
         builder.Services.AddScoped<ICommentRepository, CommentRepository>();
@@ -87,7 +86,12 @@ public class Program
         builder.Services.AddScoped<ILessonSlotRepository, LessonSlotRepository>();
         builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
-        builder.Services.AddScoped<IClaimsTransformation, UserRolesClaimsTransformation>();
+        builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();
+        builder.Services.AddScoped<IUserSessionTrackingService, UserSessionTrackingService>();
+        builder.Services.AddHostedService<DeadlineSender>();
+        builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
+        builder.Services.AddHostedService<MonthlyStatisticsAggregationService>();
+        builder.Services.AddHostedService<UserSessionExpirationService>();
         
         var authenticationBuilder = builder.Services.AddAuthentication();
         var microsoftClientId = builder.Configuration["Authentication:Microsoft:ClientId"];
@@ -117,7 +121,7 @@ public class Program
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));
 
-        builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c => c.BaseAddress = new Uri("http://localhost:5678"));
+        builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c => c.BaseAddress = new Uri(builder.Configuration["Parser:Url"] ?? "http://localhost:5678"));
         builder.Services.AddHostedService<ScheduleAutoUpdateService>();
 
         var app = builder.Build();
@@ -133,55 +137,12 @@ public class Program
         app.UseHttpsRedirection();
         app.UseRouting();
 
-        app.UseAuthentication(); 
-
-        app.Use(async (context, next) =>
-        {
-            var path = context.Request.Path;
-
-            static bool IsPath(string? value, string prefix)
-            {
-                return !string.IsNullOrWhiteSpace(value) &&
-                       value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
-            }
-
-            var isBypassedPath = path.HasValue &&
-                                 (IsPath(path.Value, "/login") ||
-                                  IsPath(path.Value, "/user/login-microsoft") ||
-                                  IsPath(path.Value, "/user/callback") ||
-                                  IsPath(path.Value, "/signin-microsoft") ||
-                                  IsPath(path.Value, "/user/access-denied") ||
-                                  Path.HasExtension(path.Value));
-
-            if (!isBypassedPath && context.User.Identity?.IsAuthenticated != true)
-            {
-                context.Response.Redirect("/login");
-                return;
-            }
-
-            if (context.User.Identity?.IsAuthenticated == true)
-            {
-                var isStudent = context.User.IsInRole(nameof(Role.Student));
-                var isLeader = context.User.IsInRole(nameof(Role.Leader));
-                var pathValue = path.Value ?? string.Empty;
-
-                if (isStudent && !isLeader && IsPath(pathValue, "/TaskBoard/ReviewGroup"))
-                {
-                    context.Response.Redirect("/Home/Index");
-                    return;
-                }
-            }
-
-            await next();
-        });
+        app.UseAuthentication();
+        app.UseMiddleware<AccessControlMiddleware>();
 
         app.UseAuthorization();
 
         app.MapStaticAssets();
-        //app.MapControllerRoute(
-        //    name: "admin-schedule",
-        //    pattern: "Admin/Schedule/{action=SchedulesList}/{id?}",
-        //    defaults: new { controller = "Schedule" });
 
         app.MapControllerRoute(
                 name: "default",

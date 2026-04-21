@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.DTOs;
 using StudyHub.Core.LessonSlots.Commands;
 using StudyHub.Core.LessonSlots.Interfaces;
@@ -8,18 +8,28 @@ namespace StudyHub.UnitTests.Handlers.LessonSlots.Commands;
 
 public class AddLessonSlotCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldMapAndAddLessonSlot()
+    private readonly Mock<ILessonSlotRepository> _repositoryMock;
+
+    public AddLessonSlotCommandHandlerTests()
     {
+        _repositoryMock = new Mock<ILessonSlotRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldAddLessonSlot_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<ILessonSlotRepository>();
-        var handler = new AddLessonSlotCommandHandler(repositoryMock.Object);
+        var handler = new AddLessonSlotCommandHandler(_repositoryMock.Object);
         var dto = new LessonSlotDto { Id = Guid.Empty, StartTime = new TimeOnly(8, 0), EndTime = new TimeOnly(9, 0) };
 
         // Act
         await handler.Handle(new AddLessonSlotRequest(dto), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.AddLessonSlot(It.Is<LessonsSlot>(s => s.Id != Guid.Empty && s.StartTime == dto.StartTime)), Times.Once);
+        _repositoryMock.Verify(x => x.AddLessonSlot(It.Is<LessonsSlot>(s => s.Id != Guid.Empty && s.StartTime == dto.StartTime)), Times.Once);
     }
 }
+
+
+

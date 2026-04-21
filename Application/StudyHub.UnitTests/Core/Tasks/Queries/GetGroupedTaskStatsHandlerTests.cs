@@ -7,9 +7,17 @@ namespace StudyHub.UnitTests.Handlers.Tasks.Queries;
 
 public class GetGroupedTaskStatsHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldMapBooleanKeysToReadableGroups()
+    private readonly Mock<ITaskRepository> _repositoryMock;
+
+    public GetGroupedTaskStatsHandlerTests()
     {
+        _repositoryMock = new Mock<ITaskRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldGetGroupedTaskStats_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var source = new Dictionary<bool, Dictionary<Status, int>>
         {
@@ -17,10 +25,9 @@ public class GetGroupedTaskStatsHandlerTests
             [true] = new Dictionary<Status, int> { [Status.Done] = 3 }
         };
 
-        var repositoryMock = new Mock<ITaskRepository>();
-        repositoryMock.Setup(x => x.GetGroupedTaskStatsAsync()).ReturnsAsync(source);
+        _repositoryMock.Setup(x => x.GetGroupedTaskStatsAsync()).ReturnsAsync(source);
 
-        var handler = new GetGroupedTaskStatsHandler(repositoryMock.Object);
+        var handler = new GetGroupedTaskStatsHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetGroupedTaskStatsRequest(), CancellationToken.None);
@@ -31,5 +38,6 @@ public class GetGroupedTaskStatsHandlerTests
         Assert.Equal(3, result["Group Tasks"]["Done"]);
     }
 }
+
 
 

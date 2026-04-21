@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using StudyHub.Core.Schedules.Commands;
 using StudyHub.Core.Schedules.Interfaces;
 
@@ -6,17 +6,27 @@ namespace StudyHub.UnitTests.Handlers.Schedules.Commands;
 
 public class DeleteAllCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldDeleteAllSchedules()
+    private readonly Mock<IScheduleRepository> _repositoryMock;
+
+    public DeleteAllCommandHandlerTests()
     {
+        _repositoryMock = new Mock<IScheduleRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldDeleteAll_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<IScheduleRepository>();
-        var handler = new DeleteAllCommandHandler(repositoryMock.Object);
+        var handler = new DeleteAllCommandHandler(_repositoryMock.Object);
 
         // Act
         await handler.Handle(new DeleteAllRequest(), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.DeleteAllAsync(), Times.Once);
+        _repositoryMock.Verify(x => x.DeleteAllAsync(), Times.Once);
     }
 }
+
+
+

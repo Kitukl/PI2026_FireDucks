@@ -1,47 +1,45 @@
 using Application.Models;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StudyHub.Core.DTOs;
+using StudyHub.Core.Admin.Commands;
+using StudyHub.Core.Admin.Queries;
 using StudyHub.Core.Feedbacks.Commands;
-using StudyHub.Core.Feedbacks.Queries;
 using StudyHub.Core.Schedules.Commands;
-using StudyHub.Core.Schedules.Queries;
-using StudyHub.Core.Statistics.Queries;
-using StudyHub.Core.Tasks.Queries;
 using StudyHub.Core.Users.Commands;
 using StudyHub.Core.Users.Queries;
-using StudyHub.Domain.Entities;
 using StudyHub.Domain.Enums;
-using StudyHub.Infrastructure;
-using DayOfWeek = StudyHub.Domain.Enums.DayOfWeek;
 
 namespace Application.Controllers;
 
-public class AdminController(IMediator mediator, SDbContext _context) : Controller
+[Authorize(Roles = nameof(Role.Admin))]
+public class AdminController(IMediator mediator) : Controller
 {
     public async Task<IActionResult> Dashboard()
     {
-        var user = await mediator.Send(new GetUsersStatisticRequest());
-        var tasksCount = await mediator.Send(new GetTaskCountRequest());
-        var taskStatusCount = await mediator.Send(new GetGroupedTaskStatsRequest());
-        
-        var viewModel = new SystemStatisticViewModel()
+        var data = await mediator.Send(new GetAdminDashboardQuery());
+
+        var viewModel = new SystemStatisticViewModel
         {
-            CreatedAt = user.CreatedAt,
-            UserActivityPerMonth = user.UserActivityPerMonth,
-            GropedTaskCount = taskStatusCount,
-            FileCount = user.FileCount,
-            TaskCount = tasksCount
+            CreatedAt = data.CreatedAt,
+            UserActivityPerMonth = data.UserActivityPerMonth,
+            GropedTaskCount = data.GroupedTaskCount,
+            StudentsCount = data.StudentsCount,
+            GroupsCount = data.GroupsCount,
+            LeadersCount = data.LeadersCount,
+            UserFilesCount = data.UserFilesCount,
+            GroupFilesCount = data.GroupFilesCount,
+            FileCount = data.FileCount,
+            TaskCount = data.TaskCount
         };
-            
+
         return View(viewModel);
     }
 
     public async Task<IActionResult> Users()
     {
         var users = await mediator.Send(new GetUsersRequest());
-        
+
         return View(users);
     }
 
@@ -76,107 +74,138 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetUser(Guid id)
+    public IActionResult GetUser(Guid id)
     {
-        var userDto = await mediator.Send(new GetUserRequest(id));
-        var users = await mediator.Send(new GetUsersRequest());
-        var existingGroups = users
-            .Select(user => user.GroupName)
-            .Where(groupName => !string.IsNullOrWhiteSpace(groupName))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(groupName => groupName)
-            .ToList();
-        
+        return RedirectToAction(nameof(Users));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetUserModal(Guid id)
+    {
+        var data = await mediator.Send(new GetAdminUpdateUserFormQuery
+        {
+            UserId = id
+        });
+
         var viewModel = new UpdateUserViewModel
         {
-            Id = userDto.Id,
-            Name = userDto.Name,
-            Surname = userDto.Surname ?? "",
-            PhotoUrl = userDto.PhotoUrl ?? string.Empty,
-            GroupName = userDto.GroupName,
-            Roles = userDto.Roles,
-            AvailableRoles = Enum.GetNames(typeof(Role)).ToList(),
-            ExistingGroups = existingGroups
+            Id = data.Id,
+            Name = data.Name,
+            Surname = data.Surname,
+            PhotoUrl = data.PhotoUrl,
+            GroupName = data.GroupName,
+            Roles = data.Roles,
+            SelectedRoles = data.SelectedRoles,
+            AvailableRoles = data.AvailableRoles,
+            ExistingGroups = data.ExistingGroups
         };
-        
-        return View("UpdateUser",viewModel);
+
+        return PartialView("_UpdateUserForm", viewModel);
     }
-    
+
     [HttpPost]
-    public async Task<IActionResult> UpdateUser(Guid id, string groupName)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateUser(UpdateUserViewModel model)
     {
-        await mediator.Send(new UpdateUserCommand 
-        { 
-            Id = id,
-            GroupName = groupName
+        var result = await mediator.Send(new UpdateAdminUserWithFormCommand
+        {
+            UserId = model.Id,
+            GroupName = model.GroupName,
+            SelectedRoles = model.SelectedRoles
         });
-    
-        return RedirectToAction("GetUser", new { id });
+
+        var isAjaxRequest = string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+        if (result.HasValidationErrors)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error);
+            }
+
+            var invalidData = result.InvalidData;
+            var invalidModel = invalidData == null
+                ? new UpdateUserViewModel { Id = model.Id }
+                : new UpdateUserViewModel
+                {
+                    Id = invalidData.Id,
+                    Name = invalidData.Name,
+                    Surname = invalidData.Surname,
+                    PhotoUrl = invalidData.PhotoUrl,
+                    GroupName = invalidData.GroupName,
+                    Roles = invalidData.Roles,
+                    SelectedRoles = invalidData.SelectedRoles,
+                    AvailableRoles = invalidData.AvailableRoles,
+                    ExistingGroups = invalidData.ExistingGroups
+                };
+
+            if (isAjaxRequest)
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                return PartialView("_UpdateUserForm", invalidModel);
+            }
+
+            return View("UpdateUser", invalidModel);
+        }
+
+        if (isAjaxRequest)
+        {
+            return Json(new
+            {
+                success = true,
+                message = "User changes were saved.",
+                userId = result.UserId,
+                roles = result.Roles,
+                groupName = result.GroupName
+            });
+        }
+
+        TempData["AdminUsersMessage"] = "User changes were saved.";
+        return RedirectToAction(nameof(Users));
     }
-    
+
     [HttpPost]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         await mediator.Send(new DeleteUserCommand { UserId = id });
-    
-        return RedirectToAction("Users"); 
-    }
-    
-    [HttpPost]
-    public async Task<IActionResult> AddUserRole(UserRoleUpdateDto dto)
-    {
-        await mediator.Send(new AssignUserRoleCommand 
-        { 
-            UserId = dto.Id, 
-            Role = dto.Role 
-        });
-    
-        return RedirectToAction("GetUser", new { id = dto.Id });
-    }
 
-    [HttpPost] 
-    public async Task<IActionResult> RemoveUserRole(UserRoleUpdateDto dto)
-    {
-        await mediator.Send(new RemoveUserRoleCommand 
-        { 
-            UserId = dto.Id, 
-            Role = dto.Role 
-        });
-    
-        return RedirectToAction("GetUser", new { id = dto.Id });
+        return RedirectToAction("Users");
     }
 
     [HttpGet("/Admin/Requests")]
     public async Task<IActionResult> Requests()
     {
-        var feedbacks = await mediator.Send(new GetFeedbacksCommand());
-        var model = BuildRequestsViewModel(feedbacks, null, false);
+        var data = await mediator.Send(new GetAdminRequestsPageQuery
+        {
+            OpenModal = false
+        });
+
+        var model = new AdminRequestsViewModel
+        {
+            Requests = data.Requests,
+            ActiveRequest = data.ActiveRequest,
+            OpenRequestModal = data.OpenRequestModal
+        };
+
         return View(model);
     }
 
     [HttpGet("/Admin/Requests/View/{feedbackId?}")]
     public async Task<IActionResult> RequestView(string? feedbackId)
     {
-        var feedbacks = await mediator.Send(new GetFeedbacksCommand());
-
-        Feedback? activeRequest = null;
-        if (!string.IsNullOrWhiteSpace(feedbackId) && Guid.TryParse(feedbackId, out var parsedId))
+        var data = await mediator.Send(new GetAdminRequestsPageQuery
         {
-            activeRequest = feedbacks.FirstOrDefault(item => item.Id == parsedId);
-            if (activeRequest == null)
-            {
-                try
-                {
-                    activeRequest = await mediator.Send(new GetFeedbackCommand { Id = parsedId });
-                }
-                catch
-                {
-                    activeRequest = null;
-                }
-            }
-        }
+            FeedbackId = feedbackId,
+            OpenModal = true
+        });
 
-        var model = BuildRequestsViewModel(feedbacks, activeRequest, true);
+        var model = new AdminRequestsViewModel
+        {
+            Requests = data.Requests,
+            ActiveRequest = data.ActiveRequest,
+            OpenRequestModal = data.OpenRequestModal
+        };
+
         return View("Requests", model);
     }
 
@@ -184,36 +213,31 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateRequestStatus(Guid feedbackId, Status status)
     {
-        var allowedStatuses = new[] { Status.ToDo, Status.InProgress, Status.Resolved };
-        if (!allowedStatuses.Contains(status))
+        var result = await mediator.Send(new UpdateAdminRequestStatusCommand
         {
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            FeedbackId = feedbackId,
+            Status = status
+        });
+
+        var isAjaxRequest = string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+        if (!result.IsSuccess)
+        {
+            if (isAjaxRequest)
             {
-                return BadRequest(new { message = "Unsupported status." });
+                return BadRequest(new { message = result.ErrorMessage });
             }
 
             return RedirectToAction(nameof(RequestView), new { feedbackId });
         }
 
-        await mediator.Send(new UpdateFeedbackCommand
-        {
-            Id = feedbackId,
-            Status = status
-        });
-
-        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        if (isAjaxRequest)
         {
             return Ok(new
             {
                 feedbackId,
-                status = status.ToString(),
-                statusLabel = status switch
-                {
-                    Status.ToDo => "To do",
-                    Status.InProgress => "In progress",
-                    Status.Resolved => "Resolved",
-                    _ => status.ToString()
-                }
+                status = result.Status,
+                statusLabel = result.StatusLabel
             });
         }
 
@@ -223,34 +247,22 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     [HttpGet("/Admin/Schedule/{groupId?}")]
     public async Task<IActionResult> Schedule(Guid? groupId)
     {
-        var groups = await _context.Groups
-            .OrderBy(g => g.Name)
-            .Select(g => new GroupDto { Id = g.Id, Name = g.Name })
-            .ToListAsync();
-
-        var allSchedules = await mediator.Send(new GetAllSchedulesRequest());
-        var firstWithSettings = allSchedules.FirstOrDefault();
+        var data = await mediator.Send(new GetAdminSchedulePageQuery
+        {
+            GroupId = groupId
+        });
 
         var model = new AdminScheduleViewModel
         {
-            Groups = groups,
-            SelectedGroupId = groupId,
-            IsAutoUpdateEnabled = firstWithSettings?.IsAutoUpdate ?? false,
-            AllowLeadersToUpdate = firstWithSettings?.HeadmanUpdate ?? false,
-            LastGlobalUpdate = allSchedules.Any()
-                ? allSchedules.Max(s => s.UpdateAt)
-                : DateTime.MinValue,
-            AutoUpdateIntervalDays = firstWithSettings?.UpdateInterval ?? 3
+            Groups = data.Groups,
+            SelectedGroupId = data.SelectedGroupId,
+            IsAutoUpdateEnabled = data.IsAutoUpdateEnabled,
+            AllowLeadersToUpdate = data.AllowLeadersToUpdate,
+            LastGlobalUpdate = data.LastGlobalUpdate,
+            AutoUpdateIntervalDays = data.AutoUpdateIntervalDays,
+            SelectedGroupLastUpdate = data.SelectedGroupLastUpdate,
+            CurrentGroupSchedule = data.CurrentGroupSchedule ?? new ScheduleViewModel()
         };
-
-        if (groupId.HasValue)
-        {
-            var scheduleDto = await mediator.Send(new GetScheduleByGroupIdRequest(groupId.Value));
-            if (scheduleDto != null)
-            {
-                model.CurrentGroupSchedule = BuildScheduleGridViewModel(scheduleDto);
-            }
-        }
 
         return View(model);
     }
@@ -258,12 +270,7 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     [HttpPost]
     public async Task<IActionResult> RunGlobalUpdate()
     {
-        var groupNames = await _context.Groups.Select(g => g.Name).ToListAsync();
-
-        foreach (var name in groupNames)
-        {
-            await mediator.Send(new ParseAndSaveScheduleCommand(name));
-        }
+        await mediator.Send(new RunGlobalScheduleUpdateRequest());
 
         return RedirectToAction(nameof(Schedule));
     }
@@ -271,11 +278,8 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     [HttpPost]
     public async Task<IActionResult> UpdateGroupSchedule(Guid groupId)
     {
-        var group = await _context.Groups.FindAsync(groupId);
-        if (group != null)
-        {
-            await mediator.Send(new ParseAndSaveScheduleCommand(group.Name));
-        }
+        await mediator.Send(new UpdateGroupScheduleRequest(groupId));
+
         return RedirectToAction(nameof(Schedule), new { groupId });
     }
 
@@ -296,82 +300,8 @@ public class AdminController(IMediator mediator, SDbContext _context) : Controll
     [HttpPost]
     public async Task<IActionResult> UpdateGlobalSettings(bool isAutoUpdate, bool allowLeaders, uint intervalDays)
     {
-        Console.WriteLine($"DEBUG: AutoUpdate={isAutoUpdate}, AllowLeaders={allowLeaders}, Interval={intervalDays}");
-
-        await _context.Schedules.ExecuteUpdateAsync(s => s
-            .SetProperty(b => b.IsAutoUpdate, isAutoUpdate)
-            .SetProperty(b => b.CanHeadmanUpdate, allowLeaders)
-            .SetProperty(b => b.UpdateInterval, intervalDays)
-            .SetProperty(b => b.UpdatedAt, DateTime.UtcNow));
+        await mediator.Send(new UpdateGlobalScheduleSettingsRequest(isAutoUpdate, allowLeaders, intervalDays));
 
         return RedirectToAction(nameof(Schedule));
-    }
-
-    private Application.Models.ScheduleViewModel BuildScheduleGridViewModel(ScheduleDto dto)
-    {
-        var vm = new Application.Models.ScheduleViewModel
-        {
-            GroupId = dto.Group.Id,
-            GroupName = dto.Group.Name,
-            CanHeadmanUpdate = dto.HeadmanUpdate,
-            IsHeadman = false
-        };
-
-        if (dto.Lessons != null && dto.Lessons.Any())
-        {
-            vm.UniqueSlots = dto.Lessons
-                .Select(l => l.LessonSlot)
-                .Where(s => s != null)
-                .GroupBy(s => s.Id)
-                .Select(g => g.First())
-                .OrderBy(s => s.StartTime)
-                .ToList();
-
-            vm.Days = new List<DayOfWeek>
-            {
-                DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
-                DayOfWeek.Thursday, DayOfWeek.Friday
-            };
-
-            foreach (var lesson in dto.Lessons)
-            {
-                var key = $"{(int)lesson.Day}-{lesson.LessonSlot.Id}";
-
-                if (!vm.Grid.ContainsKey(key))
-                {
-                    vm.Grid[key] = new List<LessonDto>();
-                }
-                vm.Grid[key].Add(lesson);
-            }
-        }
-
-        return vm;
-    }
-
-
-
-    private static AdminRequestsViewModel BuildRequestsViewModel(
-        IEnumerable<Feedback> feedbacks,
-        Feedback? activeRequest,
-        bool openModal)
-    {
-        var allowedStatuses = new[] { Status.ToDo, Status.InProgress, Status.Resolved };
-
-        var filteredRequests = feedbacks
-            .Where(request => allowedStatuses.Contains(request.Status))
-            .OrderByDescending(request => request.CreatedAt)
-            .ToList();
-
-        if (activeRequest == null)
-        {
-            activeRequest = filteredRequests.FirstOrDefault();
-        }
-
-        return new AdminRequestsViewModel
-        {
-            Requests = filteredRequests,
-            ActiveRequest = activeRequest,
-            OpenRequestModal = openModal && activeRequest != null
-        };
     }
 }

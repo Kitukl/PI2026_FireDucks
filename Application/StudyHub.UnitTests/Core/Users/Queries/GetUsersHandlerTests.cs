@@ -7,11 +7,18 @@ namespace StudyHub.UnitTests.Handlers.Users.Queries;
 
 public class GetUsersHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldMapUsersToDtoList()
+    private readonly Mock<IUserRepository> _repositoryMock;
+
+    public GetUsersHandlerTests()
     {
+        _repositoryMock = new Mock<IUserRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldGetUsers_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<IUserRepository>();
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -21,10 +28,10 @@ public class GetUsersHandlerTests
             Group = new Group { Name = "PI-21" }
         };
 
-        repositoryMock.Setup(x => x.GetUsersAsync()).ReturnsAsync(new[] { user });
-        repositoryMock.Setup(x => x.GetRolesByUser(user)).ReturnsAsync(new List<string> { "Student" });
+        _repositoryMock.Setup(x => x.GetUsersAsync()).ReturnsAsync(new[] { user });
+        _repositoryMock.Setup(x => x.GetRolesByUser(user)).ReturnsAsync(new List<string> { "Student" });
 
-        var handler = new GetUsersHandler(repositoryMock.Object);
+        var handler = new GetUsersHandler(_repositoryMock.Object);
 
         // Act
         var result = (await handler.Handle(new GetUsersRequest(), CancellationToken.None)).ToList();
@@ -36,25 +43,27 @@ public class GetUsersHandlerTests
         Assert.Equal("Doe", result[0].Surname);
         Assert.Equal("PI-21", result[0].GroupName);
         Assert.Contains("Student", result[0].Roles);
-        repositoryMock.Verify(x => x.GetUsersAsync(), Times.Once);
-        repositoryMock.Verify(x => x.GetRolesByUser(user), Times.Once);
+        _repositoryMock.Verify(x => x.GetUsersAsync(), Times.Once);
+        _repositoryMock.Verify(x => x.GetRolesByUser(user), Times.Once);
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenNoUsers_ShouldReturnEmptyList()
+    public async System.Threading.Tasks.Task Handle_ShouldGetUsers_WhenNoUsersExist()
     {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<IUserRepository>();
-        repositoryMock.Setup(x => x.GetUsersAsync()).ReturnsAsync(Array.Empty<User>());
+        _repositoryMock.Setup(x => x.GetUsersAsync()).ReturnsAsync(Array.Empty<User>());
 
-        var handler = new GetUsersHandler(repositoryMock.Object);
+        var handler = new GetUsersHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetUsersRequest(), CancellationToken.None);
 
         // Assert
         Assert.Empty(result);
-        repositoryMock.Verify(x => x.GetUsersAsync(), Times.Once);
+        _repositoryMock.Verify(x => x.GetUsersAsync(), Times.Once);
     }
 }
+
+
 

@@ -8,12 +8,19 @@ namespace StudyHub.UnitTests.Handlers.Schedules.Commands;
 
 public class AddScheduleCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldMapAndAddSchedule()
+    private readonly Mock<IScheduleRepository> _repositoryMock;
+
+    public AddScheduleCommandHandlerTests()
     {
+        _repositoryMock = new Mock<IScheduleRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldAddSchedule_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
-        var repositoryMock = new Mock<IScheduleRepository>();
-        var handler = new AddScheduleCommandHandler(repositoryMock.Object);
+        var handler = new AddScheduleCommandHandler(_repositoryMock.Object);
 
         var dto = new ScheduleDto
         {
@@ -23,28 +30,29 @@ public class AddScheduleCommandHandlerTests
             IsAutoUpdate = true,
             UpdateAt = DateTime.UtcNow,
             Lessons = new List<LessonDto>
-            {
-                new()
-                {
-                    Id = Guid.Empty,
-                    Day = DayOfWeek.Monday,
-                    LessonType = "Lecture",
-                    Subject = new SubjectDto { Id = Guid.Empty, Name = "Math" },
-                    LessonSlot = new LessonSlotDto { Id = Guid.Empty, StartTime = new TimeOnly(8,0), EndTime = new TimeOnly(9,0) },
-                    Lecturers = new List<LecturerDtoResponse>()
-                }
-            }
+        {
+        new()
+        {
+        Id = Guid.Empty,
+        Day = DayOfWeek.Monday,
+        LessonType = "Lecture",
+        Subject = new SubjectDto { Id = Guid.Empty, Name = "Math" },
+        LessonSlot = new LessonSlotDto { Id = Guid.Empty, StartTime = new TimeOnly(8,0), EndTime = new TimeOnly(9,0) },
+        Lecturers = new List<LecturerDtoResponse>()
+        }
+        }
         };
 
         // Act
         await handler.Handle(new AddScheduleRequest(dto), CancellationToken.None);
 
         // Assert
-        repositoryMock.Verify(x => x.AddSchedule(It.Is<Schedule>(s =>
-            s.Id != Guid.Empty &&
-            s.Group.Name == "PI-21" &&
-            s.Lessons.Count == 1)), Times.Once);
+        _repositoryMock.Verify(x => x.AddSchedule(It.Is<Schedule>(s =>
+        s.Id != Guid.Empty &&
+        s.Group.Name == "PI-21" &&
+        s.Lessons.Count == 1)), Times.Once);
     }
 }
+
 
 

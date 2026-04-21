@@ -7,9 +7,17 @@ namespace StudyHub.UnitTests.Handlers.Users.Queries;
 
 public class GetUserHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldReturnMappedUserDto()
+    private readonly Mock<IUserRepository> _repositoryMock;
+
+    public GetUserHandlerTests()
     {
+        _repositoryMock = new Mock<IUserRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldGetUser_WhenRequestIsValid()
+    {
+        _repositoryMock.Reset();
         // Arrange
         var id = Guid.NewGuid();
         var user = new User
@@ -21,11 +29,10 @@ public class GetUserHandlerTests
             Group = new Group { Name = "PI-22" }
         };
 
-        var repositoryMock = new Mock<IUserRepository>();
-        repositoryMock.Setup(x => x.GetUserById(id)).ReturnsAsync(user);
-        repositoryMock.Setup(x => x.GetRolesByUser(user)).ReturnsAsync(new List<string> { "Leader" });
+        _repositoryMock.Setup(x => x.GetUserById(id)).ReturnsAsync(user);
+        _repositoryMock.Setup(x => x.GetRolesByUser(user)).ReturnsAsync(new List<string> { "Leader" });
 
-        var handler = new GetUserHandler(repositoryMock.Object);
+        var handler = new GetUserHandler(_repositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new GetUserRequest(id), CancellationToken.None);
@@ -36,8 +43,10 @@ public class GetUserHandlerTests
         Assert.Equal("Smith", result.Surname);
         Assert.Equal("PI-22", result.GroupName);
         Assert.Contains("Leader", result.Roles);
-        repositoryMock.Verify(x => x.GetUserById(id), Times.Once);
-        repositoryMock.Verify(x => x.GetRolesByUser(user), Times.Once);
+        _repositoryMock.Verify(x => x.GetUserById(id), Times.Once);
+        _repositoryMock.Verify(x => x.GetRolesByUser(user), Times.Once);
     }
 }
+
+
 

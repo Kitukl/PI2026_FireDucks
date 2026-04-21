@@ -9,20 +9,29 @@ namespace StudyHub.UnitTests.Handlers.Feedbacks.Commands;
 
 public class CreateFeedbackCommandHandlerTests
 {
-    [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldCreateFeedbackWithTrimmedDescription()
+    private readonly Mock<IFeedbackRepository> _feedbackRepositoryMock;
+    private readonly Mock<IUserRepository> _userRepositoryMock;
+
+    public CreateFeedbackCommandHandlerTests()
     {
+        _feedbackRepositoryMock = new Mock<IFeedbackRepository>();
+        _userRepositoryMock = new Mock<IUserRepository>();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Handle_ShouldCreateFeedback_WhenRequestIsValid()
+    {
+        _feedbackRepositoryMock.Reset();
+        _userRepositoryMock.Reset();
         // Arrange
         var user = new User { Id = Guid.NewGuid(), Name = "Ann", Surname = "Lee", UserName = "ann" };
         var expectedId = Guid.NewGuid();
 
-        var feedbackRepositoryMock = new Mock<IFeedbackRepository>();
-        feedbackRepositoryMock.Setup(x => x.AddFeedbackAsync(It.IsAny<Feedback>())).ReturnsAsync(expectedId);
+        _feedbackRepositoryMock.Setup(x => x.AddFeedbackAsync(It.IsAny<Feedback>())).ReturnsAsync(expectedId);
 
-        var userRepositoryMock = new Mock<IUserRepository>();
-        userRepositoryMock.Setup(x => x.GetUserById(user.Id)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetUserById(user.Id)).ReturnsAsync(user);
 
-        var handler = new CreateFeedbackCommandHandler(feedbackRepositoryMock.Object, userRepositoryMock.Object);
+        var handler = new CreateFeedbackCommandHandler(_feedbackRepositoryMock.Object, _userRepositoryMock.Object);
 
         // Act
         var result = await handler.Handle(new CreateFeedbackCommand
@@ -36,24 +45,24 @@ public class CreateFeedbackCommandHandlerTests
 
         // Assert
         Assert.Equal(expectedId, result);
-        feedbackRepositoryMock.Verify(x => x.AddFeedbackAsync(It.Is<Feedback>(f =>
-            f.User == user &&
-            f.CreatorFullname == "Ann Lee" &&
-            f.Description == "text")), Times.Once);
+        _feedbackRepositoryMock.Verify(x => x.AddFeedbackAsync(It.Is<Feedback>(f =>
+        f.User == user &&
+        f.CreatorFullname == "Ann Lee" &&
+        f.Description == "text")), Times.Once);
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_WhenDescriptionWhitespace_ShouldStoreEmptyString()
+    public async System.Threading.Tasks.Task Handle_ShouldCreateFeedback_WhenDescriptionContainsOnlyWhitespace()
     {
+        _feedbackRepositoryMock.Reset();
+        _userRepositoryMock.Reset();
         // Arrange
         var user = new User { Id = Guid.NewGuid(), UserName = "usr" };
-        var feedbackRepositoryMock = new Mock<IFeedbackRepository>();
-        feedbackRepositoryMock.Setup(x => x.AddFeedbackAsync(It.IsAny<Feedback>())).ReturnsAsync(Guid.NewGuid());
+        _feedbackRepositoryMock.Setup(x => x.AddFeedbackAsync(It.IsAny<Feedback>())).ReturnsAsync(Guid.NewGuid());
 
-        var userRepositoryMock = new Mock<IUserRepository>();
-        userRepositoryMock.Setup(x => x.GetUserById(user.Id)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(x => x.GetUserById(user.Id)).ReturnsAsync(user);
 
-        var handler = new CreateFeedbackCommandHandler(feedbackRepositoryMock.Object, userRepositoryMock.Object);
+        var handler = new CreateFeedbackCommandHandler(_feedbackRepositoryMock.Object, _userRepositoryMock.Object);
 
         // Act
         await handler.Handle(new CreateFeedbackCommand
@@ -66,7 +75,9 @@ public class CreateFeedbackCommandHandlerTests
         }, CancellationToken.None);
 
         // Assert
-        feedbackRepositoryMock.Verify(x => x.AddFeedbackAsync(It.Is<Feedback>(f => f.Description == string.Empty)), Times.Once);
+        _feedbackRepositoryMock.Verify(x => x.AddFeedbackAsync(It.Is<Feedback>(f => f.Description == string.Empty)), Times.Once);
     }
 }
+
+
 
