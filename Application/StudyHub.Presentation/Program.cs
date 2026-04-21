@@ -2,6 +2,9 @@ using Application.Middleware;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
+using StudyHub.Infrastructure;
+using StudyHub.Infrastructure.Repositories;
+
 using Serilog;
 using StudyHub.Core.Comments.Interfaces;
 using StudyHub.Core.Feedbacks.Interfaces;
@@ -54,7 +57,7 @@ public class Program
 
         builder.Host.UseSerilog((context, configuration) =>
             configuration.ReadFrom.Configuration(context.Configuration));
-        
+
         builder.Services.AddControllersWithViews();
         builder.Services.Configure<SessionTrackingOptions>(
             builder.Configuration.GetSection(SessionTrackingOptions.SectionName));
@@ -71,7 +74,7 @@ public class Program
             options.LoginPath = "/login";
             options.AccessDeniedPath = "/user/access-denied";
         });
-        
+
         builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
         builder.Services.AddScoped<ITaskRepository, TaskRepository>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -117,7 +120,7 @@ public class Program
                 };
             });
         }
-        
+
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));
 

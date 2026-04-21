@@ -122,7 +122,6 @@ namespace Application.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScheduleEdit(Guid id, ScheduleDto schedule)
         {
             schedule.Id = id;
