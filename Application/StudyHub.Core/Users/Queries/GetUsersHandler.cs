@@ -21,6 +21,7 @@ public class GetUsersHandler : IRequestHandler<GetUsersRequest, IEnumerable<User
         return response.Select(c => new UserDto
         {
             Id =  c.Id,
+            Email = c.Email,
             Surname =  c.Surname,
             Name = c.Name,
             PhotoUrl = c.PhotoUrl,

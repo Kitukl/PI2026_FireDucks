@@ -7,8 +7,5 @@ namespace StudyHub.Core.Subjects.Interfaces
     {
         Task<Subject?> GetById(Guid id);
         Task<List<Subject>> GetAll();
-        Task AddSubject(Subject lesson);
-        Task DeleteSubject(Guid id);
-        Task UpdateSubject(Subject lesson);
     }
 }

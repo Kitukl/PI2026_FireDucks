@@ -14,7 +14,7 @@ public class UserProfilePageDataDto
 {
     public string FullName { get; set; } = "Гість";
     public string PhotoUrl { get; set; } = "/images/no-photo.png";
-    public bool IsNotified { get; set; } = true;
+    public bool IsNotified { get; set; }
     public uint ReminderOffset { get; set; } = 2u;
     public TimeType ReminderTimeType { get; set; } = TimeType.Day;
 }
