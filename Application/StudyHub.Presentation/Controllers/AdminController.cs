@@ -286,7 +286,6 @@ public class AdminController(IMediator mediator) : Controller
     [HttpPost]
     public async Task<IActionResult> RemoveGroupSchedule(Guid groupId)
     {
-        dfgdfg
         await mediator.Send(new DeleteScheduleForGroupRequest(groupId));
         return RedirectToAction(nameof(Schedule));
     }
