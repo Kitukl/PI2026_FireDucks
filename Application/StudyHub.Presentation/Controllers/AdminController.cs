@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Core.Admin.Commands;
 using StudyHub.Core.Admin.Queries;
-using StudyHub.Core.Feedbacks.Commands;
 using StudyHub.Core.Schedules.Commands;
 using StudyHub.Core.Users.Commands;
 using StudyHub.Core.Users.Queries;
