@@ -12,6 +12,7 @@ using Application.Helpers;
 
 namespace Application.Controllers;
 
+[Authorize]
 public class TaskBoardController : Controller
 {
     private readonly IMediator _mediator;

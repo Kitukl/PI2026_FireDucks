@@ -1,10 +1,13 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Core.Group.Commands;
 using StudyHub.Core.Group.Queries;
+using StudyHub.Domain.Enums;
 
 namespace Application.Controllers
 {
+    [Authorize(Roles = nameof(Role.Admin))]
     public class GroupController : Controller
     {
         private readonly IMediator _mediator;

@@ -126,12 +126,13 @@ public class Program
             options.ForwardedHeaders =
                 ForwardedHeaders.XForwardedFor |
                 ForwardedHeaders.XForwardedProto;
+
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
         });
+
         var app = builder.Build();
         app.UseForwardedHeaders();
-
-        app.UseHttpsRedirection();
-        
         app.UseSerilogRequestLogging();
 
         if (!app.Environment.IsDevelopment())
@@ -142,65 +143,7 @@ public class Program
 
         app.UseHttpsRedirection();
         app.UseRouting();
-
         app.UseAuthentication();
-
-        app.Use(async (context, next) =>
-        {
-            var path = context.Request.Path;
-            var pathValue = path.Value ?? string.Empty;
-
-            static bool IsPath(string? value, string prefix)
-            {
-                return !string.IsNullOrWhiteSpace(value) &&
-                       value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
-            }
-
-            var isStaticAsset = Path.HasExtension(pathValue);
-            var isLoginPath = IsPath(pathValue, "/login");
-            var isAuthTechnicalPath = IsPath(pathValue, "/user/login-microsoft") ||
-                                      IsPath(pathValue, "/user/callback") ||
-                                      IsPath(pathValue, "/signin-microsoft") ||
-                                      IsPath(pathValue, "/user/access-denied");
-            var isBypassedPath = isLoginPath || isAuthTechnicalPath || isStaticAsset;
-            var isExternalAuthInProgress = context.Request.Path.StartsWithSegments("/signin-microsoft");
-
-            if (!isBypassedPath && !isExternalAuthInProgress && context.User.Identity?.IsAuthenticated != true)
-            {
-                context.Response.Redirect("/login");
-                return;
-            }
-
-            if (context.User.Identity?.IsAuthenticated == true)
-            {
-                var isAdmin = context.User.IsInRole(nameof(Role.Admin));
-                var isStudent = context.User.IsInRole(nameof(Role.Student));
-                var isLeader = context.User.IsInRole(nameof(Role.Leader));
-                var isAdminPath = IsPath(pathValue, "/Admin");
-                var isLogoutPath = IsPath(pathValue, "/user/logout");
-
-                if (!isAdmin && isAdminPath)
-                {
-                    context.Response.Redirect("/Home/Index");
-                    return;
-                }
-
-                if (isAdmin && !isAdminPath && !isLogoutPath && !isAuthTechnicalPath && !isStaticAsset)
-                {
-                    context.Response.Redirect("/Admin/Dashboard");
-                    return;
-                }
-
-                if (isStudent && !isLeader && IsPath(pathValue, "/TaskBoard/ReviewGroup"))
-                {
-                    context.Response.Redirect("/Home/Index");
-                    return;
-                }
-            }
-
-            await next(context);
-        });
-
         app.UseAuthorization();
 
         app.MapStaticAssets();

@@ -10,6 +10,7 @@ using StudyHub.Domain.Enums;
 
 namespace Application.Controllers;
 
+[Authorize]
 [Route("user")]
 public class UserController : Controller
 {
@@ -61,6 +62,7 @@ public class UserController : Controller
         return RedirectToAction("Index", "Home");
     }
 
+    [AllowAnonymous]
     [HttpGet("access-denied")]
     public IActionResult AccessDenied(string? returnUrl)
     {
