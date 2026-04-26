@@ -152,8 +152,9 @@ public class Program
                                       IsPath(pathValue, "/signin-microsoft") ||
                                       IsPath(pathValue, "/user/access-denied");
             var isBypassedPath = isLoginPath || isAuthTechnicalPath || isStaticAsset;
+            var isExternalAuthInProgress = context.Request.Path.StartsWithSegments("/signin-microsoft");
 
-            if (!isBypassedPath && context.User.Identity?.IsAuthenticated != true)
+            if (!isBypassedPath && !isExternalAuthInProgress && context.User.Identity?.IsAuthenticated != true)
             {
                 context.Response.Redirect("/login");
                 return;
@@ -186,7 +187,7 @@ public class Program
                 }
             }
 
-            await next();
+            await next(context);
         });
 
         app.UseAuthorization();
