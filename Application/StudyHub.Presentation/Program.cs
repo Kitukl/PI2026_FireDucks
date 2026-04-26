@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
+using Microsoft.AspNetCore.HttpOverrides;
 using StudyHub.Infrastructure;
 using StudyHub.Infrastructure.Repositories;
 
@@ -69,6 +70,8 @@ public class Program
         {
             options.LoginPath = "/login";
             options.AccessDeniedPath = "/user/access-denied";
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         });
 
         builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
@@ -102,7 +105,7 @@ public class Program
                 options.CallbackPath = "/signin-microsoft";
 
                 options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
 
                 options.Events.OnRemoteFailure = context =>
                 {
@@ -118,9 +121,17 @@ public class Program
 
         builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c => c.BaseAddress = new Uri(builder.Configuration["Parser:Url"] ?? "http://localhost:5678"));
         builder.Services.AddHostedService<ScheduleAutoUpdateService>();
-
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor |
+                ForwardedHeaders.XForwardedProto;
+        });
         var app = builder.Build();
+        app.UseForwardedHeaders();
 
+        app.UseHttpsRedirection();
+        
         app.UseSerilogRequestLogging();
 
         if (!app.Environment.IsDevelopment())
