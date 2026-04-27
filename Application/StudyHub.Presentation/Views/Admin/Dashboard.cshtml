@@ -98,6 +98,25 @@
     };
 
     var chartDataJson = JsonSerializer.Serialize(chartData);
+    var activityYear = DateTime.Now.Year;
+    var monthlyActivity = Enumerable.Range(1, 12)
+        .Select(month =>
+        {
+            var value = Model.UserActivityPerMonth.TryGetValue(month, out var monthValue) ? monthValue : 0d;
+            return new
+            {
+                MonthNumber = month,
+                Label = CultureInfo.InvariantCulture.DateTimeFormat.GetAbbreviatedMonthName(month),
+                Value = Math.Round(value, 2)
+            };
+        })
+        .ToList();
+    var maxMonthlyActivity = monthlyActivity.Max(item => item.Value);
+
+    string FormatActivityValue(double value)
+    {
+        return value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
 }
 
 <style>
@@ -296,6 +315,151 @@
     display: flex;
     justify-content: center;
     margin-top: 14px;
+}
+
+.admin-activity-panel {
+    margin-top: 12px;
+}
+
+.admin-activity-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
+    gap: 16px;
+    align-items: start;
+}
+
+.admin-activity-chart-shell {
+    border: 1px solid rgba(18, 24, 38, 0.14);
+    border-radius: 14px;
+    background:
+        repeating-linear-gradient(
+            to top,
+            rgba(16, 38, 66, 0.08) 0,
+            rgba(16, 38, 66, 0.08) 1px,
+            transparent 1px,
+            transparent 25%
+        );
+    padding: 18px 16px 14px;
+}
+
+.admin-activity-chart-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 12px;
+    color: #28405e;
+}
+
+.admin-activity-chart-meta h3 {
+    margin: 0;
+    font-size: 1.06rem;
+    font-weight: 800;
+    color: #102642;
+}
+
+.admin-activity-chart-meta p {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.admin-activity-bars {
+    height: 260px;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: end;
+    gap: 10px;
+}
+
+.admin-activity-bar-group {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 8px;
+    height: 100%;
+}
+
+.admin-activity-value {
+    min-height: 20px;
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #17385f;
+}
+
+.admin-activity-bar-track {
+    height: 100%;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+}
+
+.admin-activity-bar {
+    width: min(100%, 36px);
+    min-height: 4px;
+    border-radius: 14px 14px 6px 6px;
+    background: linear-gradient(180deg, #8fc2ff 0%, #3779c2 58%, #183f78 100%);
+    box-shadow: 0 10px 20px rgba(26, 64, 117, 0.18);
+}
+
+.admin-activity-bar.is-empty {
+    background: linear-gradient(180deg, #dfe7f2 0%, #c9d4e4 100%);
+    box-shadow: none;
+}
+
+.admin-activity-label {
+    text-align: center;
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #384a61;
+}
+
+.admin-activity-summary {
+    border: 1px solid rgba(18, 24, 38, 0.16);
+    border-radius: 14px;
+    background: #fff;
+    padding: 14px;
+    display: grid;
+    gap: 12px;
+}
+
+.admin-activity-summary h3 {
+    margin: 0;
+    font-size: 1.08rem;
+    font-weight: 800;
+    color: #102642;
+}
+
+.admin-activity-summary ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.admin-activity-summary li {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    gap: 8px;
+    color: #2b3d56;
+    font-weight: 700;
+}
+
+.admin-activity-summary strong {
+    color: #102642;
+    font-weight: 800;
+}
+
+.admin-report-activity-card {
+    border: 1px solid rgba(14, 30, 51, 0.18);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.admin-report-activity-bars {
+    height: 220px;
 }
 
 .admin-report-backdrop {
@@ -536,6 +700,14 @@
         grid-template-columns: 1fr;
     }
 
+    .admin-activity-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-activity-bars {
+        gap: 8px;
+    }
+
     .admin-report-paper {
         width: 100%;
         min-height: 0;
@@ -662,6 +834,48 @@
         </article>
     </div>
 
+    <article class="admin-panel admin-activity-panel">
+        <header class="admin-panel-head">
+            <h2>Activity per month</h2>
+        </header>
+
+        <div class="admin-activity-layout">
+            <section class="admin-activity-chart-shell" aria-label="Average session duration per month">
+                <div class="admin-activity-chart-meta">
+                    <h3>Average session duration</h3>
+                    <p>@activityYear, minutes</p>
+                </div>
+
+                <div class="admin-activity-bars">
+                    @foreach (var item in monthlyActivity)
+                    {
+                        var barHeight = maxMonthlyActivity > 0
+                            ? Math.Max(4, Math.Round(item.Value / maxMonthlyActivity * 100, 2))
+                            : 4;
+                        var barClass = item.Value <= 0 ? "admin-activity-bar is-empty" : "admin-activity-bar";
+
+                        <div class="admin-activity-bar-group">
+                            <div class="admin-activity-value">@FormatActivityValue(item.Value)</div>
+                            <div class="admin-activity-bar-track">
+                                <div class="@barClass" style="height: @($"{barHeight.ToString("0.##", CultureInfo.InvariantCulture)}%");"></div>
+                            </div>
+                            <div class="admin-activity-label">@item.Label</div>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <aside class="admin-activity-summary">
+                <h3>Highlights</h3>
+                <ul>
+                    <li><span>Peak month</span><strong>@monthlyActivity.OrderByDescending(item => item.Value).First().Label</strong></li>
+                    <li><span>Peak value</span><strong>@FormatActivityValue(maxMonthlyActivity) min</strong></li>
+                    <li><span>Year average</span><strong>@FormatActivityValue(monthlyActivity.Average(item => item.Value)) min</strong></li>
+                </ul>
+            </aside>
+        </div>
+    </article>
+
     <div class="admin-dashboard-actions">
         <button type="button" class="admin-btn admin-btn-primary js-open-report-preview">Preview PDF</button>
     </div>
@@ -776,6 +990,34 @@
                         </div>
                         <div class="admin-report-mini-chart js-admin-report-mini-chart" data-scope="all" style="@BuildPieStyle(totalTaskStats)"></div>
                     </article>
+                </div>
+            </section>
+
+            <section class="admin-report-section">
+                <h3>Activity per month</h3>
+                <div class="admin-report-activity-card">
+                    <div class="admin-activity-chart-meta">
+                        <h3>Average session duration</h3>
+                        <p>@activityYear, minutes</p>
+                    </div>
+
+                    <div class="admin-activity-bars admin-report-activity-bars">
+                        @foreach (var item in monthlyActivity)
+                        {
+                            var barHeight = maxMonthlyActivity > 0
+                                ? Math.Max(4, Math.Round(item.Value / maxMonthlyActivity * 100, 2))
+                                : 4;
+                            var barClass = item.Value <= 0 ? "admin-activity-bar is-empty" : "admin-activity-bar";
+
+                            <div class="admin-activity-bar-group">
+                                <div class="admin-activity-value">@FormatActivityValue(item.Value)</div>
+                                <div class="admin-activity-bar-track">
+                                    <div class="@barClass" style="height: @($"{barHeight.ToString("0.##", CultureInfo.InvariantCulture)}%");"></div>
+                                </div>
+                                <div class="admin-activity-label">@item.Label</div>
+                            </div>
+                        }
+                    </div>
                 </div>
             </section>
         </article>

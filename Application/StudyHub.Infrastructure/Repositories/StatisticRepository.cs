@@ -71,6 +71,35 @@ public class StatisticRepository(
         return (studentsCount, groupsCount, leadersCount);
     }
 
+    public Task<bool> HasStatisticForMonthAsync(int year, int month, CancellationToken cancellationToken = default)
+    {
+        return context.Statistics.AnyAsync(
+            statistic => statistic.CreatedAt.Year == year && statistic.CreatedAt.Month == month,
+            cancellationToken);
+    }
+
+    public async Task<Statistic> AddMonthlyActivityStatisticAsync(
+        int year,
+        int month,
+        double averageSessionDurationMinutes,
+        CancellationToken cancellationToken = default)
+    {
+        var statistic = new Statistic
+        {
+            Id = Guid.NewGuid(),
+            CreatedAt = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc),
+            UserActivityPerMonth = averageSessionDurationMinutes,
+            FilesCount = 0,
+            Users = [],
+            Tasks = []
+        };
+
+        await context.Statistics.AddAsync(statistic, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+
+        return statistic;
+    }
+
     private Task<int> GetUsersInRoleCountAsync(Role role, CancellationToken cancellationToken)
     {
         var normalizedRoleName = role.ToString().ToUpperInvariant();
