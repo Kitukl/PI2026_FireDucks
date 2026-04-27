@@ -27,7 +27,7 @@ public class AddUserRoleCommandHandlerTests
         await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        _repositoryMock.Verify(x => x.AddRole(Role.Admin, userId), Times.Once);
+        _repositoryMock.Verify(x => x.AddRole(Role.Leader, userId), Times.Once);
     }
 }
 
