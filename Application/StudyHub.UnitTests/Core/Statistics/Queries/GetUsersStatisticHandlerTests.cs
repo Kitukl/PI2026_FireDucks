@@ -29,7 +29,6 @@ public class GetUsersStatisticHandlerTests
         var result = await handler.Handle(new GetUsersStatisticRequest(), CancellationToken.None);
 
         // Assert
-        Assert.Equal(1,0);
         Assert.Equal(5, result.UserFilesCount);
         Assert.Equal(4, result.GroupFilesCount);
         Assert.Equal(9, result.FileCount);
