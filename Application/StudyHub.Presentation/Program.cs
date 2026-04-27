@@ -53,7 +53,7 @@ public class Program
             break;
         }
 
-        var builder = WebApplication.CreateBuilder(args);
+        var builder = WebApplication.CreateBuilder(args)
 
         builder.Host.UseSerilog((context, configuration) =>
             configuration.ReadFrom.Configuration(context.Configuration));
