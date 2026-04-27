@@ -38,6 +38,13 @@ public class AddLessonSlotCommandHandlerTests
         // Assert
         _repositoryMock.Verify(x => x.AddLesson(It.Is<Lesson>(l => l.Id != Guid.Empty && l.Subject.Name == "Math")), Times.Once);
     }
+
+
+    [Fact]
+    public void Handle_ShouldFall()
+    {
+        Assert.True(false);
+    }
 }
 
 
