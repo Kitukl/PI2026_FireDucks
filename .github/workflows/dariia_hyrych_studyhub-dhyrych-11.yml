@@ -13,15 +13,17 @@ jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Необхідно для повного аналізу SonarCloud
 
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'
+          dotnet-version: '10.x'
 
       - name: Install SonarCloud scanner
         run: dotnet tool install --global dotnet-sonarscanner
@@ -35,17 +37,15 @@ jobs:
           dotnet build Application/Application.sln --configuration Release
           dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
-      - name: Build with dotnet
-        run: dotnet build Application/Application.sln --configuration Release
-
       - name: dotnet publish
-        run: dotnet publish Application/StudyHub.Presentation/StudyHub.Presentation.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
+        # Використовуємо лапки та відносний шлях, щоб уникнути помилки MSB1008 (через пробіли в Program Files)
+        run: dotnet publish Application/StudyHub.Presentation/StudyHub.Presentation.csproj -c Release -o "publish_output"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          path: "publish_output"
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -65,14 +65,15 @@ jobs:
     runs-on: windows-latest
     needs: [build, unit-tests]
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
+          path: .
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -88,4 +89,3 @@ jobs:
           app-name: 'studyhub-dhyrych-11'
           slot-name: 'Production'
           package: .
-          
