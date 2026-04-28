@@ -8,6 +8,6 @@ public interface IUserSessionRepository
     Task<bool> TouchSessionAsync(Guid sessionId, Guid userId, DateTime seenAtUtc, CancellationToken cancellationToken = default);
     Task<bool> CloseSessionAsync(Guid sessionId, Guid userId, DateTime closedAtUtc, CancellationToken cancellationToken = default);
     Task<int> CloseInactiveSessionsAsync(DateTime inactiveSinceUtc, CancellationToken cancellationToken = default);
-    Task<double> GetAverageSessionDurationMinutesAsync(int year, int month, CancellationToken cancellationToken = default);
+    Task<Dictionary<Guid, double>> GetAverageDayDurationMinutesPerUserAsync(int year, int month, CancellationToken cancellationToken = default);
     Task<int> DeleteClosedSessionsOlderThanAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default);
 }

@@ -82,33 +82,50 @@ public class StatisticRepository(
         return (studentsCount, groupsCount, leadersCount);
     }
 
-    public Task<bool> HasStatisticForMonthAsync(int year, int month, CancellationToken cancellationToken = default)
+    public Task<int> DeleteMonthlyActivityStatisticsAsync(int year, int month, CancellationToken cancellationToken = default)
     {
-        return context.Statistics.AnyAsync(
-            statistic => statistic.CreatedAt.Year == year && statistic.CreatedAt.Month == month,
-            cancellationToken);
+        return context.Statistics
+            .Where(statistic => statistic.CreatedAt.Year == year && statistic.CreatedAt.Month == month)
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
-    public async Task<Statistic> AddMonthlyActivityStatisticAsync(
+    public async Task<int> AddMonthlyActivityStatisticsAsync(
         int year,
         int month,
-        double averageSessionDurationMinutes,
+        IReadOnlyDictionary<Guid, double> averageDayDurationMinutesByUser,
         CancellationToken cancellationToken = default)
     {
-        var statistic = new Statistic
+        if (averageDayDurationMinutesByUser.Count == 0)
         {
-            Id = Guid.NewGuid(),
-            CreatedAt = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc),
-            UserActivityPerMonth = averageSessionDurationMinutes,
-            FilesCount = 0,
-            Users = [],
-            Tasks = []
-        };
+            return 0;
+        }
 
-        await context.Statistics.AddAsync(statistic, cancellationToken);
+        var users = await context.Users
+            .Where(user => averageDayDurationMinutesByUser.Keys.Contains(user.Id))
+            .ToDictionaryAsync(user => user.Id, cancellationToken);
+
+        var createdAtUtc = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var statistics = averageDayDurationMinutesByUser
+            .Where(item => users.ContainsKey(item.Key))
+            .Select(item => new Statistic
+            {
+                Id = Guid.NewGuid(),
+                CreatedAt = createdAtUtc,
+                UserActivityPerMonth = item.Value,
+                FilesCount = 0,
+                Users = [users[item.Key]],
+                Tasks = []
+            })
+            .ToList();
+
+        if (statistics.Count == 0)
+        {
+            return 0;
+        }
+
+        await context.Statistics.AddRangeAsync(statistics, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
-
-        return statistic;
+        return statistics.Count;
     }
 
     private Task<int> GetUsersInRoleCountAsync(Role role, CancellationToken cancellationToken)

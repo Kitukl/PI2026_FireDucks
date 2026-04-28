@@ -29,7 +29,7 @@ public class MonthlyStatisticsAggregationService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to aggregate monthly session statistics.");
+                logger.LogError(ex, "Failed to aggregate monthly user activity statistics.");
             }
         }
     }
@@ -37,6 +37,7 @@ public class MonthlyStatisticsAggregationService(
     private async Task AggregatePreviousMonthAsync(CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<SDbContext>();
         var statisticRepository = scope.ServiceProvider.GetRequiredService<IStatisticRepository>();
         var userSessionRepository = scope.ServiceProvider.GetRequiredService<IUserSessionRepository>();
 
@@ -47,28 +48,34 @@ public class MonthlyStatisticsAggregationService(
             1,
             0, 0, 0,
             DateTimeKind.Utc);
-        
+
+        if (nowUtc.Day != 1)
+        {
+            return;
+        }
+
         var targetMonth = currentMonthStartUtc.AddMonths(-1);
 
-        var alreadyExists = await statisticRepository.HasStatisticForMonthAsync(
+        var averageDayDurationMinutesByUser = await userSessionRepository.GetAverageDayDurationMinutesPerUserAsync(
             targetMonth.Year,
             targetMonth.Month,
             cancellationToken);
 
-        if (!alreadyExists)
-        {
-            var averageMinutes = await userSessionRepository.GetAverageSessionDurationMinutesAsync(
-                targetMonth.Year,
-                targetMonth.Month,
-                cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            await statisticRepository.AddMonthlyActivityStatisticAsync(
-                targetMonth.Year,
-                targetMonth.Month,
-                averageMinutes,
-                cancellationToken);
-        }
+        await statisticRepository.DeleteMonthlyActivityStatisticsAsync(
+            targetMonth.Year,
+            targetMonth.Month,
+            cancellationToken);
 
+        await statisticRepository.AddMonthlyActivityStatisticsAsync(
+            targetMonth.Year,
+            targetMonth.Month,
+            averageDayDurationMinutesByUser,
+            cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+        
         var retentionMonths = Math.Max(1, options.Value.RetentionMonths);
         var cutoffUtc =  currentMonthStartUtc.AddMonths(-retentionMonths);
         await userSessionRepository.DeleteClosedSessionsOlderThanAsync(cutoffUtc, cancellationToken);

@@ -88,18 +88,36 @@ public class UserSessionRepository(SDbContext context) : IUserSessionRepository
         return sessions.Count;
     }
 
-    public async Task<double> GetAverageSessionDurationMinutesAsync(int year, int month, CancellationToken cancellationToken = default)
+    public async Task<Dictionary<Guid, double>> GetAverageDayDurationMinutesPerUserAsync(int year, int month, CancellationToken cancellationToken = default)
     {
-        var averageSeconds = await context.UserSessions
+        var dailyTotalsQuery = context.UserSessions
             .AsNoTracking()
             .Where(session => session.IsClosed &&
                               session.ExitTimeUtc.HasValue &&
                               session.ExitTimeUtc.Value.Year == year &&
                               session.ExitTimeUtc.Value.Month == month)
-            .Select(session => (double?)session.DurationSeconds)
-            .AverageAsync(cancellationToken);
+            .GroupBy(session => new
+            {
+                session.UserId,
+                Day = session.ExitTimeUtc!.Value.Date
+            })
+            .Select(group => new
+            {
+                group.Key.UserId,
+                DailyTotalSeconds = group.Sum(session => session.DurationSeconds)
+            });
 
-        return Math.Round((averageSeconds ?? 0d) / 60d, 2, MidpointRounding.AwayFromZero);
+        return await dailyTotalsQuery
+            .GroupBy(item => item.UserId)
+            .Select(group => new
+            {
+                UserId = group.Key,
+                AverageDayDurationMinutes = Math.Round(
+                    group.Average(item => (double)item.DailyTotalSeconds) / 60d,
+                    2,
+                    MidpointRounding.AwayFromZero)
+            })
+            .ToDictionaryAsync(item => item.UserId, item => item.AverageDayDurationMinutes, cancellationToken);
     }
 
     public Task<int> DeleteClosedSessionsOlderThanAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default)
