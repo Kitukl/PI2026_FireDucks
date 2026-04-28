@@ -6,6 +6,7 @@ public interface IStatisticRepository
 {
     Task<Statistic?> GetRecentStatisticAsync();
     Task<Dictionary<int,double>> GetYearlyActivityAsync(int year);
+    Task<Dictionary<int, double>> GetYearlyActivityAsync(Guid userId, int year,CancellationToken cancellationToken);
     Task<(int UserFilesCount, int GroupFilesCount)> GetStorageFileCountsAsync(CancellationToken cancellationToken = default);
     Task<(int StudentsCount, int GroupsCount, int LeadersCount)> GetSystemEntityCountsAsync(CancellationToken cancellationToken = default);
     Task<bool> HasStatisticForMonthAsync(int year, int month, CancellationToken cancellationToken = default);

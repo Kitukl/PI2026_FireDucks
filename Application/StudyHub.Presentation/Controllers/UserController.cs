@@ -115,6 +115,7 @@ public class UserController : Controller
         ViewBag.IsNotified = data.IsNotified;
         ViewBag.ReminderOffset = data.ReminderOffset;
         ViewBag.ReminderTimeType = data.ReminderTimeType;
+        ViewBag.MonthlyActivityPerMonth = data.MonthlyActivityPerMonth;
 
         return View("~/Views/Home/UserProfile/UserProfile.cshtml");
     }

@@ -27,7 +27,19 @@ public class StatisticRepository(
             .AsNoTracking()
             .ToDictionaryAsync(
                 g => g.Key,
-                g => g.Sum(s => s.UserActivityPerMonth));
+                g => g.Average(s => s.UserActivityPerMonth));
+    }
+
+    public async Task<Dictionary<int, double>> GetYearlyActivityAsync(Guid userId, int year,CancellationToken cancellationToken)
+    {
+        return await context.Statistics
+            .Where(s => s.CreatedAt.Year == year && s.Users.Any(u => u.Id == userId))
+            .GroupBy(s => s.CreatedAt.Month)
+            .AsNoTracking()
+            .ToDictionaryAsync(
+                g => g.Key,
+                g => g.Average(s => s.UserActivityPerMonth),
+                cancellationToken);
     }
 
     public async Task<(int UserFilesCount, int GroupFilesCount)> GetStorageFileCountsAsync(CancellationToken cancellationToken = default)
@@ -63,7 +75,6 @@ public class StatisticRepository(
 
     public async Task<(int StudentsCount, int GroupsCount, int LeadersCount)> GetSystemEntityCountsAsync(CancellationToken cancellationToken = default)
     {
-        // DbContext is not thread-safe; execute these queries sequentially on a single context instance.
         var studentsCount = await GetUsersInRoleCountAsync(Role.Student, cancellationToken);
         var groupsCount = await context.Groups.CountAsync(cancellationToken);
         var leadersCount = await GetUsersInRoleCountAsync(Role.Leader, cancellationToken);

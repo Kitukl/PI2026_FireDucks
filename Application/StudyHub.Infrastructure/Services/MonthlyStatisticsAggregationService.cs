@@ -21,13 +21,16 @@ public class MonthlyStatisticsAggregationService(
             try
             {
                 await AggregatePreviousMonthAsync(stoppingToken);
+                await Task.Delay(_checkInterval, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to aggregate monthly session statistics.");
             }
-
-            await Task.Delay(_checkInterval, stoppingToken);
         }
     }
 
@@ -38,7 +41,14 @@ public class MonthlyStatisticsAggregationService(
         var userSessionRepository = scope.ServiceProvider.GetRequiredService<IUserSessionRepository>();
 
         var nowUtc = DateTime.UtcNow;
-        var targetMonth = new DateTime(nowUtc.Year, nowUtc.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-1);
+        var currentMonthStartUtc = new DateTime(
+            nowUtc.Year,
+            nowUtc.Month,
+            1,
+            0, 0, 0,
+            DateTimeKind.Utc);
+        
+        var targetMonth = currentMonthStartUtc.AddMonths(-1);
 
         var alreadyExists = await statisticRepository.HasStatisticForMonthAsync(
             targetMonth.Year,
@@ -60,7 +70,7 @@ public class MonthlyStatisticsAggregationService(
         }
 
         var retentionMonths = Math.Max(1, options.Value.RetentionMonths);
-        var cutoffUtc = new DateTime(nowUtc.Year, nowUtc.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-retentionMonths);
+        var cutoffUtc =  currentMonthStartUtc.AddMonths(-retentionMonths);
         await userSessionRepository.DeleteClosedSessionsOlderThanAsync(cutoffUtc, cancellationToken);
     }
 }

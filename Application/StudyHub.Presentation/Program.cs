@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using StudyHub.Infrastructure;
 using StudyHub.Infrastructure.Repositories;
-
 using Serilog;
 using StudyHub.Core.Comments.Interfaces;
 using StudyHub.Core.Feedbacks.Interfaces;
@@ -23,10 +22,8 @@ using StudyHub.Core.UserSessions.Interfaces;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Core.Notifications.Interfaces;
 using StudyHub.Domain.Entities;
-using StudyHub.Infrastructure;
 using StudyHub.Infrastructure.Services;
 using StudyHub.Infrastructure.Notifications;
-using StudyHub.Infrastructure.Repositories;
 using StudyHub.Infrastructure.Storage;
 
 namespace Application;
@@ -44,17 +41,14 @@ public class Program
 
         foreach (var envPath in envCandidates)
         {
-            if (!File.Exists(envPath))
+            if (File.Exists(envPath))
             {
-                continue;
+                Env.Load(envPath);
+                break;
             }
-
-            Env.Load(envPath);
-            break;
         }
 
         var builder = WebApplication.CreateBuilder(args);
-
         builder.Host.UseSerilog((context, configuration) =>
             configuration.ReadFrom.Configuration(context.Configuration));
 
@@ -79,8 +73,6 @@ public class Program
         builder.Services.AddScoped<ITaskRepository, TaskRepository>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IUserAuthRepository, UserAuthRepository>();
-        builder.Services.AddScoped<IBlobService, BlobService>();
-        builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
         builder.Services.AddScoped<ICommentRepository, CommentRepository>();
         builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
         builder.Services.AddScoped<IGroupRepository, GroupRepository>();
@@ -89,10 +81,13 @@ public class Program
         builder.Services.AddScoped<ILessonSlotRepository, LessonSlotRepository>();
         builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
-        builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();
+        builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();   
+        
+        builder.Services.AddScoped<IBlobService, BlobService>();
         builder.Services.AddScoped<IUserSessionTrackingService, UserSessionTrackingService>();
-        builder.Services.AddHostedService<DeadlineSender>();
         builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
+        
+        builder.Services.AddHostedService<DeadlineSender>();
         builder.Services.AddHostedService<MonthlyStatisticsAggregationService>();
         builder.Services.AddHostedService<UserSessionExpirationService>();
         
@@ -124,9 +119,16 @@ public class Program
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));
 
-        builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c => c.BaseAddress = new Uri(builder.Configuration["Parser:Url"] ?? "http://localhost:5678"));
-        builder.Services.AddHostedService<ScheduleAutoUpdateService>();
+        var parserUrl = builder.Configuration["Parser:Url"];
 
+        if (!string.IsNullOrWhiteSpace(parserUrl))
+        {
+            builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c =>
+                c.BaseAddress = new Uri(parserUrl));
+    
+            builder.Services.AddHostedService<ScheduleAutoUpdateService>();
+        }
+        
         var app = builder.Build();
 
         app.UseSerilogRequestLogging();
