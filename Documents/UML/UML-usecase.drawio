@@ -1,0 +1,323 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.5.2 Chrome/142.0.7444.265 Electron/39.6.1 Safari/537.36" version="29.5.2">
+  <diagram name="StudyHub App" id="0">
+    <mxGraphModel dx="3420" dy="2776" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#111111" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#ffffff;fontStyle=1;fontSize=13;align=center;fontFamily=Helvetica;" value="StudyHub App" vertex="1">
+          <mxGeometry height="30" width="260" x="225" y="-70" as="geometry" />
+        </mxCell>
+        <mxCell id="sec_home" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#ffffff;fontColor=#ffffff;align=left;verticalAlign=top;spacingTop=-16;fontSize=10;fontFamily=Helvetica;" value="Головна сторінка" vertex="1">
+          <mxGeometry height="250" width="460" x="90" y="-80" as="geometry" />
+        </mxCell>
+        <mxCell id="sec_files" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#ffffff;fontColor=#ffffff;align=left;verticalAlign=top;spacingTop=-16;fontSize=10;fontFamily=Helvetica;" value="Сховище файлів" vertex="1">
+          <mxGeometry height="210" width="490" x="70" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="sec_account" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#ffffff;fontColor=#ffffff;align=left;verticalAlign=top;spacingTop=-16;fontSize=10;fontFamily=Helvetica;" value="Обліковий запис" vertex="1">
+          <mxGeometry height="380" width="500" x="60" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="sec_schedule" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#ffffff;fontColor=#ffffff;align=left;verticalAlign=top;spacingTop=-16;fontSize=10;fontFamily=Helvetica;" value="Розклад" vertex="1">
+          <mxGeometry height="185" width="240" x="60" y="950" as="geometry" />
+        </mxCell>
+        <mxCell id="sec_tasks" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#ffffff;fontColor=#ffffff;align=left;verticalAlign=top;spacingTop=-16;fontSize=10;fontFamily=Helvetica;" value="Дошка завдань" vertex="1">
+          <mxGeometry height="310" width="590" x="60" y="1175" as="geometry" />
+        </mxCell>
+        <mxCell id="sec_admin" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#ffffff;fontColor=#ffffff;align=left;verticalAlign=top;spacingTop=-16;fontSize=10;fontFamily=Helvetica;" value="Панель адміністратора" vertex="1">
+          <mxGeometry height="620" width="230" x="600" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="RF_AbDqBY8dM_oxggWB4-3" edge="1" parent="1" source="student" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="RF_AbDqBY8dM_oxggWB4-4">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-30" y="205" />
+              <mxPoint x="-30" y="780" />
+            </Array>
+            <mxPoint x="-102.5" y="713.8095238095239" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="student" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;strokeColor=#ffffff;fontColor=#ffffff;fillColor=#ffffff;fontSize=12;fontFamily=Helvetica;" value="Студент" vertex="1">
+          <mxGeometry height="70" width="35" x="-140" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="leader" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;strokeColor=#ffffff;fontColor=#ffffff;fillColor=#ffffff;fontSize=12;fontFamily=Helvetica;" value="Староста" vertex="1">
+          <mxGeometry height="70" width="35" x="-155" y="1045" as="geometry" />
+        </mxCell>
+        <mxCell id="newuser" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;strokeColor=#ffffff;fontColor=#ffffff;fillColor=#ffffff;fontSize=12;fontFamily=Helvetica;" value="Новий користувач" vertex="1">
+          <mxGeometry height="70" width="35" x="950" y="-40" as="geometry" />
+        </mxCell>
+        <mxCell id="admin" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;strokeColor=#ffffff;fontColor=#ffffff;fillColor=#ffffff;fontSize=12;fontFamily=Helvetica;" value="Адмін" vertex="1">
+          <mxGeometry height="70" width="35" x="950" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="register" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Зареєструватись" vertex="1">
+          <mxGeometry height="60" width="170" x="355" y="-35" as="geometry" />
+        </mxCell>
+        <mxCell id="login" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Увійти в систему" vertex="1">
+          <mxGeometry height="60" width="170" x="120" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="navigate" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Переходити між сторінками веб-застосунку" vertex="1">
+          <mxGeometry height="60" width="170" x="120" y="-35" as="geometry" />
+        </mxCell>
+        <mxCell id="info" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Переглядати інформацію про застосунок" vertex="1">
+          <mxGeometry height="60" width="170" x="370" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="view_files" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Переглядати файли" vertex="1">
+          <mxGeometry height="60" width="170" x="110" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="manage_files" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Керувати файлами" vertex="1">
+          <mxGeometry height="60" width="170" x="100" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="add_file" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Додати файли" vertex="1">
+          <mxGeometry height="60" width="170" x="380" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="delete_file" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Видалити файли" vertex="1">
+          <mxGeometry height="60" width="170" x="380" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="edit_profile" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Редагувати особисті дані" vertex="1">
+          <mxGeometry height="60" width="170" x="110" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="change_photo" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Змінити фото профілю" vertex="1">
+          <mxGeometry height="60" width="170" x="370" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="notifications" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Налаштувати сповіщення" vertex="1">
+          <mxGeometry height="60" width="170" x="110" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="support" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Надіслати запит до техпідтримки" vertex="1">
+          <mxGeometry height="60" width="170" x="110" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="view_schedule" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Переглядати розклад" vertex="1">
+          <mxGeometry height="60" width="170" x="100" y="965" as="geometry" />
+        </mxCell>
+        <mxCell id="update_schedule" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Оновити розклад" vertex="1">
+          <mxGeometry height="60" width="170" x="100" y="1045" as="geometry" />
+        </mxCell>
+        <mxCell id="personal_tasks" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Керувати особистими завданнями" vertex="1">
+          <mxGeometry height="60" width="170" x="110" y="1220" as="geometry" />
+        </mxCell>
+        <mxCell id="group_tasks" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Керувати груповими завданнями" vertex="1">
+          <mxGeometry height="60" width="170" x="100" y="1385" as="geometry" />
+        </mxCell>
+        <mxCell id="create_task" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Створити завдання" vertex="1">
+          <mxGeometry height="60" width="170" x="440" y="1220" as="geometry" />
+        </mxCell>
+        <mxCell id="delete_task" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Видалити завдання" vertex="1">
+          <mxGeometry height="60" width="170" x="450" y="1385" as="geometry" />
+        </mxCell>
+        <mxCell id="manage_users" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Керувати користувачами (ролі/групи)" vertex="1">
+          <mxGeometry height="60" width="170" x="630" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="handle_requests" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Обробляти запити користувачів" vertex="1">
+          <mxGeometry height="60" width="170" x="630" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="view_stats" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Переглядати статистику" vertex="1">
+          <mxGeometry height="60" width="170" x="630" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="pdf" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Завантажити аналітику (PDF)" vertex="1">
+          <mxGeometry height="60" width="170" x="630" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="auto_update" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Керувати автооновленням розкладу" vertex="1">
+          <mxGeometry height="60" width="170" x="630" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="delete_schedules" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Видаляти існуючі розклади для певних груп" vertex="1">
+          <mxGeometry height="60" width="170" x="630" y="635" as="geometry" />
+        </mxCell>
+        <mxCell id="head_rights" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#64B5F6;strokeColor=#000000;fontColor=#ffffff;fontStyle=1;align=center;verticalAlign=middle;fontSize=11;fontFamily=Helvetica;" value="Керувати правами доступу старост до оновлення розкладу" vertex="1">
+          <mxGeometry height="80" width="180" x="625" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="e_student_login" edge="1" parent="1" source="student" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="login" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-30" y="205" />
+              <mxPoint x="-30" y="110" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_student_view_files" edge="1" parent="1" source="student" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="view_files" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-30" y="205" />
+              <mxPoint x="-30" y="270" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_student_manage_files" edge="1" parent="1" source="student" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="manage_files" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-30" y="205" />
+              <mxPoint x="-30" y="370" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_student_edit_profile" edge="1" parent="1" source="student" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="edit_profile" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-30" y="205" />
+              <mxPoint x="-30" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_student_notifications" edge="1" parent="1" source="student" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="notifications" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-30" y="205" />
+              <mxPoint x="-30" y="590" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_student_support" edge="1" parent="1" source="student" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="support" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-30" y="205" />
+              <mxPoint x="-30" y="680" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_student_view_schedule" edge="1" parent="1" source="student" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="view_schedule" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-30" y="205" />
+              <mxPoint x="-30" y="995" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_student_personal_tasks" edge="1" parent="1" source="student" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="personal_tasks" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-30" y="205" />
+              <mxPoint x="-30" y="1250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_leader_update_schedule" edge="1" parent="1" source="leader" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=default;dashed=1;dashPattern=12 12;" target="update_schedule" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-150" y="1075" />
+              <mxPoint x="-150" y="1075" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_leader_group_tasks" edge="1" parent="1" source="leader" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="group_tasks" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-80" y="1090" />
+              <mxPoint x="-80" y="1410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_new_register" edge="1" parent="1" source="newuser" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="register" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_admin_manage_users" edge="1" parent="1" source="admin" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="manage_users" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="510" />
+              <mxPoint x="880" y="290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_admin_handle_requests" edge="1" parent="1" source="admin" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="handle_requests" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="510" />
+              <mxPoint x="880" y="365" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_admin_view_stats" edge="1" parent="1" source="admin" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="view_stats" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="510" />
+              <mxPoint x="880" y="440" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_admin_pdf" edge="1" parent="1" source="admin" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="pdf" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="510" />
+              <mxPoint x="880" y="515" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_admin_auto_update" edge="1" parent="1" source="admin" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="auto_update" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="510" />
+              <mxPoint x="880" y="590" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_admin_delete_schedules" edge="1" parent="1" source="admin" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="delete_schedules" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="510" />
+              <mxPoint x="880" y="665" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_admin_head_rights" edge="1" parent="1" source="admin" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;" target="head_rights" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="510" />
+              <mxPoint x="880" y="750" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_login_navigate" edge="1" parent="1" source="login" style="endArrow=open;endFill=0;endSize=8;html=1;dashed=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;fontColor=#ffffff;fontSize=11;fontFamily=Helvetica;" target="navigate" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_login_info" edge="1" parent="1" source="login" style="endArrow=open;endFill=0;endSize=8;html=1;dashed=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;fontColor=#ffffff;fontSize=11;fontFamily=Helvetica;" target="info" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_manage_files_add_file" edge="1" parent="1" source="manage_files" style="endArrow=open;endFill=0;endSize=8;html=1;dashed=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;fontColor=#ffffff;fontSize=11;fontFamily=Helvetica;" target="add_file" value="&amp;lt;&amp;lt;extends&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="320" y="370" />
+              <mxPoint x="320" y="270" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_manage_files_delete_file" edge="1" parent="1" source="manage_files" style="endArrow=open;endFill=0;endSize=8;html=1;dashed=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;fontColor=#ffffff;fontSize=11;fontFamily=Helvetica;" target="delete_file" value="&amp;lt;&amp;lt;extends&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_edit_profile_change_photo" edge="1" parent="1" source="edit_profile" style="endArrow=open;endFill=0;endSize=8;html=1;dashed=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;fontColor=#ffffff;fontSize=11;fontFamily=Helvetica;" target="change_photo" value="&amp;lt;&amp;lt;extends&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_personal_tasks_create_task" edge="1" parent="1" source="personal_tasks" style="endArrow=open;endFill=0;endSize=8;html=1;dashed=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;fontColor=#ffffff;fontSize=11;fontFamily=Helvetica;" target="create_task" value="&amp;lt;&amp;lt;extends&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="360" y="1225" />
+              <mxPoint x="360" y="1225" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_personal_tasks_delete_task" edge="1" parent="1" source="personal_tasks" style="endArrow=open;endFill=0;endSize=8;html=1;dashed=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;fontColor=#ffffff;fontSize=11;fontFamily=Helvetica;" target="delete_task" value="&amp;lt;&amp;lt;extends&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" x="-0.1693" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="330" y="1250" />
+              <mxPoint x="330" y="1415" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_group_tasks_create_task" edge="1" parent="1" source="group_tasks" style="endArrow=open;endFill=0;endSize=8;html=1;dashed=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;fontColor=#ffffff;fontSize=11;fontFamily=Helvetica;" target="create_task" value="&amp;lt;&amp;lt;extends&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" x="0.3027" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="410" y="1405" />
+              <mxPoint x="410" y="1250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_group_tasks_delete_task" edge="1" parent="1" source="group_tasks" style="endArrow=open;endFill=0;endSize=8;html=1;dashed=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#ffffff;fontColor=#ffffff;fontSize=11;fontFamily=Helvetica;" target="delete_task" value="&amp;lt;&amp;lt;extends&amp;gt;&amp;gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="350" y="1435" />
+              <mxPoint x="350" y="1435" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="RF_AbDqBY8dM_oxggWB4-4" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=light-dark(#64B5F6,#64B5F6);" value="Переглядати час використання сайту" vertex="1">
+          <mxGeometry height="60" width="180" x="110" y="750" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
