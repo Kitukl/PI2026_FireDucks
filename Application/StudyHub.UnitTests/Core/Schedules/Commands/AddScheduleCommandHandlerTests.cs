@@ -26,7 +26,7 @@ public class AddScheduleCommandHandlerTests
         {
             Id = Guid.Empty,
             Group = new GroupDto { Id = Guid.NewGuid(), Name = "PI-21" },
-            HeadmanUpdate = true,
+            LeaderUpdate = true,
             IsAutoUpdate = true,
             UpdateAt = DateTime.UtcNow,
             Lessons = new List<LessonDto>

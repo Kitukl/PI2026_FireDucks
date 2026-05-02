@@ -1,10 +1,6 @@
 ﻿using MediatR;
-using StudyHub.Core.DTOs.Parser;
 using StudyHub.Core.Schedules.Interfaces;
 using StudyHub.Core.Services;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace StudyHub.Core.Schedules.Commands
 {

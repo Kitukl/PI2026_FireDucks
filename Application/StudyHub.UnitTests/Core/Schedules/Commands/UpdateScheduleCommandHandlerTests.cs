@@ -27,7 +27,7 @@ public class UpdateScheduleCommandHandlerTests
         {
             Id = scheduleId,
             IsAutoUpdate = false,
-            HeadmanUpdate = true,
+            LeaderUpdate = true,
             Lessons = new List<LessonDto> { new() { Id = lessonId } }
         };
 

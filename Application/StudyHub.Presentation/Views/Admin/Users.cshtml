@@ -53,14 +53,16 @@
         <div class="admin-table-wrap">
             <table class="admin-table" id="adminUsersTable">
                 <colgroup>
-                    <col style="width: 34%;" />
                     <col style="width: 24%;" />
-                    <col style="width: 24%;" />
+                    <col style="width: 28%;" />
+                    <col style="width: 18%;" />
+                    <col style="width: 16%;" />
                     <col style="width: 18%;" />
                 </colgroup>
                 <thead>
                 <tr>
                     <th>Name</th>
+                    <th>Email</th>
                     <th>Role</th>
                     <th>Group</th>
                     <th>Actions</th>
@@ -71,6 +73,7 @@
                 {
                     <tr data-user-id="@user.Id">
                         <td>@user.Name @user.Surname</td>
+                        <td>@user.Email</td>
                         <td class="js-user-role-cell">@string.Join(", ", user.Roles)</td>
                         <td class="js-user-group-cell">@(string.IsNullOrWhiteSpace(user.GroupName) ? "-" : user.GroupName)</td>
                         <td>

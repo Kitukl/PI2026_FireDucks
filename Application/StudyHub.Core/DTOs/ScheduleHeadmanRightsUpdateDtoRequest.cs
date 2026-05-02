@@ -1,8 +1,8 @@
 ﻿namespace StudyHub.Core.DTOs
 {
-    public class ScheduleHeadmanRightsUpdateDtoRequest
+    public class ScheduleLeaderRightsUpdateDtoRequest
     {
         public Guid Id { get; set; }
-        public bool CanHeadmanUpdate { get; set; }
+        public bool CanLeaderUpdate { get; set; }
     }
 }
