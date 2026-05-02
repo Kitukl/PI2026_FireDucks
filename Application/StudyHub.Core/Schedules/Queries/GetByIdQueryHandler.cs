@@ -29,7 +29,7 @@ public class GetScheduleByIdQueryHandler : IRequestHandler<GetScheduleByIdReques
                 },
                 IsAutoUpdate = schedule.IsAutoUpdate,
                 UpdateAt = schedule.UpdatedAt,
-                LeaderUpdate = schedule.CanLeaderUpdate,
+                LeaderUpdate = schedule.CanHeadmanUpdate,
                 Lessons = schedule.Lessons.Select(l => new LessonDto
                 {
                     Id = l.Id,

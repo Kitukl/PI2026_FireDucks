@@ -25,7 +25,7 @@ namespace StudyHub.Core.Schedules.Queries
                 {
                     Id = schedule.Id,
                     UpdateAt = schedule.UpdatedAt,
-                    LeaderUpdate = schedule.CanLeaderUpdate,
+                    LeaderUpdate = schedule.CanHeadmanUpdate,
                     IsAutoUpdate = schedule.IsAutoUpdate,
                     Group = new GroupDto { Id = schedule.Group.Id, Name = schedule.Group.Name },
                     Lessons = schedule.Lessons.Select(x => new LessonDto

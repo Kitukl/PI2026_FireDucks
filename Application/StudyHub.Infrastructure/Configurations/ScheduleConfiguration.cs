@@ -11,7 +11,7 @@ public class ScheduleConfiguration : IEntityTypeConfiguration<Schedule>
         builder.HasKey(s => s.Id);
 
         builder.Property(s => s.IsAutoUpdate).HasDefaultValue(false);
-        builder.Property(s => s.CanLeaderUpdate).HasDefaultValue(true);
+        builder.Property(s => s.CanHeadmanUpdate).HasDefaultValue(true);
 
         builder.HasOne(x => x.Group)
             .WithOne(g => g.Schedule)

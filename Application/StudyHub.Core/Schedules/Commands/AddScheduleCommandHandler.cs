@@ -23,7 +23,7 @@ namespace StudyHub.Core.Schedules.Commands
             {
                 Id = request.dto.Id == Guid.Empty ? Guid.NewGuid() : request.dto.Id,
                 UpdatedAt = request.dto.UpdateAt,
-                CanLeaderUpdate = request.dto.LeaderUpdate,
+                CanHeadmanUpdate = request.dto.LeaderUpdate,
                 IsAutoUpdate = request.dto.IsAutoUpdate,
                 Group = new Domain.Entities.Group { Id = request.dto.Group.Id, Name = request.dto.Group.Name },
                 Lessons = request.dto.Lessons.Select(x => new Lesson
