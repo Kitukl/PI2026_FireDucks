@@ -26,7 +26,7 @@ public class UserController : Controller
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "UserPlatform");
         }
 
         return View("Login");
@@ -39,7 +39,7 @@ public class UserController : Controller
         var properties = await UserControllerHelper.CreateMicrosoftChallengePropertiesAsync(HttpContext, Url);
         if (properties == null)
         {
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "UserPlatform");
         }
 
         return Challenge(properties, MicrosoftAccountDefaults.AuthenticationScheme);
@@ -52,13 +52,13 @@ public class UserController : Controller
         var command = await UserControllerHelper.CreateExternalRegisterCommandAsync(HttpContext);
         if (command == null)
         {
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "UserPlatform");
         }
 
         await _mediator.Send(command);
         await UserControllerHelper.SignOutExternalSchemeAsync(HttpContext);
 
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction("Index", "UserPlatform");
     }
 
     [HttpGet("access-denied")]
@@ -78,7 +78,7 @@ public class UserController : Controller
     public async Task<IActionResult> Logout()
     {
         await _mediator.Send(new SignOutUserCommand());
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction("Index", "UserPlatform");
     }
 
     [Authorize(Roles = nameof(Role.Leader))]
@@ -114,7 +114,7 @@ public class UserController : Controller
         ViewBag.ReminderOffset = data.ReminderOffset;
         ViewBag.ReminderTimeType = data.ReminderTimeType;
 
-        return View("~/Views/Home/UserProfile/UserProfile.cshtml");
+        return View("~/Views/UserPlatform/UserProfile/UserProfile.cshtml");
     }
 
     [HttpPost("/UserProfile/Photo")]

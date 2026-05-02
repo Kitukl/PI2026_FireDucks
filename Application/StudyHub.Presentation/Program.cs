@@ -10,9 +10,7 @@ using Serilog;
 using StudyHub.Core.Comments.Interfaces;
 using StudyHub.Core.Feedbacks.Interfaces;
 using StudyHub.Core.Group;
-using StudyHub.Core.Lecturers.Interfaces;
 using StudyHub.Core.Lessons.Interfaces;
-using StudyHub.Core.LessonSlots.Interfaces;
 using StudyHub.Core.Schedules.Interfaces;
 using StudyHub.Core.Services;
 using StudyHub.Core.Statistics.Interfaces;
@@ -80,9 +78,7 @@ public class Program
         builder.Services.AddScoped<ICommentRepository, CommentRepository>();
         builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
         builder.Services.AddScoped<IGroupRepository, GroupRepository>();
-        builder.Services.AddScoped<ILecturerRepository, LecturerRepository>();
         builder.Services.AddScoped<ILessonRepository, LessonRepository>();
-        builder.Services.AddScoped<ILessonSlotRepository, LessonSlotRepository>();
         builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
         builder.Services.AddHostedService<DeadlineSender>();
@@ -125,7 +121,7 @@ public class Program
 
         if (!app.Environment.IsDevelopment())
         {
-            app.UseExceptionHandler("/Home/Error");
+            app.UseExceptionHandler("/UserPlatform/Error");
             app.UseHsts();
         }
 
@@ -169,7 +165,7 @@ public class Program
 
                 if (!isAdmin && isAdminPath)
                 {
-                    context.Response.Redirect("/Home/Index");
+                    context.Response.Redirect("/UserPlatform/Index");
                     return;
                 }
 
@@ -181,7 +177,7 @@ public class Program
 
                 if (isStudent && !isLeader && IsPath(pathValue, "/TaskBoard/ReviewGroup"))
                 {
-                    context.Response.Redirect("/Home/Index");
+                    context.Response.Redirect("/UserPlatform/Index");
                     return;
                 }
             }
@@ -199,7 +195,7 @@ public class Program
 
         app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
+                pattern: "{controller=UserPlatform}/{action=Index}/{id?}")
             .WithStaticAssets();
 
         app.Run();
