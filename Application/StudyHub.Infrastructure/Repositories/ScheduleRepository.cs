@@ -131,7 +131,7 @@ public class ScheduleRepository : IScheduleRepository
         if (existingSchedule == null) return;
 
         existingSchedule.IsAutoUpdate = schedule.IsAutoUpdate;
-        existingSchedule.CanLeaderUpdate = schedule.CanLeaderUpdate;
+        existingSchedule.CanHeadmanUpdate = schedule.CanHeadmanUpdate;
         existingSchedule.UpdatedAt = schedule.UpdatedAt;
 
         var newLessonIds = schedule.Lessons.Select(l => l.Id).ToList();
@@ -171,7 +171,7 @@ public class ScheduleRepository : IScheduleRepository
         var dbSchedule = await _context.Schedules.FindAsync(schedule.Id);
         if (dbSchedule != null)
         {
-            dbSchedule.CanLeaderUpdate = schedule.CanLeaderUpdate;
+            dbSchedule.CanHeadmanUpdate = schedule.CanHeadmanUpdate;
             await _context.SaveChangesAsync();
         }
     }
@@ -181,7 +181,7 @@ public class ScheduleRepository : IScheduleRepository
         var schedule = await _context.Schedules
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Group.Id == groupId);
-        return schedule?.CanLeaderUpdate ?? false;
+        return schedule?.CanHeadmanUpdate ?? false;
     }
 
     public async Task SetScheduleAutoUpdate(bool value)
@@ -200,7 +200,7 @@ public class ScheduleRepository : IScheduleRepository
     {
         await _context.Schedules.ExecuteUpdateAsync(s => s
             .SetProperty(b => b.IsAutoUpdate, isAutoUpdate)
-            .SetProperty(b => b.CanLeaderUpdate, allowLeaders)
+            .SetProperty(b => b.CanHeadmanUpdate, allowLeaders)
             .SetProperty(b => b.UpdateInterval, intervalDays)
             .SetProperty(b => b.UpdatedAt, updatedAt));
 

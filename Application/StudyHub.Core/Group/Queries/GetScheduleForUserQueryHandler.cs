@@ -41,7 +41,7 @@ public class GetScheduleForUserQueryHandler : IRequestHandler<GetScheduleForUser
             GroupId = currentUser.Group.Id,
             GroupName = currentUser.Group.Name,
             IsLeader = isLeader,
-            CanLeaderUpdate = schedule?.CanLeaderUpdate ?? false
+            CanLeaderUpdate = schedule?.CanHeadmanUpdate ?? false
         };
 
         if (schedule != null && schedule.Lessons.Any())
