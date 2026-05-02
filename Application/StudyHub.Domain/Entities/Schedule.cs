@@ -6,7 +6,7 @@ public class Schedule
     public uint UpdateInterval { get; set; }
     public DateTime UpdatedAt { get; set; }
     public bool IsAutoUpdate { get; set; }
-    public bool CanLeaderUpdate { get; set; }
+    public bool CanHeadmanUpdate { get; set; }
     public Group Group { get; set; }
     public Guid GroupId { get; set; }
     
