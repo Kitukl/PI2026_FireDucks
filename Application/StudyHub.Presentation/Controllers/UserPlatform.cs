@@ -2,9 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Application.Controllers;
 
-public class HomeController : Controller
+[Route("[controller]")]
+public class UserPlatform : Controller
 {
-    [HttpGet("/Home/Index")]
+    [HttpGet("Index")]
     public IActionResult Index()
     {
         return RedirectToAction("Index", "Dashboard");

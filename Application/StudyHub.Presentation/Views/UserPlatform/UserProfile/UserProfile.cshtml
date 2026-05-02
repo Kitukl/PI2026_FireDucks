@@ -13,7 +13,7 @@
     var reminderOffsets = Enumerable.Range(1, 10);
 
     // ВАЖЛИВО: Отримуємо збережені значення з ViewBag
-    bool isNotified = ViewBag.IsNotified ?? true;
+    bool isNotified = ViewBag.IsNotified ?? false;
     var currentOffset = ViewBag.ReminderOffset ?? 2;
     var currentTimeType = ViewBag.ReminderTimeType ?? TimeType.Day;
 }
@@ -39,9 +39,9 @@
 
             <h1 class="user-profile-name">@fullName</h1>
 
-            @* БЛОК НАЛАШТУВАНЬ З ВИПРАВЛЕНИМ SELECTED *@
             <fieldset class="user-settings-card js-user-settings" 
-                      data-update-url="@Url.Action("UpdateReminderSettings", "User")">
+                      data-update-url="@Url.Action("UpdateReminderSettings", "User")"
+                      data-enabled="@(isNotified ? "true" : "false")">
                 @Html.AntiForgeryToken()
                 <legend>Settings</legend>
 

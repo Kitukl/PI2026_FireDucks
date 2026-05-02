@@ -16,11 +16,15 @@ public class FeedbackRepository : IFeedbackRepository
 
     public async Task<Feedback?> GetFeedbackAsync(Guid id) 
     { 
-        return await _context.Feedbacks.FirstOrDefaultAsync(c => c.Id == id);
+        return await _context.Feedbacks
+            .Include(x => x.User)
+            .FirstOrDefaultAsync(c => c.Id == id);
     }
     public async Task<List<Feedback>> GetFeedbacksAsync()
     {
-        return await _context.Feedbacks.ToListAsync();
+        return await _context.Feedbacks
+            .Include(x => x.User)
+            .ToListAsync();
     }
     public async Task<Guid> AddFeedbackAsync(Feedback feedback)
     {
