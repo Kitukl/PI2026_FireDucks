@@ -33,7 +33,7 @@ public class GetGroupedTaskStatsHandlerTests
         var result = await handler.Handle(new GetGroupedTaskStatsRequest(), CancellationToken.None);
 
         // Assert
-        Assert.Equal(1, result.Count);
+        Assert.Equal(2, result.Count);
         Assert.Equal(2, result["User Tasks"]["ToDo"]);
         Assert.Equal(3, result["Group Tasks"]["Done"]);
     }

@@ -55,14 +55,29 @@ public class GlobalAnnouncementService : IGlobalAnnouncementService
             return;
         }
 
+        string htmlContent;
+        string plainText;
+
+        if (description.Trim().StartsWith("<"))
+        {
+            htmlContent = description;
+            plainText = "Перегляньте деталі у додатку.";
+        }
+        else
+        {
+            htmlContent = $"<p>{System.Net.WebUtility.HtmlEncode(description).Replace("\n", "<br />")}</p>";
+            plainText = description;
+        }
+        
         var client = new SendGridClient(apiKey);
         var from = new EmailAddress(fromEmail, fromName);
         var message = MailHelper.CreateSingleEmailToMultipleRecipients(
             from,
             validRecipients,
             subject,
-            plainTextContent: description,
-            htmlContent: $"<p>{System.Net.WebUtility.HtmlEncode(description).Replace("\n", "<br />")}</p>");
+            plainTextContent: plainText,
+            htmlContent: htmlContent);
+    
         message.SetReplyTo(from);
 
         var response = await client.SendEmailAsync(message, cancellationToken);
