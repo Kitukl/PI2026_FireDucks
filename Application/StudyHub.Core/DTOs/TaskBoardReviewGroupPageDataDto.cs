@@ -8,4 +8,5 @@ public class TaskBoardReviewGroupPageDataDto
     public string GroupName { get; set; } = "Group";
     public List<GroupUserDto> GroupUsers { get; set; } = new();
     public List<GroupUserDto> UnassignedUsers { get; set; } = new();
+    public string? ResourceUrl { get; set; }
 }

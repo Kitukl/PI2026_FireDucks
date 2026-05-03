@@ -258,4 +258,25 @@ public class TaskBoardController : Controller
         return RedirectToAction(nameof(TaskBoardReviewGroup));
     }
 
+    [HttpPost("/ViewTask/Edit")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TaskBoardViewTaskEdit(Guid taskId, string? title, string? description, string? resourceUrl)
+    {
+        var result = await _mediator.Send(new EditTaskBoardTaskCommand
+        {
+            CurrentUserId = TaskBoardControllerHelper.GetCurrentUserId(User),
+            TaskId = taskId,
+            Title = title,
+            Description = description,
+            ResourceUrl = resourceUrl
+        });
+
+        if (result.IsForbidden)
+        {
+            return Forbid();
+        }
+
+        return RedirectToAction(nameof(TaskBoardViewTask), new { taskCode = taskId });
+    }
+
 }
