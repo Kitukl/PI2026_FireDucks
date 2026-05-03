@@ -64,7 +64,7 @@ public class TaskRepository : ITaskRepository
     public async Task<Guid> DeleteTaskAsync(Guid id)
     {
         await _context.Comments
-            .Where(comment => EF.Property<Guid>(comment, "TaskId") == id)
+            .Where(comment => comment.Task.Id == id)
             .ExecuteDeleteAsync();
 
         await _context.Tasks.Where(f => f.Id == id).ExecuteDeleteAsync();

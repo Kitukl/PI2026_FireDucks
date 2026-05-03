@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Application.Helpers;
+using StudyHub.Core.Feedbacks.Commands;
 using StudyHub.Core.Users.Commands;
 using StudyHub.Core.Users.Queries;
 using StudyHub.Domain.Entities;
@@ -108,13 +109,22 @@ public class UserController : Controller
             UserId = parsedUserId
         });
 
-        ViewBag.FullName = data.FullName;
-        ViewBag.PhotoUrl = data.PhotoUrl;
-        ViewBag.IsNotified = data.IsNotified;
-        ViewBag.ReminderOffset = data.ReminderOffset;
-        ViewBag.ReminderTimeType = data.ReminderTimeType;
+        return View("~/Views/UserPlatform/UserProfile/UserProfile.cshtml", data);
+    }
 
-        return View("~/Views/UserPlatform/UserProfile/UserProfile.cshtml");
+    [HttpGet("/UserProfile/ViewRequest/{feedbackId?}")]
+    public async Task<IActionResult> ViewRequest(string? feedbackId)
+    {
+        var parsedUserId = UserControllerHelper.GetCurrentUserId(User);
+
+        var data = await _mediator.Send(new GetUserProfilePageQuery
+        {
+            UserId = parsedUserId,
+            FeedbackId = feedbackId,
+            OpenModal = true
+        });
+
+        return View("~/Views/UserPlatform/UserProfile/UserProfile.cshtml", data);
     }
 
     [HttpPost("/UserProfile/Photo")]
@@ -205,6 +215,56 @@ public class UserController : Controller
 
         TempData["ProfileFeedbackSuccess"] = result.SuccessMessage;
         return RedirectToAction(nameof(UserProfile));
+    }
+
+    [HttpPost("/UserProfile/AddRequestComment")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddRequestComment(Guid feedbackId, string? description)
+    {
+        var result = await _mediator.Send(new AddRequestCommentCommand
+        {
+            CurrentUserId = UserControllerHelper.GetCurrentUserId(User),
+            FeedbackId = feedbackId,
+            Description = description,
+            IsAdmin = User.IsInRole(nameof(Role.Admin))
+        });
+
+        if (result.IsForbidden)
+        {
+            return Forbid();
+        }
+
+        if (result.IsNotFound)
+        {
+            return NotFound();
+        }
+
+        return RedirectToAction(nameof(ViewRequest), new { feedbackId });
+    }
+
+    [HttpPost("/UserProfile/DeleteRequestComment")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteRequestComment(Guid feedbackId, Guid commentId)
+    {
+        var result = await _mediator.Send(new DeleteRequestCommentCommand
+        {
+            CurrentUserId = UserControllerHelper.GetCurrentUserId(User),
+            FeedbackId = feedbackId,
+            CommentId = commentId,
+            IsAdmin = User.IsInRole(nameof(Role.Admin))
+        });
+
+        if (result.IsForbidden)
+        {
+            return Forbid();
+        }
+
+        if (result.IsNotFound)
+        {
+            return NotFound();
+        }
+
+        return RedirectToAction(nameof(ViewRequest), new { feedbackId });
     }
 
 }

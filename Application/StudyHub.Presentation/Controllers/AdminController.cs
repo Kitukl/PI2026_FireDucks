@@ -1,4 +1,5 @@
 using Application.Models;
+using Application.Helpers;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -184,6 +185,7 @@ public class AdminController(IMediator mediator) : Controller
         {
             Requests = data.Requests,
             ActiveRequest = data.ActiveRequest,
+            ActiveRequestComments = data.ActiveRequestComments,
             OpenRequestModal = data.OpenRequestModal
         };
 
@@ -203,10 +205,61 @@ public class AdminController(IMediator mediator) : Controller
         {
             Requests = data.Requests,
             ActiveRequest = data.ActiveRequest,
+            ActiveRequestComments = data.ActiveRequestComments,
             OpenRequestModal = data.OpenRequestModal
         };
 
         return View("Requests", model);
+    }
+
+    [HttpPost("/Admin/Requests/AddComment")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddRequestComment(Guid feedbackId, string? description)
+    {
+        var result = await mediator.Send(new AddRequestCommentCommand
+        {
+            CurrentUserId = UserControllerHelper.GetCurrentUserId(User),
+            FeedbackId = feedbackId,
+            Description = description,
+            IsAdmin = true
+        });
+
+        if (result.IsForbidden)
+        {
+            return Forbid();
+        }
+
+        if (result.IsNotFound)
+        {
+            return NotFound();
+        }
+
+        return RedirectToAction(nameof(RequestView), new { feedbackId });
+    }
+
+    [HttpPost("/Admin/Requests/DeleteComment")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteRequestComment(Guid feedbackId, Guid commentId)
+    {
+        var result = await mediator.Send(new DeleteRequestCommentCommand
+        {
+            CurrentUserId = UserControllerHelper.GetCurrentUserId(User),
+            FeedbackId = feedbackId,
+            CommentId = commentId,
+            IsAdmin = true
+        });
+
+        if (result.IsForbidden)
+        {
+            return Forbid();
+        }
+
+        if (result.IsNotFound)
+        {
+            return NotFound();
+        }
+
+        return RedirectToAction(nameof(RequestView), new { feedbackId });
     }
 
     [HttpPost("/Admin/Requests/UpdateStatus")]

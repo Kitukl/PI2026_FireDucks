@@ -1,0 +1,1 @@
+ALTER TABLE "Schedules" RENAME COLUMN "CanLeaderUpdate" TO "CanHeadmanUpdate";
