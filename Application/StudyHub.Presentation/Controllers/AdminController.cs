@@ -3,22 +3,33 @@ using Application.Helpers;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using StudyHub.Core.Admin.Commands;
 using StudyHub.Core.Admin.Queries;
 using StudyHub.Core.Feedbacks.Commands;
 using StudyHub.Core.Schedules.Commands;
 using StudyHub.Core.Users.Commands;
+using StudyHub.Core.Users.Interfaces;
 using StudyHub.Core.Users.Queries;
 using StudyHub.Domain.Enums;
 
 namespace Application.Controllers;
 
 [Authorize(Roles = nameof(Role.Admin))]
-public class AdminController(IMediator mediator) : Controller
+public class AdminController : Controller
 {
+    private readonly IMediator _mediator;
+    private readonly IUserAuthRepository _userAuthRepository;
+
+    public AdminController(IMediator mediator, IUserAuthRepository userAuthRepository)
+    {
+        _mediator = mediator;
+        _userAuthRepository = userAuthRepository;
+    }
+
     public async Task<IActionResult> Dashboard()
     {
-        var data = await mediator.Send(new GetAdminDashboardQuery());
+        var data = await _mediator.Send(new GetAdminDashboardQuery());
 
         var viewModel = new SystemStatisticViewModel
         {
@@ -39,7 +50,7 @@ public class AdminController(IMediator mediator) : Controller
 
     public async Task<IActionResult> Users()
     {
-        var users = await mediator.Send(new GetUsersRequest());
+        var users = await _mediator.Send(new GetUsersRequest());
 
         return View(users);
     }
@@ -56,7 +67,7 @@ public class AdminController(IMediator mediator) : Controller
 
         try
         {
-            var recipientsCount = await mediator.Send(new SendGlobalAnnouncementCommand
+            var recipientsCount = await _mediator.Send(new SendGlobalAnnouncementCommand
             {
                 Subject = subject,
                 Description = description
@@ -83,7 +94,7 @@ public class AdminController(IMediator mediator) : Controller
     [HttpGet]
     public async Task<IActionResult> GetUserModal(Guid id)
     {
-        var data = await mediator.Send(new GetAdminUpdateUserFormQuery
+        var data = await _mediator.Send(new GetAdminUpdateUserFormQuery
         {
             UserId = id
         });
@@ -108,7 +119,7 @@ public class AdminController(IMediator mediator) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateUser(UpdateUserViewModel model)
     {
-        var result = await mediator.Send(new UpdateAdminUserWithFormCommand
+        var result = await _mediator.Send(new UpdateAdminUserWithFormCommand
         {
             UserId = model.Id,
             GroupName = model.GroupName,
@@ -161,6 +172,12 @@ public class AdminController(IMediator mediator) : Controller
             });
         }
 
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (Guid.TryParse(currentUserId, out var parsedCurrentUserId) && parsedCurrentUserId == model.Id)
+        {
+            await _userAuthRepository.RefreshSignInAsync(model.Id);
+        }
+
         TempData["AdminUsersMessage"] = "User changes were saved.";
         return RedirectToAction(nameof(Users));
     }
@@ -168,7 +185,7 @@ public class AdminController(IMediator mediator) : Controller
     [HttpPost]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
-        await mediator.Send(new DeleteUserCommand { UserId = id });
+        await _mediator.Send(new DeleteUserCommand { UserId = id });
 
         return RedirectToAction("Users");
     }
@@ -176,7 +193,7 @@ public class AdminController(IMediator mediator) : Controller
     [HttpGet("/Admin/Requests")]
     public async Task<IActionResult> Requests()
     {
-        var data = await mediator.Send(new GetAdminRequestsPageQuery
+        var data = await _mediator.Send(new GetAdminRequestsPageQuery
         {
             OpenModal = false
         });
@@ -195,7 +212,7 @@ public class AdminController(IMediator mediator) : Controller
     [HttpGet("/Admin/Requests/View/{feedbackId?}")]
     public async Task<IActionResult> RequestView(string? feedbackId)
     {
-        var data = await mediator.Send(new GetAdminRequestsPageQuery
+        var data = await _mediator.Send(new GetAdminRequestsPageQuery
         {
             FeedbackId = feedbackId,
             OpenModal = true
@@ -216,7 +233,7 @@ public class AdminController(IMediator mediator) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddRequestComment(Guid feedbackId, string? description)
     {
-        var result = await mediator.Send(new AddRequestCommentCommand
+        var result = await _mediator.Send(new AddRequestCommentCommand
         {
             CurrentUserId = UserControllerHelper.GetCurrentUserId(User),
             FeedbackId = feedbackId,
@@ -241,7 +258,7 @@ public class AdminController(IMediator mediator) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteRequestComment(Guid feedbackId, Guid commentId)
     {
-        var result = await mediator.Send(new DeleteRequestCommentCommand
+        var result = await _mediator.Send(new DeleteRequestCommentCommand
         {
             CurrentUserId = UserControllerHelper.GetCurrentUserId(User),
             FeedbackId = feedbackId,
@@ -266,7 +283,7 @@ public class AdminController(IMediator mediator) : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateRequestStatus(Guid feedbackId, Status status)
     {
-        var result = await mediator.Send(new UpdateAdminRequestStatusCommand
+        var result = await _mediator.Send(new UpdateAdminRequestStatusCommand
         {
             FeedbackId = feedbackId,
             Status = status
@@ -300,7 +317,7 @@ public class AdminController(IMediator mediator) : Controller
     [HttpGet("/Admin/Schedule/{groupId?}")]
     public async Task<IActionResult> Schedule(Guid? groupId)
     {
-        var data = await mediator.Send(new GetAdminSchedulePageQuery
+        var data = await _mediator.Send(new GetAdminSchedulePageQuery
         {
             GroupId = groupId
         });
@@ -323,7 +340,7 @@ public class AdminController(IMediator mediator) : Controller
     [HttpPost]
     public async Task<IActionResult> RunGlobalUpdate()
     {
-        await mediator.Send(new RunGlobalScheduleUpdateRequest());
+        await _mediator.Send(new RunGlobalScheduleUpdateRequest());
 
         return RedirectToAction(nameof(Schedule));
     }
@@ -331,7 +348,7 @@ public class AdminController(IMediator mediator) : Controller
     [HttpPost]
     public async Task<IActionResult> UpdateGroupSchedule(Guid groupId)
     {
-        await mediator.Send(new UpdateGroupScheduleRequest(groupId));
+        await _mediator.Send(new UpdateGroupScheduleRequest(groupId));
 
         return RedirectToAction(nameof(Schedule), new { groupId });
     }
@@ -339,21 +356,21 @@ public class AdminController(IMediator mediator) : Controller
     [HttpPost]
     public async Task<IActionResult> RemoveGroupSchedule(Guid groupId)
     {
-        await mediator.Send(new DeleteScheduleForGroupRequest(groupId));
+        await _mediator.Send(new DeleteScheduleForGroupRequest(groupId));
         return RedirectToAction(nameof(Schedule));
     }
 
     [HttpPost]
     public async Task<IActionResult> RemoveGlobalSchedule()
     {
-        await mediator.Send(new DeleteAllRequest());
+        await _mediator.Send(new DeleteAllRequest());
         return RedirectToAction(nameof(Schedule));
     }
 
     [HttpPost]
     public async Task<IActionResult> UpdateGlobalSettings(bool isAutoUpdate, bool allowLeaders, uint intervalDays)
     {
-        await mediator.Send(new UpdateGlobalScheduleSettingsRequest(isAutoUpdate, allowLeaders, intervalDays));
+        await _mediator.Send(new UpdateGlobalScheduleSettingsRequest(isAutoUpdate, allowLeaders, intervalDays));
 
         return RedirectToAction(nameof(Schedule));
     }

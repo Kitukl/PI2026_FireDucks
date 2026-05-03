@@ -69,7 +69,12 @@ public class UserController : Controller
 
         if (UserControllerHelper.IsPath(returnUrl, "/Admin"))
         {
-            return RedirectToAction("Dashboard", "Admin");
+            if (User.IsInRole(nameof(Role.Admin)))
+            {
+                return RedirectToAction("Dashboard", "Admin");
+            }
+
+            return RedirectToAction("Index", "UserPlatform");
         }
 
         return RedirectToAction("Index", "Dashboard");
