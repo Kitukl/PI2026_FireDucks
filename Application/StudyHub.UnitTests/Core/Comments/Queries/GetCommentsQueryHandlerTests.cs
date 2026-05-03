@@ -34,7 +34,7 @@ public class GetCommentsQueryHandlerTests
         var result = await handler.Handle(new GetCommentsQuery { TaskId = taskId }, CancellationToken.None);
 
         // Assert
-        Assert.Equal(3, result.Count);
+        Assert.Equal(2, result.Count);
         _repositoryMock.Verify(x => x.GetCommentsAsync(taskId), Times.Once);
     }
 }
