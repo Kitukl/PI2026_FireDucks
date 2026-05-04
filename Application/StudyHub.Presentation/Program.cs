@@ -8,9 +8,7 @@ using Serilog;
 using StudyHub.Core.Comments.Interfaces;
 using StudyHub.Core.Feedbacks.Interfaces;
 using StudyHub.Core.Group;
-using StudyHub.Core.Lecturers.Interfaces;
 using StudyHub.Core.Lessons.Interfaces;
-using StudyHub.Core.LessonSlots.Interfaces;
 using StudyHub.Core.Schedules.Interfaces;
 using StudyHub.Core.Services;
 using StudyHub.Core.Statistics.Interfaces;
@@ -41,11 +39,13 @@ public class Program
 
         foreach (var envPath in envCandidates)
         {
-            if (File.Exists(envPath))
+            if (!File.Exists(envPath))
             {
-                Env.Load(envPath);
-                break;
+                continue;
             }
+
+            Env.Load(envPath);
+            break;
         }
 
         var builder = WebApplication.CreateBuilder(args);
@@ -57,8 +57,7 @@ public class Program
             builder.Configuration.GetSection(SessionTrackingOptions.SectionName));
         builder.Services.AddDbContext<SDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-        builder.Services.AddHttpContextAccessor();
-        
+
         builder.Services.AddIdentity<User, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<SDbContext>()
             .AddDefaultTokenProviders();
@@ -76,9 +75,7 @@ public class Program
         builder.Services.AddScoped<ICommentRepository, CommentRepository>();
         builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
         builder.Services.AddScoped<IGroupRepository, GroupRepository>();
-        builder.Services.AddScoped<ILecturerRepository, LecturerRepository>();
         builder.Services.AddScoped<ILessonRepository, LessonRepository>();
-        builder.Services.AddScoped<ILessonSlotRepository, LessonSlotRepository>();
         builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
         builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();   
@@ -119,23 +116,16 @@ public class Program
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(GetUsersStatisticHandler).Assembly));
 
-        var parserUrl = builder.Configuration["Parser:Url"];
+        builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c => c.BaseAddress = new Uri(builder.Configuration["Parser:Url"] ?? "http://localhost:5678"));
+        builder.Services.AddHostedService<ScheduleAutoUpdateService>();
 
-        if (!string.IsNullOrWhiteSpace(parserUrl))
-        {
-            builder.Services.AddHttpClient<IScheduleParserClient, ScheduleParserClient>(c =>
-                c.BaseAddress = new Uri(parserUrl));
-    
-            builder.Services.AddHostedService<ScheduleAutoUpdateService>();
-        }
-        
         var app = builder.Build();
 
         app.UseSerilogRequestLogging();
 
         if (!app.Environment.IsDevelopment())
         {
-            app.UseExceptionHandler("/Home/Error");
+            app.UseExceptionHandler("/UserPlatform/Error");
             app.UseHsts();
         }
 
@@ -151,7 +141,7 @@ public class Program
 
         app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
+                pattern: "{controller=UserPlatform}/{action=Index}/{id?}")
             .WithStaticAssets();
 
         app.Run();

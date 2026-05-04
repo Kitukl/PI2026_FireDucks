@@ -15,8 +15,8 @@ namespace StudyHub.Core.Schedules.Interfaces
         Task DeleteScheduleForGroup(Guid groupId);
         Task DeleteAllAsync();
         Task UpdateScheduleAsync(Schedule schedule);
-        Task UpdateHeadmanRights(Schedule schedule);
-        Task<bool> GetHeadmanUpdateRights(Guid groupId);
+        Task UpdateLeaderRights(Schedule schedule);
+        Task<bool> GetLeaderUpdateRights(Guid groupId);
         Task SetScheduleAutoUpdate(bool value);
         Task SetScheduleAutoUpdateInterval(uint interval);
         Task UpdateGlobalSettings(bool isAutoUpdate, bool allowLeaders, uint intervalDays, DateTime updatedAt);

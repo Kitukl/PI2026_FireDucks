@@ -23,7 +23,7 @@ namespace StudyHub.Core.Schedules.Commands
             {
                 Id = request.dto.Id,
                 IsAutoUpdate = request.dto.IsAutoUpdate,
-                CanHeadmanUpdate = request.dto.HeadmanUpdate,
+                CanHeadmanUpdate = request.dto.LeaderUpdate,
                 UpdatedAt = DateTime.UtcNow,
                 Lessons = request.dto.Lessons?
                     .Where(l => l != null)

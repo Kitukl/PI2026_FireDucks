@@ -229,7 +229,8 @@
                 <div class="admin-request-review-details">
                     <dl>
                         <dt>Request:</dt><dd>#@activeRequest.Id.ToString()[..8]</dd>
-                        <dt>User:</dt><dd>@activeRequest.CreatorFullname</dd>
+                        <dt>User name:</dt><dd>@activeRequest.CreatorFullname</dd>
+                        <dt>Email:</dt><dd>@activeRequest.User?.Email</dd>
                         <dt>Category:</dt><dd>@CategoryLabel(activeRequest.Category)</dd>
                         <dt>Type:</dt><dd>@FeedbackTypeLabel(activeRequest.FeedbackType)</dd>
                     </dl>

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StudyHub.Infrastructure;
@@ -11,9 +12,11 @@ using StudyHub.Infrastructure;
 namespace StudyHub.Infrastructure.Migrations
 {
     [DbContext(typeof(SDbContext))]
-    partial class SDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260422222106_UpdateLeader")]
+    partial class UpdateLeader
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -627,39 +630,6 @@ namespace StudyHub.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("StudyHub.Domain.Entities.UserSession", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("DurationSeconds")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("EntryTimeUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("ExitTimeUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsClosed")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("LastSeenUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("UserId", "IsClosed");
-
-                    b.ToTable("UserSessions");
-                });
-
             modelBuilder.Entity("LecturerLesson", b =>
                 {
                     b.HasOne("StudyHub.Domain.Entities.Lecturer", null)
@@ -860,17 +830,6 @@ namespace StudyHub.Infrastructure.Migrations
                     b.Navigation("Reminder");
                 });
 
-            modelBuilder.Entity("StudyHub.Domain.Entities.UserSession", b =>
-                {
-                    b.HasOne("StudyHub.Domain.Entities.User", "User")
-                        .WithMany("Sessions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("StudyHub.Domain.Entities.Group", b =>
                 {
                     b.Navigation("Schedule")
@@ -899,8 +858,6 @@ namespace StudyHub.Infrastructure.Migrations
             modelBuilder.Entity("StudyHub.Domain.Entities.User", b =>
                 {
                     b.Navigation("Feedbacks");
-
-                    b.Navigation("Sessions");
 
                     b.Navigation("Tasks");
                 });

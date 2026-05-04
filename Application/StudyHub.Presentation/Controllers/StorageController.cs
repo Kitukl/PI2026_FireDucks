@@ -27,7 +27,7 @@ public class StorageController : Controller
             UserId = currentUserId
         }, cancellationToken);
 
-        return View("~/Views/Home/Storage/Storage.cshtml", model);
+        return View("~/Views/UserPlatform/Storage/Storage.cshtml", model);
     }
 
     [HttpPost("/Storage/Upload")]
