@@ -1,4 +1,5 @@
 using Application.Middleware;
+using Application.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
@@ -81,6 +82,7 @@ public class Program
         builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();   
         
         builder.Services.AddScoped<IBlobService, BlobService>();
+        builder.Services.AddScoped<IUserSessionCookieStore, UserSessionCookieStore>();
         builder.Services.AddScoped<IUserSessionTrackingService, UserSessionTrackingService>();
         builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
         

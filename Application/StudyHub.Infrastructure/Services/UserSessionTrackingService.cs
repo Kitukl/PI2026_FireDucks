@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using StudyHub.Core.UserSessions.Interfaces;
@@ -9,30 +8,23 @@ using Task = System.Threading.Tasks.Task;
 namespace StudyHub.Infrastructure.Services;
 
 public class UserSessionTrackingService(
-    IHttpContextAccessor httpContextAccessor,
+    IUserSessionCookieStore userSessionCookieStore,
     IUserSessionRepository userSessionRepository,
     UserManager<User> userManager,
     ILogger<UserSessionTrackingService> logger) : IUserSessionTrackingService
 {
-    private const string SessionCookieName = "studyhub-session-id";
-
     public async Task EnsureSessionStartedAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
     {
-        var httpContext = httpContextAccessor.HttpContext;
-        if (httpContext == null)
-        {
-            return;
-        }
-
         var userId = await ResolveUserIdAsync(principal);
         if (userId == null)
         {
             return;
         }
 
-        if (TryGetSessionId(httpContext.Request.Cookies[SessionCookieName], out var sessionId))
+        var sessionId = userSessionCookieStore.GetCurrentSessionId();
+        if (sessionId.HasValue)
         {
-            var updated = await userSessionRepository.TouchSessionAsync(sessionId, userId.Value, DateTime.UtcNow, cancellationToken);
+            var updated = await userSessionRepository.TouchSessionAsync(sessionId.Value, userId.Value, DateTime.UtcNow, cancellationToken);
             if (updated)
             {
                 return;
@@ -40,26 +32,21 @@ public class UserSessionTrackingService(
         }
 
         var session = await userSessionRepository.StartSessionAsync(userId.Value, DateTime.UtcNow, cancellationToken);
-        AppendSessionCookie(httpContext, session.Id);
+        userSessionCookieStore.SetCurrentSessionId(session.Id);
     }
 
     public async Task<bool> HeartbeatAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
     {
-        var httpContext = httpContextAccessor.HttpContext;
-        if (httpContext == null)
-        {
-            return false;
-        }
-
         var userId = await ResolveUserIdAsync(principal);
         if (userId == null)
         {
             return false;
         }
 
-        if (TryGetSessionId(httpContext.Request.Cookies[SessionCookieName], out var sessionId))
+        var sessionId = userSessionCookieStore.GetCurrentSessionId();
+        if (sessionId.HasValue)
         {
-            var touched = await userSessionRepository.TouchSessionAsync(sessionId, userId.Value, DateTime.UtcNow, cancellationToken);
+            var touched = await userSessionRepository.TouchSessionAsync(sessionId.Value, userId.Value, DateTime.UtcNow, cancellationToken);
             if (touched)
             {
                 return true;
@@ -67,32 +54,27 @@ public class UserSessionTrackingService(
         }
 
         var session = await userSessionRepository.StartSessionAsync(userId.Value, DateTime.UtcNow, cancellationToken);
-        AppendSessionCookie(httpContext, session.Id);
+        userSessionCookieStore.SetCurrentSessionId(session.Id);
         return true;
     }
 
     public async Task<bool> CloseCurrentSessionAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
     {
-        var httpContext = httpContextAccessor.HttpContext;
-        if (httpContext == null)
-        {
-            return false;
-        }
-
         var userId = await ResolveUserIdAsync(principal);
         if (userId == null)
         {
-            DeleteSessionCookie(httpContext);
+            userSessionCookieStore.ClearCurrentSessionId();
             return false;
         }
 
         var closed = false;
-        if (TryGetSessionId(httpContext.Request.Cookies[SessionCookieName], out var sessionId))
+        var sessionId = userSessionCookieStore.GetCurrentSessionId();
+        if (sessionId.HasValue)
         {
-            closed = await userSessionRepository.CloseSessionAsync(sessionId, userId.Value, DateTime.UtcNow, cancellationToken);
+            closed = await userSessionRepository.CloseSessionAsync(sessionId.Value, userId.Value, DateTime.UtcNow, cancellationToken);
         }
 
-        DeleteSessionCookie(httpContext);
+        userSessionCookieStore.ClearCurrentSessionId();
         return closed;
     }
 
@@ -116,33 +98,5 @@ public class UserSessionTrackingService(
 
         logger.LogWarning("Skipping session tracking because the authenticated principal could not be resolved to an application user.");
         return null;
-    }
-
-    private static bool TryGetSessionId(string? rawValue, out Guid sessionId)
-    {
-        return Guid.TryParse(rawValue, out sessionId);
-    }
-
-    private static void AppendSessionCookie(HttpContext httpContext, Guid sessionId)
-    {
-        httpContext.Response.Cookies.Append(SessionCookieName, sessionId.ToString("D"), new CookieOptions
-        {
-            HttpOnly = true,
-            IsEssential = true,
-            SameSite = SameSiteMode.Lax,
-            Secure = httpContext.Request.IsHttps,
-            Expires = DateTimeOffset.UtcNow.AddDays(7)
-        });
-    }
-
-    private static void DeleteSessionCookie(HttpContext httpContext)
-    {
-        httpContext.Response.Cookies.Delete(SessionCookieName, new CookieOptions
-        {
-            HttpOnly = true,
-            IsEssential = true,
-            SameSite = SameSiteMode.Lax,
-            Secure = httpContext.Request.IsHttps
-        });
     }
 }
