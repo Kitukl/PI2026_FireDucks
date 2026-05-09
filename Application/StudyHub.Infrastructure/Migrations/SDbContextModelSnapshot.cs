@@ -874,6 +874,7 @@ namespace StudyHub.Infrastructure.Migrations
             modelBuilder.Entity("StudyHub.Domain.Entities.Feedback", b =>
                 {
                     b.Navigation("Comments");
+                });
             modelBuilder.Entity("StudyHub.Domain.Entities.UserSession", b =>
                 {
                     b.HasOne("StudyHub.Domain.Entities.User", "User")
@@ -918,7 +919,7 @@ namespace StudyHub.Infrastructure.Migrations
 
                     b.Navigation("Tasks");
                 });
-#pragma warning restore 612, 618
+
         }
     }
 }
