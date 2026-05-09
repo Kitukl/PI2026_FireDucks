@@ -12,6 +12,7 @@ using Application.Helpers;
 
 namespace Application.Controllers;
 
+[Authorize]
 public class TaskBoardController : Controller
 {
     private readonly IMediator _mediator;
@@ -29,7 +30,7 @@ public class TaskBoardController : Controller
             CurrentUserId = TaskBoardControllerHelper.GetCurrentUserId(User)
         });
 
-        return View("~/Views/Home/TaskBoard/TaskBoard.cshtml", model);
+        return View("~/Views/UserPlatform/TaskBoard/TaskBoard.cshtml", model);
     }
 
     [HttpGet("/Create")]
@@ -42,7 +43,7 @@ public class TaskBoardController : Controller
         });
 
         var model = TaskBoardViewModelMapper.MapTaskCreatePageViewModel(modelData);
-        return View("~/Views/Home/TaskBoard/TaskBoardCreate.cshtml", model);
+        return View("~/Views/UserPlatform/TaskBoard/TaskBoardCreate.cshtml", model);
     }
 
     [HttpPost("/Create")]
@@ -83,7 +84,7 @@ public class TaskBoardController : Controller
             };
 
             var invalidModel = TaskBoardViewModelMapper.MapTaskCreatePageViewModel(invalidModelData);
-            return View("~/Views/Home/TaskBoard/TaskBoardCreate.cshtml", invalidModel);
+            return View("~/Views/UserPlatform/TaskBoard/TaskBoardCreate.cshtml", invalidModel);
         }
 
         return RedirectToAction(nameof(TaskBoardViewTask), new { taskCode = createResult.CreatedTaskId });
@@ -107,7 +108,7 @@ public class TaskBoardController : Controller
             Comments = pageData.Comments
         };
 
-        return View("~/Views/Home/TaskBoard/TaskBoardViewTask.cshtml", model);
+        return View("~/Views/UserPlatform/TaskBoard/TaskBoardViewTask.cshtml", model);
     }
 
     [HttpPost("/ViewTask/Delete")]
@@ -223,7 +224,7 @@ public class TaskBoardController : Controller
             UnassignedUsers = data.UnassignedUsers.Select(TaskBoardViewModelMapper.MapGroupUserViewModel).ToList()
         };
 
-        return View("~/Views/Home/TaskBoard/TaskBoardReviewGroup.cshtml", model);
+        return View("~/Views/UserPlatform/TaskBoard/TaskBoardReviewGroup.cshtml", model);
     }
 
     [HttpPost("/ReviewGroup/AddUsers")]

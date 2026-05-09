@@ -5,24 +5,24 @@ using Task = System.Threading.Tasks.Task;
 
 namespace StudyHub.Core.Schedules.Commands
 {
-    public record UpdateHeadmanRightsRequest(ScheduleHeadmanRightsUpdateDtoRequest dto) : IRequest;
+    public record UpdateLeaderRightsRequest(ScheduleLeaderRightsUpdateDtoRequest dto) : IRequest;
 
-    public class UpdateHeadmanRightsCommandHandler : IRequestHandler<UpdateHeadmanRightsRequest>
+    public class UpdateLeaderRightsCommandHandler : IRequestHandler<UpdateLeaderRightsRequest>
     {
         private readonly IScheduleRepository _repo;
 
-        public UpdateHeadmanRightsCommandHandler(IScheduleRepository repo)
+        public UpdateLeaderRightsCommandHandler(IScheduleRepository repo)
         {
             _repo = repo;
         }
 
-        public async Task Handle(UpdateHeadmanRightsRequest request, CancellationToken cancellationToken)
+        public async Task Handle(UpdateLeaderRightsRequest request, CancellationToken cancellationToken)
         {
             var schedule = await _repo.GetByGroupIdAsync(request.dto.Id);
 
             if (schedule != null)
             {
-               await _repo.UpdateHeadmanRights(schedule);
+               await _repo.UpdateLeaderRights(schedule);
             }
         }
     }

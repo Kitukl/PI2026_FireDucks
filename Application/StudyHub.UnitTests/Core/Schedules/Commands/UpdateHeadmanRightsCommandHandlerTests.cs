@@ -6,17 +6,17 @@ using StudyHub.Domain.Entities;
 
 namespace StudyHub.UnitTests.Handlers.Schedules.Commands;
 
-public class UpdateHeadmanRightsCommandHandlerTests
+public class UpdateLeaderRightsCommandHandlerTests
 {
     private readonly Mock<IScheduleRepository> _repositoryMock;
 
-    public UpdateHeadmanRightsCommandHandlerTests()
+    public UpdateLeaderRightsCommandHandlerTests()
     {
         _repositoryMock = new Mock<IScheduleRepository>();
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldUpdateHeadmanRights_WhenRequestIsValid()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateLeaderRights_WhenRequestIsValid()
     {
         _repositoryMock.Reset();
         // Arrange
@@ -24,29 +24,29 @@ public class UpdateHeadmanRightsCommandHandlerTests
         var schedule = new Schedule { Id = Guid.NewGuid(), Group = new Group { Id = groupId, Name = "PI" }, Lessons = new List<Lesson>() };
         _repositoryMock.Setup(x => x.GetByGroupIdAsync(groupId)).ReturnsAsync(schedule);
 
-        var handler = new UpdateHeadmanRightsCommandHandler(_repositoryMock.Object);
+        var handler = new UpdateLeaderRightsCommandHandler(_repositoryMock.Object);
 
         // Act
-        await handler.Handle(new UpdateHeadmanRightsRequest(new ScheduleHeadmanRightsUpdateDtoRequest { Id = groupId }), CancellationToken.None);
+        await handler.Handle(new UpdateLeaderRightsRequest(new ScheduleLeaderRightsUpdateDtoRequest { Id = groupId }), CancellationToken.None);
 
         // Assert
-        _repositoryMock.Verify(x => x.UpdateHeadmanRights(schedule), Times.Once);
+        _repositoryMock.Verify(x => x.UpdateLeaderRights(schedule), Times.Once);
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Handle_ShouldUpdateHeadmanRights_WhenScheduleNotFound()
+    public async System.Threading.Tasks.Task Handle_ShouldUpdateLeaderRights_WhenScheduleNotFound()
     {
         _repositoryMock.Reset();
         // Arrange
         _repositoryMock.Setup(x => x.GetByGroupIdAsync(It.IsAny<Guid>())).ReturnsAsync((Schedule?)null);
 
-        var handler = new UpdateHeadmanRightsCommandHandler(_repositoryMock.Object);
+        var handler = new UpdateLeaderRightsCommandHandler(_repositoryMock.Object);
 
         // Act
-        await handler.Handle(new UpdateHeadmanRightsRequest(new ScheduleHeadmanRightsUpdateDtoRequest { Id = Guid.NewGuid() }), CancellationToken.None);
+        await handler.Handle(new UpdateLeaderRightsRequest(new ScheduleLeaderRightsUpdateDtoRequest { Id = Guid.NewGuid() }), CancellationToken.None);
 
         // Assert
-        _repositoryMock.Verify(x => x.UpdateHeadmanRights(It.IsAny<Schedule>()), Times.Never);
+        _repositoryMock.Verify(x => x.UpdateLeaderRights(It.IsAny<Schedule>()), Times.Never);
     }
 }
 

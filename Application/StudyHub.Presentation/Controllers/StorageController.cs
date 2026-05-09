@@ -1,11 +1,13 @@
 using MediatR;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudyHub.Core.Storage.Commands;
 using StudyHub.Core.Storage.Queries;
 
 namespace Application.Controllers;
 
+[Authorize]
 public class StorageController : Controller
 {
     private readonly IMediator _mediator;
@@ -25,7 +27,7 @@ public class StorageController : Controller
             UserId = currentUserId
         }, cancellationToken);
 
-        return View("~/Views/Home/Storage/Storage.cshtml", model);
+        return View("~/Views/UserPlatform/Storage/Storage.cshtml", model);
     }
 
     [HttpPost("/Storage/Upload")]

@@ -37,7 +37,7 @@ public class GetAdminSchedulePageQueryHandler : IRequestHandler<GetAdminSchedule
             Groups = groups,
             SelectedGroupId = request.GroupId,
             IsAutoUpdateEnabled = firstWithSettings?.IsAutoUpdate ?? false,
-            AllowLeadersToUpdate = firstWithSettings?.HeadmanUpdate ?? false,
+            AllowLeadersToUpdate = firstWithSettings?.LeaderUpdate ?? false,
             LastGlobalUpdate = allSchedules.Any() ? allSchedules.Max(schedule => schedule.UpdateAt) : DateTime.MinValue,
             AutoUpdateIntervalDays = firstWithSettings?.UpdateInterval ?? 3
         };
@@ -61,8 +61,8 @@ public class GetAdminSchedulePageQueryHandler : IRequestHandler<GetAdminSchedule
         {
             GroupId = dto.Group.Id,
             GroupName = dto.Group.Name,
-            CanHeadmanUpdate = dto.HeadmanUpdate,
-            IsHeadman = false
+            CanLeaderUpdate = dto.LeaderUpdate,
+            IsLeader = false
         };
 
         if (dto.Lessons != null && dto.Lessons.Any())

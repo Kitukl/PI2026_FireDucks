@@ -7,6 +7,7 @@ using StudyHub.Core.DTOs;
 using StudyHub.Core.Group.Queries;
 using StudyHub.Core.Lessons.Queries;
 using StudyHub.Core.Schedules.Commands;
+using StudyHub.Domain.Enums;
 using Task = System.Threading.Tasks.Task;
 
 namespace Application.Controllers
@@ -67,6 +68,7 @@ namespace Application.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = nameof(Role.Admin))]
         public async Task<IActionResult> SchedulesList()
         {
             var schedules = await _mediator.Send(new GetAllSchedulesRequest());
@@ -75,6 +77,7 @@ namespace Application.Controllers
 
 
         [HttpGet]
+        [Authorize(Roles = nameof(Role.Admin))]
         public async Task<IActionResult> ScheduleCreate(Guid? groupId)
         {
             await PrepareGroupsViewBag();
@@ -88,6 +91,7 @@ namespace Application.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = nameof(Role.Admin))]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScheduleCreate(ScheduleDto schedule)
         {
@@ -100,6 +104,7 @@ namespace Application.Controllers
             return View(schedule);
         }
 
+        [Authorize(Roles = nameof(Role.Admin))]
         public async Task<IActionResult> ScheduleEdit(Guid id)
         {
             var schedule = await _mediator.Send(new GetScheduleByIdRequest(id));
@@ -109,6 +114,7 @@ namespace Application.Controllers
             return View(schedule);
         }
 
+        [Authorize(Roles = nameof(Role.Admin))]
         public async Task<IActionResult> ScheduleDetails(Guid id)
         {
             var schedule = await _mediator.Send(new GetScheduleByIdRequest(id));
@@ -122,6 +128,7 @@ namespace Application.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = nameof(Role.Admin))]
         public async Task<IActionResult> ScheduleEdit(Guid id, ScheduleDto schedule)
         {
             schedule.Id = id;
@@ -163,6 +170,7 @@ namespace Application.Controllers
             }
         }
 
+        [Authorize(Roles = nameof(Role.Admin))]
         public async Task<IActionResult> ScheduleDelete(Guid id)
         {
             var schedule = await _mediator.Send(new GetScheduleByIdRequest(id));

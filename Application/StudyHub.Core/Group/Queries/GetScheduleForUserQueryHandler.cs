@@ -34,14 +34,14 @@ public class GetScheduleForUserQueryHandler : IRequestHandler<GetScheduleForUser
 
         var schedule = await _scheduleRepository.GetByGroupIdAsync(currentUser.Group.Id);
 
-        var isHeadman = await _userRepository.IsHeadman(normalizedId);
+        var isLeader = await _userRepository.IsLeader(normalizedId);
 
         var response = new ScheduleViewModel
         {
             GroupId = currentUser.Group.Id,
             GroupName = currentUser.Group.Name,
-            IsHeadman = isHeadman,
-            CanHeadmanUpdate = schedule?.CanHeadmanUpdate ?? false
+            IsLeader = isLeader,
+            CanLeaderUpdate = schedule?.CanHeadmanUpdate ?? false
         };
 
         if (schedule != null && schedule.Lessons.Any())

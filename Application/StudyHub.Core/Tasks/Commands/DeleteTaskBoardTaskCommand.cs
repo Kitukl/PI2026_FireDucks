@@ -35,7 +35,7 @@ public class DeleteTaskBoardTaskCommandHandler : IRequestHandler<DeleteTaskBoard
             GroupName = currentUser.GroupName
         }, cancellationToken);
 
-        if (!taskIsVisible)
+        if (!taskIsVisible || (!currentUser.Roles.Contains("Leader") && taskToDelete.IsGroupTask))
         {
             return new TaskBoardCommandResult { IsForbidden = true };
         }
