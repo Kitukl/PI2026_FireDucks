@@ -1,3 +1,4 @@
+@using System.Globalization
 @using StudyHub.Domain.Entities
 @{
     ViewData["Title"] = "User profile";
@@ -16,6 +17,32 @@
     bool isNotified = ViewBag.IsNotified ?? false;
     var currentOffset = ViewBag.ReminderOffset ?? 2;
     var currentTimeType = ViewBag.ReminderTimeType ?? TimeType.Day;
+    var activityYear = DateTime.Now.Year;
+    var activitySource = ViewBag.MonthlyActivityPerMonth as Dictionary<int, double> ?? new Dictionary<int, double>();
+    var monthlyActivity = Enumerable.Range(1, 12)
+        .Select(month =>
+        {
+            var value = activitySource.TryGetValue(month, out var monthValue) ? monthValue : 0d;
+            return new
+            {
+                Label = CultureInfo.InvariantCulture.DateTimeFormat.GetAbbreviatedMonthName(month),
+                Value = Math.Round(value, 2)
+            };
+        })
+        .ToList();
+    var maxMonthlyActivity = monthlyActivity.Max(item => item.Value);
+    var activeMonthlyActivity = monthlyActivity.Where(item => item.Value > 0).ToList();
+    var peakMonthLabel = activeMonthlyActivity.Count > 0
+        ? activeMonthlyActivity.OrderByDescending(item => item.Value).First().Label
+        : "No data";
+    var activeMonthsAverage = activeMonthlyActivity.Count > 0
+        ? activeMonthlyActivity.Average(item => item.Value)
+        : 0d;
+
+    string FormatActivityValue(double value)
+    {
+        return value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
 }
 
 <section class="user-profile-page">
@@ -140,6 +167,49 @@
             </article>
         </section>
     </div>
+
+    <article class="profile-activity-panel user-contact-card">
+        <header class="user-contact-head">
+            <h2>Activity per month</h2>
+        </header>
+
+        <div class="profile-activity-layout">
+            <section class="profile-activity-chart-shell" aria-label="Average day duration per month">
+                <div class="profile-activity-chart-meta">
+                    <h3>Average day duration</h3>
+                    <p>@activityYear, minutes</p>
+                </div>
+
+                <div class="profile-activity-bars">
+                    @foreach (var item in monthlyActivity)
+                    {
+                        var barHeight = maxMonthlyActivity > 0
+                            ? Math.Max(4, Math.Round(item.Value / maxMonthlyActivity * 100, 2))
+                            : 4;
+                        var barClass = item.Value <= 0 ? "profile-activity-bar is-empty" : "profile-activity-bar";
+                        var displayValue = item.Value > 0 ? FormatActivityValue(item.Value) : "-";
+
+                        <div class="profile-activity-bar-group">
+                            <div class="profile-activity-value">@displayValue</div>
+                            <div class="profile-activity-bar-track">
+                                <div class="@barClass" style="height: @($"{barHeight.ToString("0.##", CultureInfo.InvariantCulture)}%");"></div>
+                            </div>
+                            <div class="profile-activity-label">@item.Label</div>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <aside class="profile-activity-summary">
+                <h3>Highlights</h3>
+                <ul>
+                    <li><span>Peak month</span><strong>@peakMonthLabel</strong></li>
+                    <li><span>Peak value</span><strong>@FormatActivityValue(maxMonthlyActivity) min</strong></li>
+                    <li><span>Active months average</span><strong>@FormatActivityValue(activeMonthsAverage) min</strong></li>
+                </ul>
+            </aside>
+        </div>
+    </article>
 </section>
 
 @section Scripts {
