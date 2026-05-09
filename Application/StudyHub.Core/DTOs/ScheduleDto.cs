@@ -4,7 +4,7 @@
     {
         public Guid Id { get; set; }
         public DateTime UpdateAt { get; set; }
-        public bool HeadmanUpdate { get; set; }
+        public bool LeaderUpdate { get; set; }
         public bool IsAutoUpdate { get; set; }
         public uint UpdateInterval { get; set; }
         public List<LessonDto> Lessons { get; set; } = new List<LessonDto>();

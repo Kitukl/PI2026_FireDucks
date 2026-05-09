@@ -73,7 +73,8 @@ public class GetTaskBoardPageQueryHandler : IRequestHandler<GetTaskBoardPageQuer
                 OwnerPhotoUrl = ResolveTaskOwnerPhotoUrl(task.User?.PhotoUrl),
                 IsGroupTask = task.IsGroupTask,
                 Status = task.Status,
-                Deadline = task.Deadline
+                Deadline = task.Deadline,
+                ResourceUrl = task.ResourceUrl
             });
         }
 

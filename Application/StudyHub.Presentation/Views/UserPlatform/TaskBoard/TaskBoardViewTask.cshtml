@@ -1,0 +1,418 @@
+@model Application.Models.TaskBoardViewTaskPageViewModel
+@using StudyHub.Domain.Enums
+@{
+    ViewData["Title"] = "View task";
+
+    var board = Model.Board;
+    var toDoTasks = board.Tasks.Where(task => task.Status == Status.ToDo).ToList();
+    var inProgressTasks = board.Tasks.Where(task => task.Status == Status.InProgress).ToList();
+    var forReviewTasks = board.Tasks.Where(task => task.Status == Status.ForReview).ToList();
+    var doneTasks = board.Tasks.Where(task => task.Status is Status.Done or Status.Resolved).ToList();
+
+    string StatusDataValue(Status status) => status switch
+    {
+        Status.ToDo => "todo",
+        Status.InProgress => "in-progress",
+        Status.ForReview => "for-review",
+        _ => "done"
+    };
+
+    var selectedTask = Model.SelectedTask ?? new Application.Models.TaskBoardTaskCardViewModel
+    {
+        Id = Guid.Empty,
+        Title = "No tasks available",
+        Description = string.Empty,
+        SubjectName = "Unknown",
+        TaskCode = "-",
+        IsGroupTask = false,
+        Status = Status.ToDo,
+        Deadline = DateTime.Today
+    };
+
+    var taskCode = selectedTask.TaskCode;
+    var dueDate = selectedTask.Deadline;
+    var isGroupTask = selectedTask.IsGroupTask;
+    var comments = (Model.Comments ?? []).OrderByDescending(comment => comment.CreatedAt).ToList();
+    var currentUserFullName = ((string?)ViewBag.CurrentUserFullName ?? string.Empty).Trim();
+    var canModerateComments = User.IsInRole(nameof(Role.Leader));
+    var statusValue = selectedTask.Status switch
+    {
+        Status.ToDo => "todo",
+        Status.InProgress => "in-progress",
+        Status.ForReview => "for-review",
+        _ => "done"
+    };
+    var statusLabel = selectedTask.Status switch
+    {
+        Status.ToDo => "To do",
+        Status.InProgress => "In progress",
+        Status.ForReview => "For review",
+        _ => "Done"
+    };
+    var normalizedDescription = string.Join(
+        "\n",
+        (selectedTask.Description ?? string.Empty)
+            .Replace("\r\n", "\n")
+            .Split('\n', StringSplitOptions.None)
+            .Select(line => line.Trim())
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+    ).Trim();
+}
+
+<section class="taskboard-page taskboard-view-page">
+    <div class="taskboard-toolbar">
+        <input id="task-search-view" type="search" placeholder="Search" aria-label="Search tasks" />
+
+        <div class="taskboard-filter-control js-task-filter-control">
+            <button class="taskboard-filter-btn js-task-filter-toggle" type="button" aria-expanded="false">
+                <span class="taskboard-filter-icon">&#9776;</span>
+                Filter by
+            </button>
+
+            <div class="taskboard-filter-dropdown" hidden>
+                <button class="taskboard-filter-all js-task-filter-all" type="button">Unselect all</button>
+                @foreach (var subject in board.Subjects)
+                {
+                    <label class="taskboard-filter-option"><input class="js-task-filter-checkbox" type="checkbox" value="@subject" checked />@subject</label>
+                }
+            </div>
+        </div>
+
+        <a class="taskboard-create-btn" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardCreate">Create task</a>
+    </div>
+
+    <div class="taskboard-grid">
+        <aside class="taskboard-sidebar">
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Own tasks <button class="taskboard-radio js-task-scope-filter" type="button" data-scope="own" aria-label="Show own tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@board.CountTasks(false, Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(false, Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(false, Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(false, Status.Done) + board.CountTasks(false, Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">Group tasks <button class="taskboard-radio js-task-scope-filter" type="button" data-scope="group" aria-label="Show group tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@board.CountTasks(true, Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(true, Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(true, Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(true, Status.Done) + board.CountTasks(true, Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            <div class="taskboard-sidebar-group">
+                <div class="taskboard-sidebar-title">All tasks <button class="taskboard-radio js-task-scope-filter active" type="button" data-scope="all" aria-label="Show all tasks"></button></div>
+                <ul>
+                    <li><span>To do</span><strong>@board.CountTasks(Status.ToDo)</strong></li>
+                    <li><span>In progress</span><strong>@board.CountTasks(Status.InProgress)</strong></li>
+                    <li><span>For review</span><strong>@board.CountTasks(Status.ForReview)</strong></li>
+                    <li><span>Done</span><strong>@(board.CountTasks(Status.Done) + board.CountTasks(Status.Resolved))</strong></li>
+                </ul>
+            </div>
+
+            @if (User.IsInRole("Leader"))
+            {
+                <a class="taskboard-manage-btn" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardReviewGroup">Manage group</a>
+            }
+        </aside>
+
+        <div class="taskboard-columns-scroll">
+            <section class="taskboard-column" data-column-status="todo">
+                <h2>To do</h2>
+                @foreach (var task in toDoTasks)
+                {
+                    <article class="task-card @(task.Id == selectedTask.Id ? "is-active" : string.Empty)" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
+                        <header>
+                            <h3 title="@task.Title">@task.Title</h3>
+                            <span class="task-card-status"></span>
+                        </header>
+                        <p class="task-card-subject" data-subject="@task.SubjectName" title="@task.SubjectName">@task.SubjectName</p>
+                        <div class="task-card-meta">
+                            @if (task.IsGroupTask)
+                            {
+                                <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
+                            }
+                            else
+                            {
+                                <span></span>
+                            }
+                            <span class="task-card-badge" title="@task.OwnerName">
+                                @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                {
+                                    <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <span class="task-card-badge-fallback">@(task.IsGroupTask ? "👤" : "👩‍💼")</span>
+                                }
+                            </span>
+                        </div>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                    </article>
+                }
+            </section>
+
+            <section class="taskboard-column" data-column-status="in-progress">
+                <h2>In progress</h2>
+                @foreach (var task in inProgressTasks)
+                {
+                    <article class="task-card @(task.Id == selectedTask.Id ? "is-active" : string.Empty)" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
+                        <header>
+                            <h3 title="@task.Title">@task.Title</h3>
+                            <span class="task-card-status"></span>
+                        </header>
+                        <p class="task-card-subject" data-subject="@task.SubjectName" title="@task.SubjectName">@task.SubjectName</p>
+                        <div class="task-card-meta">
+                            @if (task.IsGroupTask)
+                            {
+                                <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
+                            }
+                            else
+                            {
+                                <span></span>
+                            }
+                            <span class="task-card-badge" title="@task.OwnerName">
+                                @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                {
+                                    <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <span class="task-card-badge-fallback">@(task.IsGroupTask ? "👤" : "👩‍💼")</span>
+                                }
+                            </span>
+                        </div>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                    </article>
+                }
+            </section>
+
+            <section class="taskboard-column" data-column-status="for-review">
+                <h2>For review</h2>
+                @foreach (var task in forReviewTasks)
+                {
+                    <article class="task-card @(task.Id == selectedTask.Id ? "is-active" : string.Empty)" data-status="@StatusDataValue(task.Status)" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")">
+                        <header>
+                            <h3 title="@task.Title">@task.Title</h3>
+                            <span class="task-card-state soft" aria-hidden="true"></span>
+                        </header>
+                        <p class="task-card-subject" data-subject="@task.SubjectName" title="@task.SubjectName">@task.SubjectName</p>
+                        <div class="task-card-meta">
+                            @if (task.IsGroupTask)
+                            {
+                                <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
+                            }
+                            else
+                            {
+                                <span></span>
+                            }
+                            <span class="task-card-badge" title="@task.OwnerName">
+                                @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                {
+                                    <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <span class="task-card-badge-fallback">@(task.IsGroupTask ? "👤" : "👩‍💼")</span>
+                                }
+                            </span>
+                        </div>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                    </article>
+                }
+            </section>
+
+            <section class="taskboard-column" data-column-status="done">
+                <h2>Done</h2>
+                @foreach (var task in doneTasks)
+                {
+                    <article class="task-card @(task.Id == selectedTask.Id ? "is-active" : string.Empty)" data-status="done" data-task-id="@task.Id" data-deadline="@task.Deadline.ToString("yyyy-MM-dd")" data-completed-at="@DateTime.UtcNow.ToString("yyyy-MM-dd")">
+                        <header>
+                            <h3 title="@task.Title">@task.Title</h3>
+                            <span class="task-card-state">&#10003;</span>
+                        </header>
+                        <p class="task-card-subject" data-subject="@task.SubjectName" title="@task.SubjectName">@task.SubjectName</p>
+                        <div class="task-card-meta">
+                            @if (task.IsGroupTask)
+                            {
+                                <span class="task-group-label"><span class="task-group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path></svg></span><span>Group task</span></span>
+                            }
+                            else
+                            {
+                                <span></span>
+                            }
+                            <span class="task-card-badge" title="@task.OwnerName">
+                                @if (!string.IsNullOrWhiteSpace(task.OwnerPhotoUrl))
+                                {
+                                    <img class="task-card-avatar" src="@task.OwnerPhotoUrl" alt="@task.OwnerName" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <span class="task-card-badge-fallback">@(task.IsGroupTask ? "👤" : "👩‍💼")</span>
+                                }
+                            </span>
+                        </div>
+                        <footer><a class="task-card-link" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoardViewTask" asp-route-taskCode="@task.Id">@task.TaskCode</a></footer>
+                    </article>
+                }
+            </section>
+        </div>
+    </div>
+
+    <div class="task-modal-backdrop" aria-hidden="true"></div>
+
+    <section class="task-view-modal" role="dialog" aria-modal="true" aria-label="View task">
+        <div class="task-view-shell">
+            <div class="task-view-top">
+                <h1 title="@selectedTask.Title">@selectedTask.Title</h1>
+
+                <div class="task-view-top-tools">
+                    <span class="task-group-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                            <path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm6 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM5 18v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1m-2 0v-1a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v1"></path>
+                        </svg>
+                    </span>
+                    <span class="task-deadline-indicator js-task-view-deadline" data-deadline="@dueDate.ToString("yyyy-MM-dd")" data-status="@statusValue" aria-hidden="true"></span>
+                    <form class="task-view-status-dropdown js-status-dropdown" asp-controller="TaskBoard" asp-action="TaskBoardViewTaskUpdateStatus" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="taskId" value="@selectedTask.Id" />
+                        <button type="button" class="task-view-status-btn js-status-dropdown-toggle" aria-haspopup="listbox" aria-expanded="false">@statusLabel</button>
+                        <ul class="task-view-status-menu js-status-dropdown-menu" role="listbox" hidden>
+                            <li><button type="button" class="task-view-status-option" data-value="todo">To do</button></li>
+                            <li><button type="button" class="task-view-status-option" data-value="in-progress">In progress</button></li>
+                            <li><button type="button" class="task-view-status-option" data-value="for-review">For review</button></li>
+                            <li><button type="button" class="task-view-status-option" data-value="done">Done</button></li>
+                        </ul>
+                        <select class="task-view-status js-task-view-status visually-hidden" name="status" aria-label="Task status">
+                            <option value="todo" selected="@(statusValue == "todo")">To do</option>
+                            <option value="in-progress" selected="@(statusValue == "in-progress")">In progress</option>
+                            <option value="for-review" selected="@(statusValue == "for-review")">For review</option>
+                            <option value="done" selected="@(statusValue == "done")">Done</option>
+                        </select>
+                    </form>
+                    <a class="task-view-back" asp-area="" asp-controller="TaskBoard" asp-action="TaskBoard">&lt; Back to the board</a>
+                </div>
+            </div>
+
+            <div class="task-view-main">
+                <div class="task-view-description">
+                    <h2>Description</h2>
+                    <div class="task-view-textbox" title="@selectedTask.Description">
+                        @(string.IsNullOrWhiteSpace(normalizedDescription) ? "No description provided for this task." : normalizedDescription)
+                    </div>
+                </div>
+
+                <aside class="task-view-details">
+                    <h2>Details</h2>
+                    <dl>
+                        <div><dt>Subject:</dt><dd class="task-view-subject" title="@selectedTask.SubjectName">@selectedTask.SubjectName</dd></div>
+                        <div><dt>Due date:</dt><dd>@dueDate.ToString("dd.MM.yyyy")</dd></div>
+                        <div><dt>Task:</dt><dd>@taskCode</dd></div>
+                        <div><dt>Type:</dt><dd>@(selectedTask.IsGroupTask ? "Group task" : "Own task")</dd></div>
+                        @if (selectedTask.IsGroupTask)
+                        {
+                            <div><dt>Owner:</dt><dd>@(string.IsNullOrWhiteSpace(selectedTask.OwnerName) ? "Unknown" : selectedTask.OwnerName)</dd></div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(selectedTask.ResourceUrl))
+                        {
+                            <div><dt>Resource:</dt><dd><a href="@selectedTask.ResourceUrl" target="_blank">Open link</a></dd></div>
+                        }
+
+                    </dl>
+                </aside>
+            </div>
+
+            @* Edit form *@
+            <div class="task-view-edit">
+                <h2>Edit task</h2>
+                <form asp-controller="TaskBoard" asp-action="TaskBoardViewTaskEdit" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="taskId" value="@selectedTask.Id" />
+
+                    <label class="task-create-inline-field">
+                        <span>Title:</span>
+                        <input type="text" name="title" value="@selectedTask.Title" maxlength="200" />
+                    </label>
+
+                    <label class="task-create-inline-field">
+                        <span>Description:</span>
+                        <textarea name="description" maxlength="200">@selectedTask.Description</textarea>
+                    </label>
+
+                    <label class="task-create-inline-field">
+                        <span>Resource URL:</span>
+                        <input type="url" name="resourceUrl" value="@selectedTask.ResourceUrl" placeholder="https://..." />
+                    </label>
+
+                    <button type="submit" class="task-create-submit">Save changes</button>
+                </form>
+            </div>
+
+            <div class="task-view-comments">
+                <h2>Comments</h2>
+                <div class="task-comment-list">
+                    @if (comments.Count == 0)
+                    {
+                        <p class="task-comment-text">No comments yet.</p>
+                    }
+                    else
+                    {
+                        @foreach (var comment in comments)
+                        {
+                            var canDeleteComment = canModerateComments ||
+                            (!string.IsNullOrWhiteSpace(currentUserFullName) &&
+                            string.Equals(comment.UserName, currentUserFullName, StringComparison.OrdinalIgnoreCase));
+
+                            <article class="task-comment-item">
+                                <div class="task-comment-main">
+                                    <div class="task-comment-head">
+                                        <span class="task-comment-author">@comment.UserName</span>
+                                    </div>
+                                    <p class="task-comment-text">@comment.Description</p>
+                                </div>
+
+                                @if (canDeleteComment)
+                                {
+                                    <div class="task-comment-actions">
+                                        <form asp-controller="TaskBoard" asp-action="TaskBoardViewTaskDeleteComment" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="taskId" value="@selectedTask.Id" />
+                                            <input type="hidden" name="commentId" value="@comment.Id" />
+                                            <button type="submit" class="task-comment-delete-btn">Delete</button>
+                                        </form>
+                                    </div>
+                                }
+                            </article>
+                        }
+                    }
+                </div>
+
+                <form class="task-view-editor js-rich-editor" asp-controller="TaskBoard" asp-action="TaskBoardViewTaskAddComment" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="taskId" value="@selectedTask.Id" />
+                    <div class="task-view-editor-head">
+                        <div class="task-view-editor-tools" aria-label="Comment formatting">
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="bold" aria-label="Bold">B</button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="italic" aria-label="Italic"><em>I</em></button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="underline" aria-label="Underline"><u>U</u></button>
+                            <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="strikeThrough" aria-label="Strike through"><s>S</s></button>
+                        </div>
+                        <button class="task-view-comment-btn" type="submit">Add a comment</button>
+                    </div>
+                    <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write a comment..." data-max-chars="1000"></div>
+                    <textarea class="visually-hidden js-rich-editor-hidden" name="description"></textarea>
+                    <div class="task-summary-counter js-rich-char-counter" aria-live="polite">0/1000</div>
+                </form>
+
+                <form asp-controller="TaskBoard" asp-action="TaskBoardViewTaskDelete" method="post" style="margin-top: 16px; display: flex; justify-content: flex-end;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="taskId" value="@selectedTask.Id" />
+                    <button type="submit" class="task-comment-delete-btn">Delete task</button>
+                </form>
+            </div>
+        </div>
+    </section>
+</section>

@@ -11,4 +11,5 @@ public class TaskBoardCreatePageDataDto
     public Guid? SubjectId { get; set; }
     public DateTime DueDate { get; set; }
     public bool IsGroupTask { get; set; }
+    public string? ResourceUrl { get; set; }
 }

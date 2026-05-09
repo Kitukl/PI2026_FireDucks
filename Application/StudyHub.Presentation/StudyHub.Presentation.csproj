@@ -44,4 +44,23 @@
       </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Views\LessonSlot\LessonSlotCreate.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\LessonSlot\LessonSlotEdit.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\LessonSlot\LessonSlotsList.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Lecturer\LecturerCreate.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Lecturer\LecturerDetails.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Lecturer\LecturerEdit.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Lecturer\LecturersList.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Lesson\LessonDetails.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Lesson\LessonsCreate.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Lesson\LessonsEdit.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Lesson\LessonsList.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Group\Create.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Group\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Subject\SubjectCreate.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Subject\SubjectEdit.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Subject\SubjectsList.cshtml" />
+    </ItemGroup>
+
 </Project>

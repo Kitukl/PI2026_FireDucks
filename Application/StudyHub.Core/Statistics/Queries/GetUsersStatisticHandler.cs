@@ -25,7 +25,7 @@ public class GetUsersStatisticHandler : IRequestHandler<GetUsersStatisticRequest
             return new UsersStatisticDto(DateTime.Now, [], userFilesCount, groupFilesCount, studentsCount, groupsCount, leadersCount);
         }
         
-        var userActivityPerMonth = await repository.GetYearlyActivityAsync(DateTime.Now.Year);
+        var userActivityPerMonth = await repository.GetYearlyActivityAsync(DateTime.UtcNow.Year);
 
         return new UsersStatisticDto(
             rawData.CreatedAt,

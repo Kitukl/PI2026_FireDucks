@@ -1,18 +1,15 @@
+using Application.Middleware;
+using Application.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using StudyHub.Infrastructure;
 using StudyHub.Infrastructure.Repositories;
-
 using Serilog;
 using StudyHub.Core.Comments.Interfaces;
 using StudyHub.Core.Feedbacks.Interfaces;
 using StudyHub.Core.Group;
-using StudyHub.Core.Lecturers.Interfaces;
 using StudyHub.Core.Lessons.Interfaces;
-using StudyHub.Core.LessonSlots.Interfaces;
 using StudyHub.Core.Schedules.Interfaces;
 using StudyHub.Core.Services;
 using StudyHub.Core.Statistics.Interfaces;
@@ -20,11 +17,11 @@ using StudyHub.Core.Statistics.Queries;
 using StudyHub.Core.Storage.Interfaces;
 using StudyHub.Core.Subjects.Interfaces;
 using StudyHub.Core.Tasks.Interfaces;
+using StudyHub.Core.UserSessions.Interfaces;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Core.Notifications.Interfaces;
 using StudyHub.Domain.Entities;
 using StudyHub.Infrastructure.Services;
-using StudyHub.Domain.Enums;
 using StudyHub.Infrastructure.Notifications;
 using StudyHub.Infrastructure.Storage;
 
@@ -53,11 +50,12 @@ public class Program
         }
 
         var builder = WebApplication.CreateBuilder(args);
-
         builder.Host.UseSerilog((context, configuration) =>
             configuration.ReadFrom.Configuration(context.Configuration));
 
         builder.Services.AddControllersWithViews();
+        builder.Services.Configure<SessionTrackingOptions>(
+            builder.Configuration.GetSection(SessionTrackingOptions.SectionName));
         builder.Services.AddDbContext<SDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -75,19 +73,23 @@ public class Program
         builder.Services.AddScoped<ITaskRepository, TaskRepository>();
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IUserAuthRepository, UserAuthRepository>();
-        builder.Services.AddScoped<IBlobService, BlobService>();
-        builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
         builder.Services.AddScoped<ICommentRepository, CommentRepository>();
         builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
         builder.Services.AddScoped<IGroupRepository, GroupRepository>();
-        builder.Services.AddScoped<ILecturerRepository, LecturerRepository>();
         builder.Services.AddScoped<ILessonRepository, LessonRepository>();
-        builder.Services.AddScoped<ILessonSlotRepository, LessonSlotRepository>();
         builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
-        builder.Services.AddHostedService<DeadlineSender>();
+        builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();   
+        
+        builder.Services.AddScoped<IBlobService, BlobService>();
+        builder.Services.AddScoped<IUserSessionCookieStore, UserSessionCookieStore>();
+        builder.Services.AddScoped<IUserSessionTrackingService, UserSessionTrackingService>();
         builder.Services.AddScoped<IGlobalAnnouncementService, GlobalAnnouncementService>();
-
+        
+        builder.Services.AddHostedService<DeadlineSender>();
+        builder.Services.AddHostedService<MonthlyStatisticsAggregationService>();
+        builder.Services.AddHostedService<UserSessionExpirationService>();
+        
         var authenticationBuilder = builder.Services.AddAuthentication();
         var microsoftClientId = builder.Configuration["Authentication:Microsoft:ClientId"];
         var microsoftClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"];
@@ -125,7 +127,7 @@ public class Program
 
         if (!app.Environment.IsDevelopment())
         {
-            app.UseExceptionHandler("/Home/Error");
+            app.UseExceptionHandler("/UserPlatform/Error");
             app.UseHsts();
         }
 
@@ -133,73 +135,15 @@ public class Program
         app.UseRouting();
 
         app.UseAuthentication();
-
-        app.Use(async (context, next) =>
-        {
-            var path = context.Request.Path;
-            var pathValue = path.Value ?? string.Empty;
-
-            static bool IsPath(string? value, string prefix)
-            {
-                return !string.IsNullOrWhiteSpace(value) &&
-                       value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
-            }
-
-            var isStaticAsset = Path.HasExtension(pathValue);
-            var isLoginPath = IsPath(pathValue, "/login");
-            var isAuthTechnicalPath = IsPath(pathValue, "/user/login-microsoft") ||
-                                      IsPath(pathValue, "/user/callback") ||
-                                      IsPath(pathValue, "/signin-microsoft") ||
-                                      IsPath(pathValue, "/user/access-denied");
-            var isBypassedPath = isLoginPath || isAuthTechnicalPath || isStaticAsset;
-
-            if (!isBypassedPath && context.User.Identity?.IsAuthenticated != true)
-            {
-                context.Response.Redirect("/login");
-                return;
-            }
-
-            if (context.User.Identity?.IsAuthenticated == true)
-            {
-                var isAdmin = context.User.IsInRole(nameof(Role.Admin));
-                var isStudent = context.User.IsInRole(nameof(Role.Student));
-                var isLeader = context.User.IsInRole(nameof(Role.Leader));
-                var isAdminPath = IsPath(pathValue, "/Admin");
-                var isLogoutPath = IsPath(pathValue, "/user/logout");
-
-                if (!isAdmin && isAdminPath)
-                {
-                    context.Response.Redirect("/Home/Index");
-                    return;
-                }
-
-                if (isAdmin && !isAdminPath && !isLogoutPath && !isAuthTechnicalPath && !isStaticAsset)
-                {
-                    context.Response.Redirect("/Admin/Dashboard");
-                    return;
-                }
-
-                if (isStudent && !isLeader && IsPath(pathValue, "/TaskBoard/ReviewGroup"))
-                {
-                    context.Response.Redirect("/Home/Index");
-                    return;
-                }
-            }
-
-            await next();
-        });
+        app.UseMiddleware<AccessControlMiddleware>();
 
         app.UseAuthorization();
 
         app.MapStaticAssets();
-        //app.MapControllerRoute(
-        //    name: "admin-schedule",
-        //    pattern: "Admin/Schedule/{action=SchedulesList}/{id?}",
-        //    defaults: new { controller = "Schedule" });
 
         app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
+                pattern: "{controller=UserPlatform}/{action=Index}/{id?}")
             .WithStaticAssets();
 
         app.Run();

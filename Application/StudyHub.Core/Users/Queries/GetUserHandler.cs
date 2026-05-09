@@ -22,6 +22,7 @@ public class GetUserHandler : IRequestHandler<GetUserRequest, UserDto>
         return new UserDto
         {
             Id = user.Id,
+            Email = user.Email,
             GroupName = user.Group?.Name,
             Name = user.Name,
             Surname = user.Surname,

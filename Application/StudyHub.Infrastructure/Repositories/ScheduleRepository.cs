@@ -166,7 +166,7 @@ public class ScheduleRepository : IScheduleRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task UpdateHeadmanRights(Schedule schedule)
+    public async Task UpdateLeaderRights(Schedule schedule)
     {
         var dbSchedule = await _context.Schedules.FindAsync(schedule.Id);
         if (dbSchedule != null)
@@ -176,7 +176,7 @@ public class ScheduleRepository : IScheduleRepository
         }
     }
 
-    public async Task<bool> GetHeadmanUpdateRights(Guid groupId)
+    public async Task<bool> GetLeaderUpdateRights(Guid groupId)
     {
         var schedule = await _context.Schedules
             .AsNoTracking()

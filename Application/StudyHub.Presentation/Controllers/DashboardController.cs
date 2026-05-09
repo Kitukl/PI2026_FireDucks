@@ -24,6 +24,6 @@ public class DashboardController : Controller
         {
             UserId = Guid.Parse(userId)
         });
-        return View("~/Views/Home/Dashboard/Index.cshtml", dashboardModel);
+        return View("~/Views/UserPlatform/Dashboard/Index.cshtml", dashboardModel);
     }
 }

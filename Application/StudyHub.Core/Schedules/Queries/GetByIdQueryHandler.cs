@@ -1,8 +1,6 @@
 ﻿using MediatR;
 using StudyHub.Core.DTOs;
-using StudyHub.Core.LessonSlots.Interfaces;
 using StudyHub.Core.Schedules.Interfaces;
-using StudyHub.Domain.Entities;
 
 public record GetScheduleByIdRequest(Guid id) : IRequest<ScheduleDto?>;
 
@@ -31,7 +29,7 @@ public class GetScheduleByIdQueryHandler : IRequestHandler<GetScheduleByIdReques
                 },
                 IsAutoUpdate = schedule.IsAutoUpdate,
                 UpdateAt = schedule.UpdatedAt,
-                HeadmanUpdate = schedule.CanHeadmanUpdate,
+                LeaderUpdate = schedule.CanHeadmanUpdate,
                 Lessons = schedule.Lessons.Select(l => new LessonDto
                 {
                     Id = l.Id,
