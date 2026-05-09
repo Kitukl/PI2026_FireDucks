@@ -5,6 +5,7 @@
     ViewData["Title"] = "Requests";
     var isModalOpen = Model.OpenRequestModal;
     var allowedStatuses = Model.AllowedStatuses;
+    var activeRequestComments = Model.ActiveRequestComments ?? [];
 
     string StatusLabel(Status status) => status switch
     {
@@ -134,6 +135,15 @@
 .admin-request-review-meta-row { display: grid; grid-template-columns: 74px 1fr; gap: 8px; margin-top: 4px; }
 .admin-request-review-resolved { display: none; }
 .admin-request-review-resolved.is-visible { display: grid; }
+.request-view-comments { margin-top: 18px; display: grid; gap: 14px; }
+.request-view-comments h3 { margin: 0; font-size: 1.5rem; font-weight: 800; color: #1f2633; }
+.request-view-comments h3::after { content: ""; display: block; width: 108px; margin-top: 4px; border-bottom: 2px solid #4a5466; }
+.request-view-comment-list { display: grid; gap: 10px; }
+.request-view-comment-item { display: flex; justify-content: space-between; gap: 12px; border: 1px solid #d9dee7; border-radius: 12px; padding: 12px 14px; background: #fafbfc; }
+.request-view-comment-author { font-weight: 800; color: #1f2633; }
+.request-view-comment-text { margin: 6px 0 0; color: #2c3444; white-space: pre-wrap; }
+.request-view-comment-actions { flex-shrink: 0; align-self: center; }
+.request-view-comment-delete-btn { border: 1px solid #c17b7b; background: #fff5f5; color: #9b2c2c; border-radius: 8px; min-height: 34px; padding: 0 12px; font-weight: 700; }
 </style>
 
 <section class="admin-requests-page">
@@ -246,6 +256,54 @@
                 </div>
             </aside>
         </div>
+
+        <section class="request-view-comments">
+            <h3>Comments</h3>
+            <div class="request-view-comment-list">
+                @if (activeRequestComments.Count == 0)
+                {
+                    <p class="admin-request-review-description">No comments yet.</p>
+                }
+                else
+                {
+                    @foreach (var comment in activeRequestComments)
+                    {
+                        <article class="request-view-comment-item">
+                            <div class="request-view-comment-main">
+                                <div class="request-view-comment-author">@comment.UserName</div>
+                                <p class="request-view-comment-text">@comment.Description</p>
+                            </div>
+
+                            <div class="request-view-comment-actions">
+                                <form asp-controller="Admin" asp-action="DeleteRequestComment" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="feedbackId" value="@activeRequest.Id" />
+                                    <input type="hidden" name="commentId" value="@comment.Id" />
+                                    <button type="submit" class="request-view-comment-delete-btn">Delete</button>
+                                </form>
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+
+            <form class="task-view-editor js-rich-editor" asp-controller="Admin" asp-action="AddRequestComment" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="feedbackId" value="@activeRequest.Id" />
+                <div class="task-view-editor-head">
+                    <div class="task-view-editor-tools" aria-label="Comment formatting">
+                        <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="bold" aria-label="Bold">B</button>
+                        <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="italic" aria-label="Italic"><em>I</em></button>
+                        <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="underline" aria-label="Underline"><u>U</u></button>
+                        <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="strikeThrough" aria-label="Strike through"><s>S</s></button>
+                    </div>
+                    <button class="task-view-comment-btn" type="submit">Add a comment</button>
+                </div>
+                <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write a comment..." data-max-chars="1000"></div>
+                <textarea class="visually-hidden js-rich-editor-hidden" name="description"></textarea>
+                <div class="task-summary-counter js-rich-char-counter" aria-live="polite">0/1000</div>
+            </form>
+        </section>
     </section>
 }
 
