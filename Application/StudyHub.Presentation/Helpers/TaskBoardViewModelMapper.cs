@@ -20,6 +20,7 @@ public static class TaskBoardViewModelMapper
             Description = data.Description,
             SubjectId = data.SubjectId,
             DueDate = data.DueDate,
+            ResourceUrl = data.ResourceUrl,
             IsGroupTask = data.IsGroupTask
         };
     }

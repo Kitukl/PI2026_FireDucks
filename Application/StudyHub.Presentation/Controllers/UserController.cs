@@ -11,6 +11,7 @@ using StudyHub.Domain.Enums;
 
 namespace Application.Controllers;
 
+[Authorize]
 [Route("user")]
 public class UserController : Controller
 {
@@ -62,6 +63,7 @@ public class UserController : Controller
         return RedirectToAction("Index", "UserPlatform");
     }
 
+    [AllowAnonymous]
     [HttpGet("access-denied")]
     public IActionResult AccessDenied(string? returnUrl)
     {
@@ -113,9 +115,15 @@ public class UserController : Controller
         {
             UserId = parsedUserId
         });
-
+        ViewBag.FullName = data.FullName;
+        ViewBag.PhotoUrl = data.PhotoUrl;
+        ViewBag.IsNotified = data.IsNotified;
+        ViewBag.ReminderOffset = data.ReminderOffset;
+        ViewBag.ReminderTimeType = data.ReminderTimeType;
+        ViewBag.MonthlyActivityPerMonth = data.MonthlyActivityPerMonth;
         return View("~/Views/UserPlatform/UserProfile/UserProfile.cshtml", data);
     }
+        
 
     [HttpGet("/UserProfile/ViewRequest/{feedbackId?}")]
     public async Task<IActionResult> ViewRequest(string? feedbackId)

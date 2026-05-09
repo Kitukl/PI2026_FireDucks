@@ -300,7 +300,8 @@
             <div class="task-view-main">
                 <div class="task-view-description">
                     <h2>Description</h2>
-                    <div class="task-view-textbox" title="@selectedTask.Description">@(string.IsNullOrWhiteSpace(normalizedDescription) ? "No description provided for this task." : normalizedDescription)
+                    <div class="task-view-textbox" title="@selectedTask.Description">
+                        @(string.IsNullOrWhiteSpace(normalizedDescription) ? "No description provided for this task." : normalizedDescription)
                     </div>
                 </div>
 
@@ -315,8 +316,39 @@
                         {
                             <div><dt>Owner:</dt><dd>@(string.IsNullOrWhiteSpace(selectedTask.OwnerName) ? "Unknown" : selectedTask.OwnerName)</dd></div>
                         }
+                        @if (!string.IsNullOrWhiteSpace(selectedTask.ResourceUrl))
+                        {
+                            <div><dt>Resource:</dt><dd><a href="@selectedTask.ResourceUrl" target="_blank">Open link</a></dd></div>
+                        }
+
                     </dl>
                 </aside>
+            </div>
+
+            @* Edit form *@
+            <div class="task-view-edit">
+                <h2>Edit task</h2>
+                <form asp-controller="TaskBoard" asp-action="TaskBoardViewTaskEdit" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="taskId" value="@selectedTask.Id" />
+
+                    <label class="task-create-inline-field">
+                        <span>Title:</span>
+                        <input type="text" name="title" value="@selectedTask.Title" maxlength="200" />
+                    </label>
+
+                    <label class="task-create-inline-field">
+                        <span>Description:</span>
+                        <textarea name="description" maxlength="200">@selectedTask.Description</textarea>
+                    </label>
+
+                    <label class="task-create-inline-field">
+                        <span>Resource URL:</span>
+                        <input type="url" name="resourceUrl" value="@selectedTask.ResourceUrl" placeholder="https://..." />
+                    </label>
+
+                    <button type="submit" class="task-create-submit">Save changes</button>
+                </form>
             </div>
 
             <div class="task-view-comments">
@@ -331,8 +363,8 @@
                         @foreach (var comment in comments)
                         {
                             var canDeleteComment = canModerateComments ||
-                                                   (!string.IsNullOrWhiteSpace(currentUserFullName) &&
-                                                    string.Equals(comment.UserName, currentUserFullName, StringComparison.OrdinalIgnoreCase));
+                            (!string.IsNullOrWhiteSpace(currentUserFullName) &&
+                            string.Equals(comment.UserName, currentUserFullName, StringComparison.OrdinalIgnoreCase));
 
                             <article class="task-comment-item">
                                 <div class="task-comment-main">

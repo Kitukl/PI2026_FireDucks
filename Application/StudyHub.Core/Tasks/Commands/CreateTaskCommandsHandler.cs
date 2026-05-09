@@ -15,6 +15,7 @@ public class CreateTaskCommand : IRequest<Guid>
     public DateTime Deadline { get; set; }
     public Subject Subject { get; set; } = null!;
     public Guid UserId { get; set; }
+    public string? ResourceUrl { get; set; }
 }
 
 public class CreateTaskCommandsHandler : IRequestHandler<CreateTaskCommand, Guid>
@@ -48,7 +49,8 @@ public class CreateTaskCommandsHandler : IRequestHandler<CreateTaskCommand, Guid
             Description = string.IsNullOrWhiteSpace(request.Description)
                 ? string.Empty
                 : request.Description.Trim(),
-            User = user
+            User = user,
+            ResourceUrl = request.ResourceUrl
         };
 
         return await _taskRepository.AddTaskAsync(task);

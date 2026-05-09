@@ -2,6 +2,7 @@ using Application.Helpers;
 using MediatR;
 using StudyHub.Core.Comments.Interfaces;
 using StudyHub.Core.Feedbacks.Queries;
+using StudyHub.Core.Statistics.Interfaces;
 using StudyHub.Core.Users.Interfaces;
 using StudyHub.Domain.Entities;
 using StudyHub.Domain.Enums;
@@ -27,6 +28,7 @@ public class UserProfilePageDataDto
     public Feedback? ActiveRequest { get; set; }
     public List<Comment> ActiveRequestComments { get; set; } = [];
     public bool OpenRequestModal { get; set; }
+    public Dictionary<int, double> MonthlyActivityPerMonth { get; set; } = [];
 }
 
 public class GetUserProfilePageQueryHandler : IRequestHandler<GetUserProfilePageQuery, UserProfilePageDataDto>
@@ -34,12 +36,14 @@ public class GetUserProfilePageQueryHandler : IRequestHandler<GetUserProfilePage
     private readonly ISender _sender;
     private readonly IUserRepository _userRepository;
     private readonly ICommentRepository _commentRepository;
+    private readonly IStatisticRepository _statisticRepository;
 
-    public GetUserProfilePageQueryHandler(ISender sender, IUserRepository userRepository, ICommentRepository commentRepository)
+    public GetUserProfilePageQueryHandler(ISender sender, IUserRepository userRepository, IStatisticRepository statisticRepository, ICommentRepository commentRepository)
     {
         _sender = sender;
         _userRepository = userRepository;
         _commentRepository = commentRepository;
+        _statisticRepository = statisticRepository;
     }
 
     public async Task<UserProfilePageDataDto> Handle(GetUserProfilePageQuery request, CancellationToken cancellationToken)
@@ -69,6 +73,10 @@ public class GetUserProfilePageQueryHandler : IRequestHandler<GetUserProfilePage
         {
             activeRequestComments = await _commentRepository.GetFeedbackCommentsAsync(activeRequest.Id);
         }
+        var monthlyActivityPerMonth = await _statisticRepository.GetYearlyActivityAsync(
+            request.UserId.Value,
+            DateTime.UtcNow.Year,
+            cancellationToken: cancellationToken);
 
         return new UserProfilePageDataDto
         {
@@ -80,7 +88,8 @@ public class GetUserProfilePageQueryHandler : IRequestHandler<GetUserProfilePage
             Requests = requests,
             ActiveRequest = activeRequest,
             ActiveRequestComments = activeRequestComments,
-            OpenRequestModal = request.OpenModal && activeRequest != null
+            OpenRequestModal = request.OpenModal && activeRequest != null,
+            MonthlyActivityPerMonth = monthlyActivityPerMonth
         };
     }
 }

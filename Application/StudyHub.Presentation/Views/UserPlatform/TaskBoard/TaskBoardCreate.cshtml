@@ -284,6 +284,11 @@
                         <input asp-for="DueDate" type="date" max="@maxDueDate" />
                     </label>
 
+                    <label class="task-create-inline-field" asp-for="ResourceUrl">
+                        <span>Resource URL:</span>
+                        <input asp-for="ResourceUrl" type="url" placeholder="https://..." />
+                    </label>
+
                     <label class="task-create-checkbox" asp-for="IsGroupTask">
                         <input asp-for="IsGroupTask" type="checkbox" />
                         <span class="task-create-group-icon" aria-hidden="true">

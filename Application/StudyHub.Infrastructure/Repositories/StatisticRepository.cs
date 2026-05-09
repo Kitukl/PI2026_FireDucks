@@ -27,7 +27,19 @@ public class StatisticRepository(
             .AsNoTracking()
             .ToDictionaryAsync(
                 g => g.Key,
-                g => g.Sum(s => s.UserActivityPerMonth));
+                g => g.Average(s => s.UserActivityPerMonth));
+    }
+
+    public async Task<Dictionary<int, double>> GetYearlyActivityAsync(Guid userId, int year,CancellationToken cancellationToken)
+    {
+        return await context.Statistics
+            .Where(s => s.CreatedAt.Year == year && s.Users.Any(u => u.Id == userId))
+            .GroupBy(s => s.CreatedAt.Month)
+            .AsNoTracking()
+            .ToDictionaryAsync(
+                g => g.Key,
+                g => g.Average(s => s.UserActivityPerMonth),
+                cancellationToken);
     }
 
     public async Task<(int UserFilesCount, int GroupFilesCount)> GetStorageFileCountsAsync(CancellationToken cancellationToken = default)
@@ -63,12 +75,57 @@ public class StatisticRepository(
 
     public async Task<(int StudentsCount, int GroupsCount, int LeadersCount)> GetSystemEntityCountsAsync(CancellationToken cancellationToken = default)
     {
-        // DbContext is not thread-safe; execute these queries sequentially on a single context instance.
         var studentsCount = await GetUsersInRoleCountAsync(Role.Student, cancellationToken);
         var groupsCount = await context.Groups.CountAsync(cancellationToken);
         var leadersCount = await GetUsersInRoleCountAsync(Role.Leader, cancellationToken);
 
         return (studentsCount, groupsCount, leadersCount);
+    }
+
+    public Task<int> DeleteMonthlyActivityStatisticsAsync(int year, int month, CancellationToken cancellationToken = default)
+    {
+        return context.Statistics
+            .Where(statistic => statistic.CreatedAt.Year == year && statistic.CreatedAt.Month == month)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task<int> AddMonthlyActivityStatisticsAsync(
+        int year,
+        int month,
+        IReadOnlyDictionary<Guid, double> averageDayDurationMinutesByUser,
+        CancellationToken cancellationToken = default)
+    {
+        if (averageDayDurationMinutesByUser.Count == 0)
+        {
+            return 0;
+        }
+
+        var users = await context.Users
+            .Where(user => averageDayDurationMinutesByUser.Keys.Contains(user.Id))
+            .ToDictionaryAsync(user => user.Id, cancellationToken);
+
+        var createdAtUtc = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var statistics = averageDayDurationMinutesByUser
+            .Where(item => users.ContainsKey(item.Key))
+            .Select(item => new Statistic
+            {
+                Id = Guid.NewGuid(),
+                CreatedAt = createdAtUtc,
+                UserActivityPerMonth = item.Value,
+                FilesCount = 0,
+                Users = [users[item.Key]],
+                Tasks = []
+            })
+            .ToList();
+
+        if (statistics.Count == 0)
+        {
+            return 0;
+        }
+
+        await context.Statistics.AddRangeAsync(statistics, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+        return statistics.Count;
     }
 
     private Task<int> GetUsersInRoleCountAsync(Role role, CancellationToken cancellationToken)

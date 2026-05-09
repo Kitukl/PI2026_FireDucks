@@ -1,9 +1,11 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.Extensions.Options
+@inject IOptions<StudyHub.Infrastructure.Services.SessionTrackingOptions> SessionTrackingOptionsAccessor
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>@ViewData["Title"] - StudyHub.Presentation</title>
+    <title>@ViewData["Title"] - StudyHub</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
@@ -14,9 +16,9 @@
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
-    var requestPath = Context.Request.Path.Value ?? string.Empty;
     var isInsideAdminController = currentController.Equals("Admin", StringComparison.OrdinalIgnoreCase);
     var isAdminUser = isInsideAdminController;
+    var heartbeatIntervalMilliseconds = Math.Max(5, SessionTrackingOptionsAccessor.Value.HeartbeatIntervalSeconds) * 1000;
 }
 <body class="@(isAdminUser ? "admin-body" : "app-body")">
 @if (!isAdminUser)
@@ -92,5 +94,15 @@ else
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
+<script>
+    function heartbeat() {
+        fetch('/session/heartbeat',{
+            method: 'POST',
+            credentials: 'include'
+        }).catch(() => {});
+    }
+    heartbeat();
+    const intervalId = setInterval(heartbeat, @heartbeatIntervalMilliseconds);
+</script>
 </body>
 </html>
