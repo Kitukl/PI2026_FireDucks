@@ -1,38 +1,27 @@
-using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
 using StudyHub.Core.Storage.DTOs;
 using StudyHub.Core.Storage.Interfaces;
-using Azure.Identity;
 
 namespace StudyHub.Infrastructure.Storage;
 
 public class BlobService : IBlobService
 {
-    //private const string BlobConnectionStringPath = "ConnectionStrings:BlobStorage";
-    //private const string DefaultAzuriteConnectionString =
-    //"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
-    private const string BlobConnectionStringPath = "ConnectionStrings:BlobStorage1";
-    private const string DefaultAzuriteConnectionString =
-        "BlobEndpoint=https://studyhubpresentationstor.blob.core.windows.net/;QueueEndpoint=https://studyhubpresentationstor.queue.core.windows.net/;TableEndpoint=https://studyhubpresentationstor.table.core.windows.net/;";
+    private const string DefaultAzuriteConnectionString = "UseDevelopmentStorage=true";
 
     private readonly BlobServiceClient _blobServiceClient;
 
     public BlobService(IConfiguration configuration)
     {
-        var connectionString = configuration[BlobConnectionStringPath];
+        var connectionString = configuration.GetConnectionString("BlobStorage");
+
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             connectionString = DefaultAzuriteConnectionString;
         }
-
-        // _blobServiceClient = new BlobServiceClient(connectionString);
-        _blobServiceClient =
-            new BlobServiceClient(
-                new Uri("https://studyhubpresentationstor.blob.core.windows.net"),
-                new DefaultAzureCredential());
+        _blobServiceClient = new BlobServiceClient(connectionString);
     }
 
     public async Task<string> UploadFileAsync(
