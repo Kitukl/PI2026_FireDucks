@@ -1,0 +1,91 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy ASP.Net Core app to Azure Web App - studyhub-dhyrych-11
+
+on:
+  push:
+    branches:
+      - Dariia_Hyrych
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Необхідно для повного аналізу SonarCloud
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Install SonarCloud scanner
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Build and analyze with SonarCloud
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet-sonarscanner begin /k:"Kitukl_PI2026_FireDucks" /o:"kitukl" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+          dotnet build Application/Application.sln --configuration Release
+          dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+      - name: dotnet publish
+        # Використовуємо лапки та відносний шлях, щоб уникнути помилки MSB1008 (через пробіли в Program Files)
+        run: dotnet publish Application/StudyHub.Presentation/StudyHub.Presentation.csproj -c Release -o "publish_output"
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: .net-app
+          path: "publish_output"
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Run Unit Tests
+        run: dotnet test Application/Application.sln --configuration Release --verbosity normal
+
+  deploy:
+    runs-on: windows-latest
+    needs: [build, unit-tests]
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: .net-app
+          path: .
+      
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_919057E1067445DEBEA98DAC7B89D851 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_13B256F05F81464CB5BA2FE17981DAE9 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_5EB381B1D1094284B4FAEC0930837F60 }}
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'studyhub-dhyrych-11'
+          slot-name: 'Production'
+          package: .

@@ -12,6 +12,10 @@ internal class FeedbackConfiguration : IEntityTypeConfiguration<Feedback>
         
         builder.Property(f => f.Description).HasMaxLength(1000);
         builder.Property(f => f.CreatorFullname).HasMaxLength(200).IsRequired();
+
+        builder.HasMany(f => f.Comments)
+            .WithOne(c => c.Feedback)
+            .OnDelete(DeleteBehavior.Restrict);
         
     }
 }

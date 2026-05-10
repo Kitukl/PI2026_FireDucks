@@ -1,5 +1,6 @@
 using MediatR;
 using StudyHub.Core.Admin.DTOs;
+using StudyHub.Core.Comments.Interfaces;
 using StudyHub.Core.Feedbacks.Queries;
 using StudyHub.Domain.Entities;
 using StudyHub.Domain.Enums;
@@ -15,10 +16,12 @@ public class GetAdminRequestsPageQuery : IRequest<AdminRequestsPageDataDto>
 public class GetAdminRequestsPageQueryHandler : IRequestHandler<GetAdminRequestsPageQuery, AdminRequestsPageDataDto>
 {
     private readonly ISender _sender;
+    private readonly ICommentRepository _commentRepository;
 
-    public GetAdminRequestsPageQueryHandler(ISender sender)
+    public GetAdminRequestsPageQueryHandler(ISender sender, ICommentRepository commentRepository)
     {
         _sender = sender;
+        _commentRepository = commentRepository;
     }
 
     public async Task<AdminRequestsPageDataDto> Handle(GetAdminRequestsPageQuery request, CancellationToken cancellationToken)
@@ -50,10 +53,17 @@ public class GetAdminRequestsPageQueryHandler : IRequestHandler<GetAdminRequests
 
         activeRequest ??= filteredRequests.FirstOrDefault();
 
+        var activeRequestComments = new List<Comment>();
+        if (request.OpenModal && activeRequest != null)
+        {
+            activeRequestComments = await _commentRepository.GetFeedbackCommentsAsync(activeRequest.Id);
+        }
+
         return new AdminRequestsPageDataDto
         {
             Requests = filteredRequests,
             ActiveRequest = activeRequest,
+            ActiveRequestComments = activeRequestComments,
             OpenRequestModal = request.OpenModal && activeRequest != null
         };
     }

@@ -14,15 +14,13 @@ public class TaskRepository : ITaskRepository
         _context = context;
     }
 
-    public async Task<UserTask> GetTaskAsync(Guid id)
+    public Task<UserTask?> GetTaskAsync(Guid id)
     {
-        var task = await _context.Tasks
+        return _context.Tasks
             .Include(task => task.Subject)
             .Include(task => task.User)
             .ThenInclude(user => user.Group)
-            .FirstOrDefaultAsync(c => c.Id == id) ?? throw new Exception("Task not found");
-
-        return task;
+            .FirstOrDefaultAsync(c => c.Id == id);
     }
 
     public async Task<List<UserTask>> GetTasksAsync()
@@ -64,7 +62,7 @@ public class TaskRepository : ITaskRepository
     public async Task<Guid> DeleteTaskAsync(Guid id)
     {
         await _context.Comments
-            .Where(comment => EF.Property<Guid>(comment, "TaskId") == id)
+            .Where(comment => comment.Task.Id == id)
             .ExecuteDeleteAsync();
 
         await _context.Tasks.Where(f => f.Id == id).ExecuteDeleteAsync();
@@ -76,19 +74,21 @@ public class TaskRepository : ITaskRepository
         return await _context.Tasks.CountAsync();
     }
     
-    public async Task<Dictionary<bool, Dictionary<Status, int>>> GetGroupedTaskStatsAsync()    {
-        var stats =  _context.Tasks
+    public async Task<Dictionary<bool, Dictionary<Status, int>>> GetGroupedTaskStatsAsync()
+    {
+        var stats = await _context.Tasks
             .GroupBy(x => new { x.IsGroupTask, x.Status })
             .Select(g => new
             {
                 g.Key.IsGroupTask,
                 g.Key.Status,
                 Count = g.Count()
-            });
-        
+            })
+            .ToListAsync();
+
         return stats.GroupBy(s=>s.IsGroupTask)
             .ToDictionary(
-                g => g.Key, 
+                g => g.Key,
                 g => g.ToDictionary(x => x.Status, x => x.Count)
             );
     }

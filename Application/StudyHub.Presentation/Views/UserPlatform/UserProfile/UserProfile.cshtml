@@ -1,22 +1,145 @@
+@using System.Globalization
 @using StudyHub.Domain.Entities
+@using StudyHub.Domain.Enums
+@model StudyHub.Core.Users.Queries.UserProfilePageDataDto
 @{
     ViewData["Title"] = "User profile";
     const int feedbackSubjectMaxLength = 160;
     const int feedbackDescriptionMaxLength = 700;
-    
-    var fullName = (string?)ViewBag.FullName ?? "Гість";
-    var photoUrl = (string?)ViewBag.PhotoUrl ?? Url.Content("~/images/no-photo.png");
+    const int requestCommentMaxLength = 1000;
+
+    var fullName = string.IsNullOrWhiteSpace(Model.FullName) ? "Гість" : Model.FullName;
+    var photoUrl = string.IsNullOrWhiteSpace(Model.PhotoUrl) ? Url.Content("~/images/no-photo.png") : Model.PhotoUrl;
     
     var feedbackTypes = Enum.GetValues<FeedbackType>();
     var categories = Enum.GetValues<Category>();
     var timeTypes = Enum.GetValues<TimeType>();
     var reminderOffsets = Enumerable.Range(1, 10);
+    var requests = Model.Requests ?? [];
+    var activeRequest = Model.ActiveRequest;
+    var activeRequestComments = Model.ActiveRequestComments ?? [];
+
+    string StatusLabel(Status status) => status switch
+    {
+        Status.ToDo => "To do",
+        Status.InProgress => "In progress",
+        Status.Resolved => "Resolved",
+        _ => status.ToString()
+    };
+
+    (string Subject, string Body) ParseRequestSummary(string? rawDescription)
+    {
+        var description = (rawDescription ?? string.Empty)
+            .Replace("\r\n", "\n")
+            .Trim();
+
+        string NormalizeBody(string text)
+        {
+            var cleanText = text
+                .Replace("\u00A0", " ")
+                .Replace("\u200B", string.Empty)
+                .Replace("\uFEFF", string.Empty);
+
+            var lines = cleanText
+                .Split('\n', StringSplitOptions.None)
+                .Select(line => line.Trim())
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .ToArray();
+
+            return string.Join(" ", lines).Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return ("(No subject)", string.Empty);
+        }
+
+        var lines = description.Split('\n', 2, StringSplitOptions.None);
+        var firstLine = lines[0].Trim();
+        const string subjectPrefix = "Subject:";
+
+        if (firstLine.StartsWith(subjectPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var subject = firstLine[subjectPrefix.Length..].Trim();
+            var body = lines.Length > 1 ? NormalizeBody(lines[1]) : string.Empty;
+
+            return (string.IsNullOrWhiteSpace(subject) ? "(No subject)" : subject, body);
+        }
+
+        return (firstLine, NormalizeBody(description));
+    }
 
     // ВАЖЛИВО: Отримуємо збережені значення з ViewBag
     bool isNotified = ViewBag.IsNotified ?? false;
     var currentOffset = ViewBag.ReminderOffset ?? 2;
     var currentTimeType = ViewBag.ReminderTimeType ?? TimeType.Day;
+    var activityYear = DateTime.Now.Year;
+    var activitySource = ViewBag.MonthlyActivityPerMonth as Dictionary<int, double> ?? new Dictionary<int, double>();
+    var monthlyActivity = Enumerable.Range(1, 12)
+        .Select(month =>
+        {
+            var value = activitySource.TryGetValue(month, out var monthValue) ? monthValue : 0d;
+            return new
+            {
+                Label = CultureInfo.InvariantCulture.DateTimeFormat.GetAbbreviatedMonthName(month),
+                Value = Math.Round(value, 2)
+            };
+        })
+        .ToList();
+    var maxMonthlyActivity = monthlyActivity.Max(item => item.Value);
+    var activeMonthlyActivity = monthlyActivity.Where(item => item.Value > 0).ToList();
+    var peakMonthLabel = activeMonthlyActivity.Count > 0
+        ? activeMonthlyActivity.OrderByDescending(item => item.Value).First().Label
+        : "No data";
+    var activeMonthsAverage = activeMonthlyActivity.Count > 0
+        ? activeMonthlyActivity.Average(item => item.Value)
+        : 0d;
+
+    string FormatActivityValue(double value)
+    {
+        return value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
 }
+
+<style>
+.user-profile-requests { margin-top: 28px; }
+.user-profile-requests h2 { margin: 0 0 12px; font-size: 1.7rem; font-weight: 800; color: #1f2633; }
+.user-profile-requests-card { border: 1px solid #d3d9e2; border-radius: 14px; background: #fff; padding: 14px; box-shadow: 0 10px 24px rgba(8, 16, 28, 0.06); }
+.user-profile-requests-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.user-profile-requests-table th, .user-profile-requests-table td { border-bottom: 1px solid #e4e8ef; padding: 10px 8px; text-align: left; }
+.user-profile-requests-table th { color: #667085; font-size: 0.92rem; font-weight: 700; }
+.user-profile-requests-table th:first-child, .user-profile-requests-table td:first-child { width: 55%; }
+.user-profile-request-link { color: inherit; text-decoration: none; font-weight: 700; }
+.user-profile-request-link:hover { text-decoration: underline; }
+.user-profile-request-status { display: inline-flex; min-width: 88px; justify-content: center; align-items: center; min-height: 30px; border: 1px solid #7e8794; border-radius: 7px; font-weight: 700; font-size: 0.92rem; line-height: 1; padding: 0 10px; }
+.user-profile-request-status.todo { background: #fff; }
+.user-profile-request-status.progress { background: #cfe5ff; border-color: #568dcc; }
+.user-profile-request-status.resolved { background: #cfe9c9; border-color: #6ea66a; }
+.user-profile-request-empty { margin: 0; color: #667085; }
+.request-view-backdrop { position: fixed; inset: 0; background: rgba(20, 27, 40, 0.45); z-index: 120; }
+.request-view-modal { position: fixed; z-index: 130; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(1080px, 92vw); max-height: 88vh; overflow: auto; background: #fff; border: 1px solid #aeb6c2; border-radius: 14px; padding: 20px 22px; box-shadow: 0 22px 42px rgba(7, 13, 22, 0.28); }
+.request-view-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.request-view-top h2 { margin: 0; font-size: clamp(1.55rem, 2.4vw, 2.2rem); font-weight: 800; color: #1f2633; }
+.request-view-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 620px; }
+.request-view-tools { display: inline-flex; align-items: center; gap: 8px; }
+.request-view-tools a { min-height: 38px; border: 1px solid #8d97a4; border-radius: 8px; background: #fff; padding: 5px 10px; color: #1f2633; text-decoration: none; display: inline-flex; align-items: center; }
+.request-view-grid { display: grid; grid-template-columns: 1.2fr 0.95fr; gap: 14px; }
+.request-view-block h3 { margin: 0 0 10px; font-size: 1.45rem; font-weight: 800; color: #1f2633; }
+.request-view-block h3::after { content: ""; display: block; width: 108px; margin-top: 4px; border-bottom: 2px solid #4a5466; }
+.request-view-description { margin-top: 18px; min-height: 240px; max-height: 320px; border: 1px solid #8d97a4; border-radius: 12px; padding: 14px; background: #fff; overflow-y: auto; white-space: normal; overflow-wrap: anywhere; }
+.request-view-details { margin-top: 8px; }
+.request-view-details dl { margin: 0; display: grid; grid-template-columns: 92px 1fr; row-gap: 8px; column-gap: 8px; }
+.request-view-details dt { color: #4d5563; }
+.request-view-meta { margin-top: 12px; font-size: 0.95rem; color: #2c3444; }
+.request-view-meta-row { display: grid; grid-template-columns: 74px 1fr; gap: 8px; margin-top: 4px; }
+.request-view-comments { margin-top: 18px; display: grid; gap: 14px; }
+.request-view-comment-list { display: grid; gap: 10px; }
+.request-view-comment-item { display: flex; justify-content: space-between; gap: 12px; border: 1px solid #d9dee7; border-radius: 12px; padding: 12px 14px; background: #fafbfc; }
+.request-view-comment-author { font-weight: 800; color: #1f2633; }
+.request-view-comment-text { margin: 6px 0 0; color: #2c3444; white-space: pre-wrap; }
+.request-view-comment-actions { flex-shrink: 0; align-self: center; }
+.request-view-comment-delete-btn { border: 1px solid #c17b7b; background: #fff5f5; color: #9b2c2c; border-radius: 8px; min-height: 34px; padding: 0 12px; font-weight: 700; }
+</style>
 
 <section class="user-profile-page">
     <div class="user-profile-grid">
@@ -140,7 +263,219 @@
             </article>
         </section>
     </div>
+
+    <section class="user-profile-requests">
+        <h2>My Requests</h2>
+
+        <div class="user-profile-requests-card">
+            @if (requests.Count == 0)
+            {
+                <p class="user-profile-request-empty">No requests yet.</p>
+            }
+            else
+            {
+                <table class="user-profile-requests-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Created at</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var requestRow in requests)
+                        {
+                            var summary = ParseRequestSummary(requestRow.Description);
+                            var statusClass = requestRow.Status == Status.Resolved
+                                ? "resolved"
+                                : requestRow.Status == Status.InProgress
+                                    ? "progress"
+                                    : "todo";
+
+                            <tr>
+                                <td>
+                                    <a class="user-profile-request-link"
+                                    asp-controller="User"
+                                    asp-action="ViewRequest"
+                                    asp-route-feedbackId="@requestRow.Id"
+                                    title="@summary.Subject">
+                                        @summary.Subject
+                                    </a>
+                                </td>
+                                <td>@requestRow.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    <span class="user-profile-request-status @statusClass">
+                                        @StatusLabel(requestRow.Status)
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </section>
+
+    <article class="profile-activity-panel user-contact-card">
+        <header class="user-contact-head">
+            <h2>Activity per month</h2>
+        </header>
+
+        <div class="profile-activity-layout">
+            <section class="profile-activity-chart-shell" aria-label="Average day duration per month">
+                <div class="profile-activity-chart-meta">
+                    <h3>Average day duration</h3>
+                    <p>@activityYear, minutes</p>
+                </div>
+
+                <div class="profile-activity-bars">
+                    @foreach (var item in monthlyActivity)
+                    {
+                        var barHeight = maxMonthlyActivity > 0
+                            ? Math.Max(4, Math.Round(item.Value / maxMonthlyActivity * 100, 2))
+                            : 4;
+
+                        var barClass = item.Value <= 0
+                            ? "profile-activity-bar is-empty"
+                            : "profile-activity-bar";
+
+                        var displayValue = item.Value > 0
+                            ? FormatActivityValue(item.Value)
+                            : "-";
+
+                        <div class="profile-activity-bar-group">
+                            <div class="profile-activity-value">@displayValue</div>
+
+                            <div class="profile-activity-bar-track">
+                                <div class="@barClass"
+                                    style="height: @($"{barHeight.ToString("0.##", CultureInfo.InvariantCulture)}%");">
+                                </div>
+                            </div>
+
+                            <div class="profile-activity-label">@item.Label</div>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <aside class="profile-activity-summary">
+                <h3>Highlights</h3>
+
+                <ul>
+                    <li>
+                        <span>Peak month</span>
+                        <strong>@peakMonthLabel</strong>
+                    </li>
+
+                    <li>
+                        <span>Peak value</span>
+                        <strong>@FormatActivityValue(maxMonthlyActivity) min</strong>
+                    </li>
+
+                    <li>
+                        <span>Active months average</span>
+                        <strong>@FormatActivityValue(activeMonthsAverage) min</strong>
+                    </li>
+                </ul>
+            </aside>
+        </div>
+    </article>
 </section>
+
+@if (Model.OpenRequestModal && activeRequest != null)
+{
+    var activeSummary = ParseRequestSummary(activeRequest.Description);
+
+    <div class="request-view-backdrop" aria-hidden="true"></div>
+
+    <section class="request-view-modal" role="dialog" aria-modal="true" aria-label="Request view">
+        <div class="request-view-top">
+            <h2 class="request-view-title" title="@activeSummary.Subject">@activeSummary.Subject</h2>
+
+            <div class="request-view-tools">
+                <a asp-controller="User" asp-action="UserProfile">&lt; Back to profile</a>
+            </div>
+        </div>
+
+        <div class="request-view-grid">
+            <article class="request-view-block">
+                <h3>Description</h3>
+                <div class="request-view-description">
+                    @(string.IsNullOrWhiteSpace(activeSummary.Body)
+                        ? "No additional description provided."
+                        : activeSummary.Body)
+                </div>
+            </article>
+
+            <aside class="request-view-block">
+                <h3>Details</h3>
+                <div class="request-view-details">
+                    <dl>
+                        <dt>Request:</dt><dd>#@activeRequest.Id.ToString()[..8]</dd>
+                        <dt>Status:</dt><dd>@StatusLabel(activeRequest.Status)</dd>
+                        <dt>Type:</dt><dd>@activeRequest.FeedbackType</dd>
+                        <dt>Category:</dt><dd>@activeRequest.Category</dd>
+                        <dt>Created:</dt><dd>@activeRequest.CreatedAt.ToString("dd.MM.yyyy HH:mm")</dd>
+                    </dl>
+                </div>
+            </aside>
+        </div>
+
+        <section class="request-view-comments">
+            <h3>Comments</h3>
+            <div class="request-view-comment-list">
+                @if (activeRequestComments.Count == 0)
+                {
+                    <p class="user-profile-request-empty">No comments yet.</p>
+                }
+                else
+                {
+                    @foreach (var comment in activeRequestComments)
+                    {
+                        var canDeleteComment = User.IsInRole(nameof(Role.Admin)) ||
+                                               string.Equals(comment.UserName, fullName, StringComparison.OrdinalIgnoreCase);
+
+                        <article class="request-view-comment-item">
+                            <div class="request-view-comment-main">
+                                <div class="request-view-comment-author">@comment.UserName</div>
+                                <p class="request-view-comment-text">@comment.Description</p>
+                            </div>
+
+                            @if (canDeleteComment)
+                            {
+                                <div class="request-view-comment-actions">
+                                    <form asp-controller="User" asp-action="DeleteRequestComment" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="feedbackId" value="@activeRequest.Id" />
+                                        <input type="hidden" name="commentId" value="@comment.Id" />
+                                        <button type="submit" class="request-view-comment-delete-btn">Delete</button>
+                                    </form>
+                                </div>
+                            }
+                        </article>
+                    }
+                }
+            </div>
+
+            <form class="task-view-editor js-rich-editor" asp-controller="User" asp-action="AddRequestComment" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="feedbackId" value="@activeRequest.Id" />
+                <div class="task-view-editor-head">
+                    <div class="task-view-editor-tools" aria-label="Comment formatting">
+                        <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="bold" aria-label="Bold">B</button>
+                        <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="italic" aria-label="Italic"><em>I</em></button>
+                        <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="underline" aria-label="Underline"><u>U</u></button>
+                        <button class="task-view-tool-btn js-rich-format-btn" type="button" data-command="strikeThrough" aria-label="Strike through"><s>S</s></button>
+                    </div>
+                    <button class="task-view-comment-btn" type="submit">Add a comment</button>
+                </div>
+                <div class="task-view-comment-input js-rich-editor-input" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write a comment..." data-max-chars="@requestCommentMaxLength"></div>
+                <textarea class="visually-hidden js-rich-editor-hidden" name="description"></textarea>
+                <div class="task-summary-counter js-rich-char-counter" aria-live="polite">0/@requestCommentMaxLength</div>
+            </form>
+        </section>
+    </section>
+}
 
 @section Scripts {
     <script>

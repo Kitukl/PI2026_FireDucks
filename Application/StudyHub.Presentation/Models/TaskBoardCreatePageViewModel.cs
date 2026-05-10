@@ -20,4 +20,5 @@ public class TaskBoardCreatePageViewModel
     public DateTime DueDate { get; set; } = DateTime.Today.AddDays(1);
 
     public bool IsGroupTask { get; set; } = true;
+    public string? ResourceUrl { get; set; }
 }

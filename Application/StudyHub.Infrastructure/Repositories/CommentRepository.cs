@@ -16,7 +16,15 @@ public class CommentRepository : ICommentRepository
     public async Task<List<Comment>> GetCommentsAsync(Guid taskid)
     {
         return await _context.Comments
-            .Where(c => c.Task.Id == taskid)
+            .Where(c => c.Task != null && c.Task.Id == taskid)
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<List<Comment>> GetFeedbackCommentsAsync(Guid feedbackId)
+    {
+        return await _context.Comments
+            .Where(c => c.Feedback != null && c.Feedback.Id == feedbackId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
     }

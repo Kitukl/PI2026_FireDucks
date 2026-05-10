@@ -9,47 +9,95 @@
     </div>
 
     <div class="dashboard-grid">
-        <div class="dashboard-left">
-            <p class="dashboard-lead">Stay focused, stay organized, and make studying simpler with <span class="dashboard-lead-study">Study</span><span class="dashboard-lead-hub">Hub</span>.</p>
+	    <div class="dashboard-left">
+		    <p class="dashboard-lead">Stay focused, stay organized, and make studying simpler with <span class="dashboard-lead-study">Study</span><span class="dashboard-lead-hub">Hub</span>.</p>
 
-            <div class="dashboard-quick-view">
-                <h2>Quick view</h2>
+		    <div class="dashboard-quick-view">
+			    <h2>Quick view</h2>
 
-                <div class="dashboard-task-box">
-                    <header>Top priority tasks</header>
+			    <div class="dashboard-task-box">
+				    <header>Top priority tasks</header>
 
-                    <div class="dashboard-task-list">
-                        @foreach (var task in Model.QuickTasks)
+				    <div class="dashboard-task-list">
+					    @foreach (var task in Model.QuickTasks)
+					    {
+						    var dayDiff = (task.Deadline.Date - DateTime.Today).Days;
+						    var isOverdue = dayDiff < 0;
+						    var deadlineLabel = dayDiff < 0 ? "✕" : dayDiff == 0 ? "Today" : $"{dayDiff}D";
+
+						    <article class="dashboard-task-item"
+						             role="link"
+						             tabindex="0"
+						             onclick="window.location.href='@Url.Action("TaskBoardViewTask", "TaskBoard", new { taskCode = task.Id })'"
+						             onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='@Url.Action("TaskBoardViewTask", "TaskBoard", new { taskCode = task.Id })'; }">
+							    <div class="dashboard-task-item-top">
+								    <h3>@task.Title</h3>
+								    <div class="dashboard-task-icons" aria-hidden="true">
+									    @if (task.IsGroupTask)
+									    {
+										    <span class="dashboard-task-group-icon"></span>
+									    }
+									    <span class="dashboard-task-deadline-badge @(isOverdue ? "is-overdue" : string.Empty)">@deadlineLabel</span>
+								    </div>
+							    </div>
+							    <div class="dashboard-task-item-bottom">
+								    <span class="dashboard-task-subject">@task.SubjectName</span>
+								    <span class="dashboard-task-code">@task.TaskCode</span>
+							    </div>
+						    </article>
+					    }
+				    </div>
+			    </div>
+		    </div>
+
+            <div class="dashboard-next-lesson mt-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <h2 class="mb-0">Next Lesson</h2>
+                    @if (Model.NextLesson != null)
+                    {
+                        <span class="badge @(Model.NextLessonDayLabel == "Today" ? "bg-success" : "bg-warning text-dark")">
+                            @Model.NextLessonDayLabel
+                        </span>
+                    }
+                </div>
+
+                @if (Model.NextLesson != null)
+                {
+                    <div class="card border-0 shadow-sm p-3" style="border-radius: 15px; background: #f8f9fa;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <span class="badge bg-black mb-2">@Model.NextLesson.LessonType</span>
+                                <h4 class="fw-bold mb-1">@Model.NextLesson.Subject.Name</h4>
+                                <p class="text-muted mb-0">
+                                    <i class="bi bi-clock"></i>
+                                    @Model.NextLesson.LessonSlot.StartTime.ToString("HH:mm") - @Model.NextLesson.LessonSlot.EndTime.ToString("HH:mm")
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-primary" style="font-size: 1.2rem;">
+                                    RM: @(string.IsNullOrEmpty(Model.NextLesson.Room) ? "—" : Model.NextLesson.Room)
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (Model.NextLesson.Lecturers != null && Model.NextLesson.Lecturers.Any())
                         {
-                            var dayDiff = (task.Deadline.Date - DateTime.Today).Days;
-                            var isOverdue = dayDiff < 0;
-                            var deadlineLabel = dayDiff < 0 ? "✕" : dayDiff == 0 ? "Today" : $"{dayDiff}D";
-
-                            <article class="dashboard-task-item"
-                                     role="link"
-                                     tabindex="0"
-                                     onclick="window.location.href='@Url.Action("TaskBoardViewTask", "TaskBoard", new { taskCode = task.Id })'"
-                                     onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='@Url.Action("TaskBoardViewTask", "TaskBoard", new { taskCode = task.Id })'; }">
-                                <div class="dashboard-task-item-top">
-                                    <h3>@task.Title</h3>
-                                    <div class="dashboard-task-icons" aria-hidden="true">
-                                        @if (task.IsGroupTask)
-                                        {
-                                            <span class="dashboard-task-group-icon"></span>
-                                        }
-                                        <span class="dashboard-task-deadline-badge @(isOverdue ? "is-overdue" : string.Empty)">@deadlineLabel</span>
-                                    </div>
-                                </div>
-                                <div class="dashboard-task-item-bottom">
-                                    <span class="dashboard-task-subject">@task.SubjectName</span>
-                                    <span class="dashboard-task-code">@task.TaskCode</span>
-                                </div>
-                            </article>
+                            <div class="mt-3 pt-2 border-top">
+                                <small class="text-muted">Lecturer:</small>
+                                <div class="fw-medium">@string.Join(", ", Model.NextLesson.Lecturers.Select(l => $"{l.Name} {l.Surname}"))</div>
+                            </div>
                         }
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="card border-0 shadow-sm p-4 text-center" style="border-radius: 15px; border: 2px dashed #dee2e6 !important; background: transparent;">
+                        <p class="text-muted mb-0">No upcoming lessons found. Rest up!</p>
+                    </div>
+                }
             </div>
-        </div>
+	    </div>
+	    
 
         <aside class="dashboard-right">
             <h2>Created by students for students.</h2>

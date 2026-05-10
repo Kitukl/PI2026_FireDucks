@@ -15,6 +15,10 @@ public class CommentConfiguration : IEntityTypeConfiguration<Comment>
 
         builder.HasOne(c => c.Task)
             .WithMany(t => t.Comments)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(c => c.Feedback)
+            .WithMany(f => f.Comments)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

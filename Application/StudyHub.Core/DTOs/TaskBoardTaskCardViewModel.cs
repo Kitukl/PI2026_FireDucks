@@ -15,4 +15,5 @@ public class TaskBoardTaskCardViewModel
     public bool IsGroupTask { get; set; }
     public Status Status { get; set; }
     public DateTime Deadline { get; set; }
+    public string? ResourceUrl { get; set; }
 }

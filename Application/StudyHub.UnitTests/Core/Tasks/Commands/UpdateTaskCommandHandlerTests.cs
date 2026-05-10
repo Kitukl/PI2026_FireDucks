@@ -43,13 +43,15 @@ public class UpdateTaskCommandHandlerTests
         {
             Id = taskId,
             Status = Status.Done,
-            Subject = newSubject
+            Subject = newSubject,
+            ResourceUrl = "https://example.com"
         }, CancellationToken.None);
 
         // Assert
         Assert.Equal(taskId, result);
         Assert.Equal(Status.Done, originalTask.Status);
         Assert.Equal(newSubject, originalTask.Subject);
+        Assert.Equal("https://example.com", originalTask.ResourceUrl);
         _repositoryMock.Verify(x => x.UpdateTaskAsync(originalTask), Times.Once);
     }
 

@@ -15,6 +15,7 @@ public class CreateTaskBoardTaskCommand : IRequest<CreateTaskBoardTaskResult>
     public Guid? SubjectId { get; set; }
     public DateTime DueDate { get; set; }
     public bool IsGroupTask { get; set; }
+    public string? ResourceUrl { get; set; }
 }
 
 public class CreateTaskBoardTaskResult
@@ -28,6 +29,7 @@ public class CreateTaskBoardTaskResult
     public Guid? SubjectId { get; set; }
     public DateTime DueDate { get; set; }
     public bool IsGroupTask { get; set; }
+    public string? ResourceUrl { get; set; }
 
     public List<CreateTaskBoardTaskValidationError> Errors { get; set; } = new();
     public TaskBoardCreatePageDataDto? InvalidPageData { get; set; }
@@ -156,7 +158,8 @@ public class CreateTaskBoardTaskCommandHandler : IRequestHandler<CreateTaskBoard
             {
                 Id = selectedSubject!.Id,
                 Name = selectedSubject.Name ?? string.Empty
-            }
+            },
+            ResourceUrl = request.ResourceUrl
         }, cancellationToken);
 
         result.IsSuccess = true;

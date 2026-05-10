@@ -16,6 +16,7 @@ public class Task
     public Subject Subject { get; set; }
     
     public User User { get; set; }
+    public string? ResourceUrl { get; set; }
 
     public ICollection<Statistic>? Statistics { get; set; }
     public ICollection<Comment>? Comments { get; set; }

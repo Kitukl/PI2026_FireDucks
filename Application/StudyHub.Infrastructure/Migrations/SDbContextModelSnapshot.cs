@@ -246,7 +246,10 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<Guid>("TaskId")
+                    b.Property<Guid?>("FeedbackId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TaskId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("UserName")
@@ -255,6 +258,8 @@ namespace StudyHub.Infrastructure.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FeedbackId");
 
                     b.HasIndex("TaskId");
 
@@ -420,7 +425,7 @@ namespace StudyHub.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("CanLeaderUpdate")
+                    b.Property<bool>("CanHeadmanUpdate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
@@ -506,6 +511,9 @@ namespace StudyHub.Infrastructure.Migrations
 
                     b.Property<bool>("IsGroupTask")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("ResourceUrl")
+                        .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -627,6 +635,39 @@ namespace StudyHub.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("StudyHub.Domain.Entities.UserSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("DurationSeconds")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("EntryTimeUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ExitTimeUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastSeenUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "IsClosed");
+
+                    b.ToTable("UserSessions");
+                });
+
             modelBuilder.Entity("LecturerLesson", b =>
                 {
                     b.HasOne("StudyHub.Domain.Entities.Lecturer", null)
@@ -740,11 +781,17 @@ namespace StudyHub.Infrastructure.Migrations
 
             modelBuilder.Entity("StudyHub.Domain.Entities.Comment", b =>
                 {
+                    b.HasOne("StudyHub.Domain.Entities.Feedback", "Feedback")
+                        .WithMany("Comments")
+                        .HasForeignKey("FeedbackId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("StudyHub.Domain.Entities.Task", "Task")
                         .WithMany("Comments")
                         .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Feedback");
 
                     b.Navigation("Task");
                 });
@@ -827,6 +874,21 @@ namespace StudyHub.Infrastructure.Migrations
                     b.Navigation("Reminder");
                 });
 
+            modelBuilder.Entity("StudyHub.Domain.Entities.Feedback", b =>
+                {
+                    b.Navigation("Comments");
+                });
+            modelBuilder.Entity("StudyHub.Domain.Entities.UserSession", b =>
+                {
+                    b.HasOne("StudyHub.Domain.Entities.User", "User")
+                        .WithMany("Sessions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("StudyHub.Domain.Entities.Group", b =>
                 {
                     b.Navigation("Schedule")
@@ -856,9 +918,11 @@ namespace StudyHub.Infrastructure.Migrations
                 {
                     b.Navigation("Feedbacks");
 
+                    b.Navigation("Sessions");
+
                     b.Navigation("Tasks");
                 });
-#pragma warning restore 612, 618
+
         }
     }
 }
