@@ -512,6 +512,9 @@ namespace StudyHub.Infrastructure.Migrations
                     b.Property<bool>("IsGroupTask")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("ResourceUrl")
+                        .HasColumnType("text");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
