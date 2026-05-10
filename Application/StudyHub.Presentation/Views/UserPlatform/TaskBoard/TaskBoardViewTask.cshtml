@@ -300,9 +300,7 @@
             <div class="task-view-main">
                 <div class="task-view-description">
                     <h2>Description</h2>
-                    <div class="task-view-textbox" title="@selectedTask.Description">
-                        @(string.IsNullOrWhiteSpace(normalizedDescription) ? "No description provided for this task." : normalizedDescription)
-                    </div>
+                    <div class="task-view-textbox" title="@selectedTask.Description">@(string.IsNullOrWhiteSpace(normalizedDescription) ? "No description provided for task." : normalizedDescription)</div>
                 </div>
 
                 <aside class="task-view-details">
