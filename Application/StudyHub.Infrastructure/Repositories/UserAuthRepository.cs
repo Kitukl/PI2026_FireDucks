@@ -27,6 +27,17 @@ public class UserAuthRepository : IUserAuthRepository
         await _signInManager.SignInAsync(user, isPersistent);
     }
 
+    public async Task RefreshSignInAsync(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            return;
+        }
+
+        await _signInManager.RefreshSignInAsync(user);
+    }
+
     public async Task SignOutAsync()
     {
         await _signInManager.SignOutAsync();

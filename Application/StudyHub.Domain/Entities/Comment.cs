@@ -7,5 +7,6 @@ public class Comment
     public string Description { get; set; }
     public DateTime CreatedAt { get; set; }
 
-    public Task Task { get; set; }
+    public Task? Task { get; set; }
+    public Feedback? Feedback { get; set; }
 }

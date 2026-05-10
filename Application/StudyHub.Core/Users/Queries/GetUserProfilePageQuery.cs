@@ -1,7 +1,11 @@
 using Application.Helpers;
 using MediatR;
+using StudyHub.Core.Comments.Interfaces;
+using StudyHub.Core.Feedbacks.Queries;
 using StudyHub.Core.Statistics.Interfaces;
 using StudyHub.Core.Users.Interfaces;
+using StudyHub.Domain.Entities;
+using StudyHub.Domain.Enums;
 using TimeType = StudyHub.Domain.Entities.TimeType;
 
 namespace StudyHub.Core.Users.Queries;
@@ -9,6 +13,8 @@ namespace StudyHub.Core.Users.Queries;
 public class GetUserProfilePageQuery : IRequest<UserProfilePageDataDto>
 {
     public Guid? UserId { get; set; }
+    public string? FeedbackId { get; set; }
+    public bool OpenModal { get; set; }
 }
 
 public class UserProfilePageDataDto
@@ -18,17 +24,25 @@ public class UserProfilePageDataDto
     public bool IsNotified { get; set; }
     public uint ReminderOffset { get; set; } = 2u;
     public TimeType ReminderTimeType { get; set; } = TimeType.Day;
+    public List<Feedback> Requests { get; set; } = [];
+    public Feedback? ActiveRequest { get; set; }
+    public List<Comment> ActiveRequestComments { get; set; } = [];
+    public bool OpenRequestModal { get; set; }
     public Dictionary<int, double> MonthlyActivityPerMonth { get; set; } = [];
 }
 
 public class GetUserProfilePageQueryHandler : IRequestHandler<GetUserProfilePageQuery, UserProfilePageDataDto>
 {
+    private readonly ISender _sender;
     private readonly IUserRepository _userRepository;
+    private readonly ICommentRepository _commentRepository;
     private readonly IStatisticRepository _statisticRepository;
 
-    public GetUserProfilePageQueryHandler(IUserRepository userRepository, IStatisticRepository statisticRepository)
+    public GetUserProfilePageQueryHandler(ISender sender, IUserRepository userRepository, IStatisticRepository statisticRepository, ICommentRepository commentRepository)
     {
+        _sender = sender;
         _userRepository = userRepository;
+        _commentRepository = commentRepository;
         _statisticRepository = statisticRepository;
     }
 
@@ -40,6 +54,25 @@ public class GetUserProfilePageQueryHandler : IRequestHandler<GetUserProfilePage
         }
 
         var user = await _userRepository.GetUserById(request.UserId.Value);
+        var feedbacks = await _sender.Send(new GetFeedbacksCommand(), cancellationToken);
+        var requests = feedbacks
+            .Where(feedback => feedback.User?.Id == request.UserId.Value && feedback.FeedbackType == FeedbackType.Request)
+            .OrderByDescending(feedback => feedback.CreatedAt)
+            .ToList();
+
+        Feedback? activeRequest = null;
+        if (!string.IsNullOrWhiteSpace(request.FeedbackId) && Guid.TryParse(request.FeedbackId, out var parsedFeedbackId))
+        {
+            activeRequest = requests.FirstOrDefault(feedback => feedback.Id == parsedFeedbackId);
+        }
+
+        activeRequest ??= requests.FirstOrDefault();
+
+        var activeRequestComments = new List<Comment>();
+        if (request.OpenModal && activeRequest != null)
+        {
+            activeRequestComments = await _commentRepository.GetFeedbackCommentsAsync(activeRequest.Id);
+        }
         var monthlyActivityPerMonth = await _statisticRepository.GetYearlyActivityAsync(
             request.UserId.Value,
             DateTime.UtcNow.Year,
@@ -52,6 +85,10 @@ public class GetUserProfilePageQueryHandler : IRequestHandler<GetUserProfilePage
             IsNotified = user.IsNotified,
             ReminderOffset = user.Reminder?.ReminderOffset ?? 2u,
             ReminderTimeType = user.Reminder?.TimeType ?? TimeType.Day,
+            Requests = requests,
+            ActiveRequest = activeRequest,
+            ActiveRequestComments = activeRequestComments,
+            OpenRequestModal = request.OpenModal && activeRequest != null,
             MonthlyActivityPerMonth = monthlyActivityPerMonth
         };
     }

@@ -54,10 +54,47 @@ public class Program
             configuration.ReadFrom.Configuration(context.Configuration));
 
         builder.Services.AddControllersWithViews();
+        // Diagnostic: print the resolved connection string at startup
+        var resolvedConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+
+        // If configuration did not provide a password (possible override), try to read the development settings file as a fallback.
+        if (string.IsNullOrWhiteSpace(resolvedConnection) || !System.Text.RegularExpressions.Regex.IsMatch(resolvedConnection, @"Password\s*=\s*[^;]+", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        {
+            var devCandidates = new[]
+            {
+                Path.Combine(currentDirectory, "StudyHub.Presentation", "appsettings.Development.json"),
+                Path.Combine(currentDirectory, "appsettings.Development.json")
+            };
+
+            foreach (var devPath in devCandidates)
+            {
+                try
+                {
+                    if (!File.Exists(devPath)) continue;
+                    var json = File.ReadAllText(devPath);
+                    using var doc = System.Text.Json.JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("ConnectionStrings", out var cs) && cs.TryGetProperty("DefaultConnection", out var def))
+                    {
+                        var fallback = def.GetString();
+                        if (!string.IsNullOrWhiteSpace(fallback))
+                        {
+                            resolvedConnection = fallback;
+                            break;
+                        }
+                    }
+                }
+                catch
+                {
+                    // ignore and continue
+                }
+            }
+        }
+
+        Console.WriteLine($"[DEBUG] DefaultConnection=<{resolvedConnection}>");
         builder.Services.Configure<SessionTrackingOptions>(
             builder.Configuration.GetSection(SessionTrackingOptions.SectionName));
         builder.Services.AddDbContext<SDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(resolvedConnection));
 
         builder.Services.AddIdentity<User, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<SDbContext>()

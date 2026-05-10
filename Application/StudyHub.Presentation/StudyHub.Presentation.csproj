@@ -6,6 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>Application</RootNamespace>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <UserSecretsId>a74ce8db-61cf-48d2-8843-bf04b30b2e16</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,8 +14,13 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Azure.Data.Tables" Version="12.10.0" />
+      <PackageReference Include="Azure.Storage.Blobs" Version="12.24.0" />
+      <PackageReference Include="Azure.Storage.Files.Shares" Version="12.22.0" />
+      <PackageReference Include="Azure.Storage.Queues" Version="12.22.0" />
       <PackageReference Include="DotNetEnv" Version="3.1.1" />
       <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="9.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Azure" Version="1.11.0" />
       <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
       <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
     </ItemGroup>
