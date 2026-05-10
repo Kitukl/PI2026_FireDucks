@@ -1,3 +1,4 @@
+using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Configuration;
@@ -9,18 +10,20 @@ namespace StudyHub.Infrastructure.Storage;
 
 public class BlobService : IBlobService
 {
-    private const string DefaultAzuriteConnectionString = "UseDevelopmentStorage=true";
+    private const string BlobConnectionStringPath = "ConnectionStrings:BlobStorage";
+    private const string DefaultAzuriteConnectionString =
+        "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
 
     private readonly BlobServiceClient _blobServiceClient;
 
     public BlobService(IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("BlobStorage");
-
+        var connectionString = configuration[BlobConnectionStringPath];
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             connectionString = DefaultAzuriteConnectionString;
         }
+
         _blobServiceClient = new BlobServiceClient(connectionString);
     }
 
